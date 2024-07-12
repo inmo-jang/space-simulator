@@ -31,10 +31,7 @@ SPADE Simulator is a pygame-based application for simulating agent behavior usin
     pip install -r requirements.txt
     ```
 
-3. Ensure you have the correct assets:
-    - Place your logo image in the `assets` directory.
-
-4. Run the simulator:
+3. Run the simulator:
     ```sh
     python main.py
     ```
