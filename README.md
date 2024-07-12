@@ -22,7 +22,7 @@ SPADE Simulator is a pygame-based application for simulating agent behavior usin
 
 1. Clone the repository:
     ```sh
-    git clone https://github.com/yourusername/spade-simulator.git
+    git clone https://github.com/inmo-jang/spade-simulator.git
     cd spade-simulator
     ```
 
