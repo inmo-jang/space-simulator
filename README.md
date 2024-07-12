@@ -2,6 +2,15 @@
 
 SPADE Simulator is a pygame-based application for simulating agent behavior using behavior trees. This documentation provides an overview of the code structure, installation instructions, and usage guidelines.
 
+<div style="display: flex; flex-direction: row;">
+    <img src="output/2024-07-13/RandomAssignment_100_agents_300_tasks_2024-07-13_00-41-18.gif" alt="GIF" width="400" height="300">
+    <img src="output/2024-07-13/RandomAssignment_1000_agents_3000_tasks_2024-07-13_00-38-13.gif" alt="GIF" width="400" height="300">
+</div>
+
+- Example: (Left) `num_agents = 100`, `num_tasks = 300`; (Right) `num_agents = 1000`, `num_tasks = 3000`
+
+
+
 ## Features
 
 - Simulates multiple agents performing tasks
