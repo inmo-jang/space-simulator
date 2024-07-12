@@ -74,4 +74,4 @@ simulation:
 Feel free to fork the repository and submit pull requests. For major changes, please open an issue first to discuss what you would like to change.
 
 ## License
-[GNU GPLv3](https://github.com/inmo-jang/pyGRAPE/blob/main/LICENSE)
+[GNU GPLv3](LICENSE)
