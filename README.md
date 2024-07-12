@@ -1,6 +1,8 @@
 # SPADE (Swarm Planning And Decision Evaluation) Simulator
 
-SPADE Simulator is a pygame-based application for simulating agent behavior using behavior trees. This documentation provides an overview of the code structure, installation instructions, and usage guidelines.
+**SPADE** Simulator is a pygame-based application for simulating decentralized agent behavior using behavior trees. 
+By integrating your custom decision-making algorithms as plugins, SPADE enables rigorous testing and comparative analysis against pre-existing algorithms. 
+
 
 <div style="display: flex; flex-direction: row;">
     <img src="output/2024-07-13/RandomAssignment_100_agents_300_tasks_2024-07-13_00-41-18.gif" alt="GIF" width="400" height="300">
@@ -17,6 +19,8 @@ SPADE Simulator is a pygame-based application for simulating agent behavior usin
 - Agents use behavior trees for decision-making
 - Real-time task assignment and execution
 - Debug mode for visualizing agent behavior
+
+
 
 ## Installation
 
@@ -36,6 +40,7 @@ SPADE Simulator is a pygame-based application for simulating agent behavior usin
     python main.py
     ```
 
+
 ## Configuration
 
 Modify the `config.yaml` file to adjust simulation parameters:
@@ -45,30 +50,32 @@ Modify the `config.yaml` file to adjust simulation parameters:
 
 Refer to the configuration guide [CONFIG_GUIDE.md](/docs/CONFIG_GUIDE.md)
 
+
+
 ## Usage
 
 ### Controls
 - `ESC` or `Q`: Quit the simulation
 - `P`: Pause/unpause the simulation
-- `R`: Record the simulation as a GIF file
+- `R`: Start/stop recording the simulation as a GIF file
 
-### Debug Mode
-Enable debug mode in `config.yaml`:
-```yaml
-simulation:
-  debug_mode: True
-```
+
 
 ## Code Structure
 - `main.py`: Entry point of the simulation, initializes pygame and manages the main game loop.
-- `agent.py`: Defines the Agent class and manages agent behavior.
-- `task.py`: Defines the Task class and manages task behavior.
-- `behavior_tree.py`: Implements behavior tree nodes and execution logic.
-- `utils.py`: Utility functions and configuration loading.
-- `decision_making.py`: Contains decision-making logic for agents.
+- `/modules/`
+    - `agent.py`: Defines the Agent class and manages agent behavior.
+    - `task.py`: Defines the Task class and manages task behavior.
+    - `behavior_tree.py`: Implements behavior tree nodes and execution logic.
+    - `utils.py`: Utility functions and configuration loading.
+- `/plugins/`
+    - `my_decision_making_plugin.py`: Template for decision-making algorithms for each agent.
+
 
 ## Contributing
-Feel free to fork the repository and submit pull requests. For major changes, please open an issue first to discuss what you would like to change.
+Feel free to fork the repository and submit pull requests. 
+Refer to [TODO.md](/docs/TODO.md) for a list of pending tasks and upcoming features.
+
 
 ## License
 [GNU GPLv3](LICENSE)
