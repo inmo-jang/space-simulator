@@ -62,7 +62,7 @@ async def game_loop():
                     if not recording:
                         recording = True
                         frames = [] # Clear any existing frames
-                        last_frame_time = pygame.time.get_ticks() / 1000
+                        last_frame_time = simulation_time
                         print("Recording started...") 
                     else:
                         recording = False
