@@ -1,6 +1,16 @@
 ### CHANGELOG.md
 
-## Version 1.1.0
+## Version 1.2.0 (24-07-15)
+
+### New Features
+- **GRAPE (grape.py)**: Implemented the GRAPE algorithm in "Anonymous Hedonic Game for Task Allocation in a Large-Scale Multiple Agent System" (I. Jang, H.-S. Shin, A. Tsourdos, IEEE Transactions on Robotics, Dec. 2018).
+- **Agent Communication (agent.py)**:
+  - Introduced `local_broadcast` method for agent local communication, utilizing `communication_radius` defined in `config.yaml`.
+  - Added `draw_communication_topology` for visualizing communication lines based on agent topology.
+- **Assigned Task Visualization**: Agents' colors now represent the colors of their assigned tasks for improved visual distinction.
+
+
+## Version 1.1.0 (24.07-14)
 
 ### New Features
 - **Simulation Time Display**: The simulation now uses a simulation time based on sampling time, which is displayed in the top right corner of the screen. This provides a more accurate representation of the simulation's progress rather than real-time elapsed.

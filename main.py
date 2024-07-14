@@ -76,16 +76,25 @@ async def game_loop():
             for task in tasks:
                 task.draw(screen)
                 
+            # Draw agents network topology
+            for agent in agents:
+                agent.draw_communication_topology(screen, agents)
+
             # Run behavior trees for each agent
             for agent in agents:
-                await agent.run_tree()
-                agent.update()
+                await agent.run_tree()    
+                agent.local_broadcast(agents)
+                agent.update()                
                 agent.draw(screen)
 
             # Display task quantity and elapsed simulation time
             tasks_left = sum(1 for task in tasks if not task.completed)
             task_time_text = pre_render_text(f'Tasks left: {tasks_left} Time: {simulation_time:.2f}s', 36, (0, 0, 0))
             screen.blit(task_time_text, (screen_width - 300, 20))
+            if 'evolution_number' in agent.message_to_share: # For GRAPE
+                partition_evolution_number = agent.message_to_share['evolution_number']
+                partition_evolution_number_text = pre_render_text(f'Partition evolution number: {partition_evolution_number}', 36, (0, 0, 0))
+                screen.blit(partition_evolution_number_text, (20, 20))
 
             # Check if all tasks are completed
             if tasks_left == 0:

@@ -5,6 +5,7 @@ import imageio
 import datetime
 from PIL import Image
 import os
+import matplotlib.cm as cm
 
 def load_config(config_file):
     with open(config_file, 'r') as f:
@@ -60,3 +61,13 @@ def save_gif(frames):
         print(f"Saved GIF: {gif_filename}")
 
 
+# Generate task_colors based on tasks.quantity
+def generate_task_colors(quantity):
+    colors = cm.get_cmap('tab20', quantity)  # 'tab20' is a colormap with 20 distinct colors
+    task_colors = {}
+    for i in range(quantity):
+        color = colors(i)  # Get color from colormap
+        task_colors[i] = (int(color[0] * 255), int(color[1] * 255), int(color[2] * 255))  # Convert to RGB tuple
+    return task_colors
+
+task_colors = generate_task_colors(config['tasks']['quantity'])

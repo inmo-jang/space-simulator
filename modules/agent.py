@@ -1,7 +1,8 @@
 import pygame
 import math
+import copy
 from modules.behavior_tree import Sequence, DecisionMakingNode, ConsensusCheckingNode, TaskExecutingNode
-from modules.utils import config, generate_positions
+from modules.utils import config, generate_positions, task_colors
 
 # Load agent configuration
 agent_max_speed = config['agents']['max_speed']
@@ -10,6 +11,7 @@ max_angular_speed = config['agents']['max_angular_speed']
 agent_approaching_to_target_radius = config['agents']['target_approaching_radius']
 agent_track_size = config['simulation']['agent_track_size']
 work_rate = config['agents']['work_rate']
+agent_communication_radius = config['agents']['communication_radius']
 
 class Agent:
     def __init__(self, agent_id, position, tasks_info):
@@ -27,6 +29,10 @@ class Agent:
         self.blackboard = {}
 
         self.tasks_info = tasks_info
+        self.communication_radius = agent_communication_radius
+        self.neighbor_agents_id = set()
+        self.message_to_share = None
+        self.messages_received = []
         self.tree = self._create_behavior_tree()
 
     def _create_behavior_tree(self):
@@ -100,6 +106,23 @@ class Agent:
             vector.scale_to_length(max_value)
         return vector
 
+    def local_broadcast(self, agents):
+        self.neighbor_agents_id = set()
+        communication_radius_squared = self.communication_radius ** 2
+
+        for other_agent in agents:
+            distance = (self.position - other_agent.position).length_squared()
+            if distance <= communication_radius_squared:
+                other_agent.receive_message(self.message_to_share)
+                self.neighbor_agents_id.add(other_agent.agent_id)        
+
+    def reset_messages_received(self):
+        self.messages_received = []
+
+    def receive_message(self, message):
+        if message not in self.messages_received:
+            self.messages_received.append(copy.copy(message))            
+
     def draw(self, screen):
         size = 10
         angle = self.rotation
@@ -109,7 +132,21 @@ class Agent:
         p2 = pygame.Vector2(self.position.x + size * math.cos(angle + 2.5), self.position.y + size * math.sin(angle + 2.5))
         p3 = pygame.Vector2(self.position.x + size * math.cos(angle - 2.5), self.position.y + size * math.sin(angle - 2.5))
 
+        self.update_color()
         pygame.draw.polygon(screen, self.color, [p1, p2, p3])
+
+    def draw_communication_topology(self, screen, agents):
+     # Draw lines to neighbor agents
+        for neighbor_agent_id in self.neighbor_agents_id:
+            neighbor_position = agents[neighbor_agent_id].position
+            pygame.draw.line(screen, (255, 255, 255), (int(self.position.x), int(self.position.y)), (int(neighbor_position.x), int(neighbor_position.y)))
+
+
+
+    def update_color(self):
+        _assigned_task_id = self.blackboard['assigned_task_id']
+        self.color = task_colors.get(_assigned_task_id, (20, 20, 20))  # Default to Dark Grey if no task is assigned
+
 
 def generate_agents(tasks_info):
     agent_quantity = config['agents']['quantity']

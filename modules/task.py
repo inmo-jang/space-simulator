@@ -1,6 +1,6 @@
 import pygame
 import random
-from modules.utils import config, generate_positions
+from modules.utils import config, generate_positions, task_colors
 
 class Task:
     def __init__(self, task_id, position):
@@ -9,6 +9,7 @@ class Task:
         self.amount = random.uniform(config['tasks']['amounts']['min'], config['tasks']['amounts']['max'])
         self.radius = self.amount / config['simulation']['task_visualisation_factor']
         self.completed = False
+        self.color = task_colors.get(self.task_id, (0, 0, 0))  # Default to black if task_id not found
 
     def set_done(self):
         self.completed = True
@@ -27,7 +28,7 @@ class Task:
     def draw(self, screen):
         self.radius = self.amount / config['simulation']['task_visualisation_factor']        
         if not self.completed:
-            pygame.draw.circle(screen, (255, 0, 0), self.position, int(self.radius))
+            pygame.draw.circle(screen, self.color, self.position, int(self.radius))
 
 
 def generate_tasks():
