@@ -107,13 +107,14 @@ class TaskExecutingNode(SyncAction):
             agent_position = agent.position
             # Calculate norm2 distance
             distance = math.sqrt((task_position[0] - agent_position[0])**2 + (task_position[1] - agent_position[1])**2)
-            if distance < target_arrive_threshold:
-                # Agent reached the task position
-                blackboard['task_completed'] = True
-                assigned_task_id = blackboard['assigned_task_id']
-                agent.tasks_info[assigned_task_id].set_done()
-                blackboard['assigned_task_id'] = None
-                return Status.SUCCESS
+            
+            assigned_task_id = blackboard['assigned_task_id']            
+            if distance < agent.tasks_info[assigned_task_id].radius + target_arrive_threshold: # Agent reached the task position                                
+                agent.tasks_info[assigned_task_id].reduce_amount(agent.work_rate)
+                if agent.tasks_info[assigned_task_id].completed:                    
+                    blackboard['task_completed'] = True
+                    blackboard['assigned_task_id'] = None
+                    return Status.SUCCESS
 
             # Move towards the task position
             agent.follow(task_position)

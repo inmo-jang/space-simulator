@@ -9,6 +9,7 @@ agent_max_accel = config['agents']['max_accel']
 max_angular_speed = config['agents']['max_angular_speed']
 agent_approaching_to_target_radius = config['agents']['target_approaching_radius']
 agent_track_size = config['simulation']['agent_track_size']
+work_rate = config['agents']['work_rate']
 
 class Agent:
     def __init__(self, agent_id, position, tasks_info):
@@ -19,6 +20,7 @@ class Agent:
         self.max_speed = agent_max_speed
         self.max_accel = agent_max_accel
         self.max_angular_speed = max_angular_speed
+        self.work_rate = work_rate
         self.memory_location = []  # To draw track
         self.rotation = 0  # Initial rotation
         self.color = (0, 0, 255)  # Blue color

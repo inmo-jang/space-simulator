@@ -46,6 +46,9 @@ async def game_loop():
     recording = False
     frames = []    
 
+    # Initialize simulation time
+    simulation_time = 0.0
+
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -69,20 +72,19 @@ async def game_loop():
         if not game_paused and not mission_completed:
             screen.fill(background_color)
 
+            # Draw tasks with task_id displayed
+            for task in tasks:
+                task.draw(screen)
+                
             # Run behavior trees for each agent
             for agent in agents:
                 await agent.run_tree()
                 agent.update()
                 agent.draw(screen)
 
-            # Draw tasks with task_id displayed
-            for task in tasks:
-                task.draw(screen)
-
-            # Display task quantity and elapsed time
+            # Display task quantity and elapsed simulation time
             tasks_left = sum(1 for task in tasks if not task.completed)
-            time_elapsed = pygame.time.get_ticks() / 1000
-            task_time_text = pre_render_text(f'Tasks left: {tasks_left} Time: {time_elapsed:.2f}s', 36, (0, 0, 0))
+            task_time_text = pre_render_text(f'Tasks left: {tasks_left} Time: {simulation_time:.2f}s', 36, (0, 0, 0))
             screen.blit(task_time_text, (screen_width - 300, 20))
 
             # Check if all tasks are completed
@@ -101,12 +103,15 @@ async def game_loop():
             pygame.display.flip()
             clock.tick(sampling_freq)
 
+            # Increment simulation time
+            simulation_time += sampling_time
+
             # Capture frame for recording
             if recording:
-                if time_elapsed - last_frame_time > 1.0/gif_recording_fps: # Capture frame if 0.5 seconds elapsed
+                if simulation_time - last_frame_time > 1.0/gif_recording_fps: # Capture frame if 0.5 seconds elapsed
                     frame = pygame.surfarray.array3d(screen)
                     frames.append(frame)            
-                    last_frame_time = time_elapsed
+                    last_frame_time = simulation_time
 
     pygame.quit()
 
