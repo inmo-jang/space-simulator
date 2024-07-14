@@ -1,0 +1,40 @@
+agents:
+  quantity: 500
+  locations:
+    x_min: 0
+    x_max: 1400
+    y_min: 0
+    y_max: 1000
+    non_overlap_radius: 0 
+  decision_making_module_path: plugins.grape.GRAPE
+  GRAPE:
+    global_situational_awareness: True
+  # decision_making_module_path: plugins.my_decision_making_plugin.MyDecisionMakingClass  
+  max_speed: 1
+  max_accel: 0.1
+  max_angular_speed: 0.3
+  target_approaching_radius: 50
+  work_rate: 1  # work rate for each agent (per 1.0/simulation.sampling_freq)
+  communication_radius: 100
+
+tasks:
+  quantity: 10
+  locations:
+    x_min: 0
+    x_max: 1400
+    y_min: 0
+    y_max: 1000
+    non_overlap_radius: 0
+  threshold_done_by_arrival: 10.0
+  amounts:  # Added amounts range for tasks
+    min: 600.0
+    max: 6000.0
+
+simulation:
+  sampling_freq: 60.0
+  agent_track_size: 100  
+  screen_width: 1400 
+  screen_height: 1000 
+  debug_mode: False
+  gif_recording_fps: 20
+  task_visualisation_factor: 100  # visualization factor for tasks : 10 means converting 10 amount to 1 pixel
