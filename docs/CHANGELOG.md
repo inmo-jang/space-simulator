@@ -10,6 +10,8 @@
 ### Changes
 - **Agent Global Information (agent.py)**:
   - Enabled each agent to access global information about all agents (i.e., `agents_info`). Note that `tasks_info` is also global information about tasks. 
+- **Agent Draw (agent.py)**:
+  - Introduced default drawing of agent tails for improved visualization.
 
 - **GRAPE (grape.py)**
   - Resolved issues in `distributed_mutex` related to message handling.

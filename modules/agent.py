@@ -141,6 +141,10 @@ class Agent:
         self.update_color()
         pygame.draw.polygon(screen, self.color, [p1, p2, p3])
 
+        # Draw track
+        if len(self.memory_location) >= 2:
+            pygame.draw.lines(screen, self.color, False, self.memory_location, 1)               
+
     def draw_communication_topology(self, screen, agents):
      # Draw lines to neighbor agents
         for neighbor_agent_id in self.neighbor_agents_id:
