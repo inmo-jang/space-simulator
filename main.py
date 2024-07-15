@@ -4,6 +4,7 @@ from modules.agent import generate_agents
 from modules.task import generate_tasks
 from modules.behavior_tree import Sequence, Status
 from modules.utils import config, pre_render_text, save_gif
+import cProfile
 
 # Load configuration
 sampling_freq = config['simulation']['sampling_freq']
@@ -12,6 +13,7 @@ screen_height = config['simulation']['screen_height']
 screen_width = config['simulation']['screen_width']
 debug_mode = config['simulation']['debug_mode']
 gif_recording_fps = config['simulation']['gif_recording_fps']
+profiling_mode = config['simulation']['profiling_mode']
 
 # Initialize pygame
 pygame.init()
@@ -124,6 +126,12 @@ async def game_loop():
 
     pygame.quit()
 
-# Run the game
-if __name__ == "__main__":
+def main():
     asyncio.run(game_loop())
+
+# Run the game
+if __name__ == "__main__":    
+    if profiling_mode:
+        cProfile.run('main()', sort='cumulative')
+    else:
+        main()

@@ -38,3 +38,4 @@ simulation:
   debug_mode: False
   gif_recording_fps: 10
   task_visualisation_factor: 100  # visualization factor for tasks : 10 means converting 10 amount to 1 pixel
+  profiling_mode: True

@@ -1,5 +1,8 @@
 ### CHANGELOG.md
 
+## Version 1.2.1 (24-07-16)
+- **Profiling Mode**: Added profiling capability using `cProfile`. Set `simulation.profiling_mode = True` to enable performance analysis of each function.
+
 ## Version 1.2.0 (24-07-15)
 
 ### New Features
