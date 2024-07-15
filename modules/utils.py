@@ -6,6 +6,7 @@ import datetime
 from PIL import Image
 import os
 import matplotlib.cm as cm
+import shutil
 
 def load_config(config_file):
     with open(config_file, 'r') as f:
@@ -60,6 +61,11 @@ def save_gif(frames):
         # imageio.mimsave(gif_filename, frames)
         print(f"Saved GIF: {gif_filename}")
 
+        # Copy config.yaml to the same directory
+        config_file_path = 'config.yaml'        
+        new_config_filename = os.path.join(output_dir, os.path.basename(gif_filename).replace('.gif', '.yaml'))
+        shutil.copy(config_file_path, new_config_filename)
+        print(f"Copied config.yaml to: {new_config_filename}")        
 
 # Generate task_colors based on tasks.quantity
 def generate_task_colors(quantity):

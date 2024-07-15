@@ -17,6 +17,10 @@
   - Resolved issues in `distributed_mutex` related to message handling.
   - Unified decision-making using `self.assigned_task` throughout the algorithm for clarity, eliminating confusion associated with `_assigned_task_id`.
 
+- **GIF and Config Copy (main.py)**:
+  - Integrated shutil to copy config.yaml alongside generated GIFs for easy simulation configuration reference.
+
+
 ## Version 1.2.0 (24-07-15)
 
 ### New Features
