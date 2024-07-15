@@ -71,7 +71,7 @@ decision_making_class = getattr(decision_making_module, class_name)
 class DecisionMakingNode(SyncAction):
     def __init__(self, name, agent):
         super().__init__(name, self._decide)
-        self.decision_maker = decision_making_class(agent, agent.tasks_info)
+        self.decision_maker = decision_making_class(agent)
 
     def _decide(self, agent, blackboard):
         assigned_task_id = self.decision_maker.decide(blackboard)

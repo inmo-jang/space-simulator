@@ -28,11 +28,14 @@ class Agent:
         self.color = (0, 0, 255)  # Blue color
         self.blackboard = {}
 
-        self.tasks_info = tasks_info
+        self.tasks_info = tasks_info # global info
+        self.agents_info = None # global info
         self.communication_radius = agent_communication_radius
         self.neighbor_agents_id = set()
         self.message_to_share = None
         self.messages_received = []
+
+    def create_behavior_tree(self):
         self.tree = self._create_behavior_tree()
 
     def _create_behavior_tree(self):
@@ -47,13 +50,11 @@ class Agent:
 
     def debug_draw(self, screen):
         # Draw assigned_task_id next to agent position
-        font = pygame.font.Font(None, 24)
+        font = pygame.font.Font(None, 20)
         text_surface = font.render(f"Assigned Task ID: {self.blackboard.get('assigned_task_id', None)}", True, (0, 0, 0))
         screen.blit(text_surface, (self.position[0] + 15, self.position[1] - 30))
-
-        # Draw track
-        if len(self.memory_location) >= 2:
-            pygame.draw.lines(screen, self.color, False, self.memory_location, 1)
+        text_surface_agent_id = font.render(f"{self.agent_id}", True, (255, 255, 255))
+        screen.blit(text_surface_agent_id, (self.position[0] + 15, self.position[1]))
 
     def follow(self, target):
         # Calculate desired velocity
@@ -152,6 +153,8 @@ class Agent:
         _assigned_task_id = self.blackboard['assigned_task_id']
         self.color = task_colors.get(_assigned_task_id, (20, 20, 20))  # Default to Dark Grey if no task is assigned
 
+    def set_global_info_agents(self, agents_info):
+        self.agents_info = agents_info
 
 def generate_agents(tasks_info):
     agent_quantity = config['agents']['quantity']
@@ -166,4 +169,10 @@ def generate_agents(tasks_info):
 
     # Initialize agents
     agents = [Agent(idx, pos, tasks_info) for idx, pos in enumerate(agents_positions)]
+
+    # Provide the global info and create behavior tree
+    for agent in agents:
+        agent.set_global_info_agents(agents)
+        agent.create_behavior_tree()
+
     return agents

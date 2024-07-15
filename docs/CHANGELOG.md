@@ -6,6 +6,10 @@
 - **GRAPE Algorithm Enhancements**:
   - Added `execute_movements_during_convergence` parameter to `GRAPE` settings. This allows agents to make movements based on local decisions even if they haven't yet converged to a Nash stable partition.
 
+### Changes
+- **Agent Global Information (agent.py)**:
+  - Enabled each agent to access global information about all agents (i.e., `agents_info`). Note that `tasks_info` is also global information about tasks. 
+
 
 ## Version 1.2.0 (24-07-15)
 

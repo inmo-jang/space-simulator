@@ -3,9 +3,8 @@ import random
 
 # Define decision-making class
 class MyDecisionMakingClass:
-    def __init__(self, agent, tasks_info):
-        self.agent = agent
-        self.tasks_info = tasks_info
+    def __init__(self, agent):
+        self.agent = agent        
 
     def decide(self, blackboard):
         # Place your decision-making code for each agent
@@ -18,7 +17,7 @@ class MyDecisionMakingClass:
             if blackboard['assigned_task_id'] is not None:
                 return blackboard['assigned_task_id']
         
-        tasks_remaining = [task.task_id for task in self.tasks_info if not task.completed]
+        tasks_remaining = [task.task_id for task in self.agent.tasks_info if not task.completed]
         if len(tasks_remaining) > 0:
             return random.choice(tasks_remaining)
         else:
