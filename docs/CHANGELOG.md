@@ -5,11 +5,15 @@
 - **Profiling Mode**: Added profiling capability using `cProfile`. Set `simulation.profiling_mode = True` to enable performance analysis of each function.
 - **GRAPE Algorithm Enhancements**:
   - Added `execute_movements_during_convergence` parameter to `GRAPE` settings. This allows agents to make movements based on local decisions even if they haven't yet converged to a Nash stable partition.
+  - Introduced `initialize_partition` and `reinitialize_partition_on_completion` methods (defined in `config.yaml`) to enhance the efficiency of achieving Nash stable partitions.
 
 ### Changes
 - **Agent Global Information (agent.py)**:
   - Enabled each agent to access global information about all agents (i.e., `agents_info`). Note that `tasks_info` is also global information about tasks. 
 
+- **GRAPE (grape.py)**
+  - Resolved issues in `distributed_mutex` related to message handling.
+  - Unified decision-making using `self.assigned_task` throughout the algorithm for clarity, eliminating confusion associated with `_assigned_task_id`.
 
 ## Version 1.2.0 (24-07-15)
 
