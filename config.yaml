@@ -9,6 +9,7 @@ agents:
   decision_making_module_path: plugins.grape.GRAPE
   GRAPE:
     global_situational_awareness: True
+    execute_movements_during_convergence: False
   # decision_making_module_path: plugins.my_decision_making_plugin.MyDecisionMakingClass  
   max_speed: 3
   max_accel: 0.1

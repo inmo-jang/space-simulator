@@ -3,6 +3,7 @@ import copy
 from modules.utils import config
 
 USE_GLOBAL_SA = config['agents']['GRAPE']['global_situational_awareness']
+KEEP_MOVING_DURING_CONVERGENCE = config['agents']['GRAPE']['execute_movements_during_convergence']
 
 class GRAPE:
     def __init__(self, agent, tasks_info):
@@ -60,6 +61,8 @@ class GRAPE:
         self.agent.reset_messages_received()
 
         if not self.satisfied:
+            if not KEEP_MOVING_DURING_CONVERGENCE:
+                self.agent.reset_movement() # Neutralise the agent's current movement during converging to a Nash stable partition
             return None
 
         _assigned_task_id = self.get_assigned_task_id_from_partition(self.partition) 

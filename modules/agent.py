@@ -101,6 +101,11 @@ class Agent:
 
         self.rotation += rotation_diff
 
+    def reset_movement(self):
+        self.velocity = pygame.Vector2(0, 0)
+        self.acceleration = pygame.Vector2(0, 0)
+
+
     def limit(self, vector, max_value):
         if vector.length_squared() > max_value**2:
             vector.scale_to_length(max_value)

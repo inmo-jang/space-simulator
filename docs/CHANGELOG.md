@@ -1,12 +1,16 @@
 ### CHANGELOG.md
 
 ## Version 1.2.1 (24-07-16)
+### New Features
 - **Profiling Mode**: Added profiling capability using `cProfile`. Set `simulation.profiling_mode = True` to enable performance analysis of each function.
+- **GRAPE Algorithm Enhancements**:
+  - Added `execute_movements_during_convergence` parameter to `GRAPE` settings. This allows agents to make movements based on local decisions even if they haven't yet converged to a Nash stable partition.
+
 
 ## Version 1.2.0 (24-07-15)
 
 ### New Features
-- **GRAPE (grape.py)**: Implemented the GRAPE algorithm in "Anonymous Hedonic Game for Task Allocation in a Large-Scale Multiple Agent System" (I. Jang, H.-S. Shin, A. Tsourdos, IEEE Transactions on Robotics, Dec. 2018).
+- **GRAPE (grape.py)**: Implemented the GRAPE algorithm in "Anonymous Hedonic Game for Task Allocation in a Large-Scale Multiple Agent System" (I. Jang, H.S. Shin, A. Tsourdos, IEEE Transactions on Robotics, Dec. 2018).
 - **Agent Communication (agent.py)**:
   - Introduced `local_broadcast` method for agent local communication, utilizing `communication_radius` defined in `config.yaml`.
   - Added `draw_communication_topology` for visualizing communication lines based on agent topology.
