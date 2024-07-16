@@ -13,6 +13,7 @@ agent_track_size = config['simulation']['agent_track_size']
 work_rate = config['agents']['work_rate']
 agent_communication_radius = config['agents']['communication_radius']
 task_colors = generate_task_colors(config['tasks']['quantity'])
+situation_awareness_radius = config.get('agents', {}).get('situation_awareness_radius', None)
 font = pygame.font.Font(None, 15)
 class Agent:
     def __init__(self, agent_id, position, tasks_info):
@@ -156,6 +157,12 @@ class Agent:
         # Draw assigned_task_id next to agent position
         text_surface = font.render(f"task_id: {self.blackboard.get('assigned_task_id', None)}", True, (50, 50, 50))
         screen.blit(text_surface, (self.position[0] + 10, self.position[1]))
+
+    def draw_situation_awareness_circle(self, screen):
+        # Draw the situation awareness radius circle    
+        if situation_awareness_radius:    
+            pygame.draw.circle(screen, self.color, (self.position[0], self.position[1]), situation_awareness_radius, 1)
+
 
     def update_color(self):
         _assigned_task_id = self.blackboard['assigned_task_id']

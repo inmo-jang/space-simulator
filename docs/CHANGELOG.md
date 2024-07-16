@@ -13,6 +13,7 @@
     - `agent_id`: Displays agent identifiers on the screen.
     - `agent_assigned_task_id`: Shows the task identifier assigned to each agent.
     - `task_id`: Displays task identifiers on the tasks.
+    - `agent_situation_awareness_circle`: Displays agent situational awareness circle. 
 
 ### Changes
 - **Configuration**:

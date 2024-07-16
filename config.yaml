@@ -20,6 +20,7 @@ agents:
   target_approaching_radius: 50
   work_rate: 1  # work rate for each agent (per 1.0/simulation.sampling_freq)
   communication_radius: 100
+  situation_awareness_radius: 300
 
 tasks:
   quantity: 10
@@ -47,6 +48,7 @@ simulation:
   rendering_options: # Only works if `rendering_mode` is `Screen`
     agent_tail: True
     agent_communication_topology: True
+    agent_situation_awareness_circle: False
     agent_id: False
     agent_assigned_task_id: False
     task_id: False
