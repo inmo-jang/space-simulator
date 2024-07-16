@@ -2,8 +2,9 @@
 
 ## Version 1.2.2 (24-07-17)
 ### New Features
+- **LocalRandomSearch Algorithm (simple.py)**:
+  - Implemented a random search algorithm enabling agents to select tasks randomly within their `situation_awareness_radius`. If no tasks are within range, agents randomly move to a new position for up to `max_random_movement_duration` seconds.
 - **Configuration File Handling**: Added command-line argument parsing to `main.py` to accept a custom configuration file path using the `--config` option. (e.g., `python main.py --config=./examples/GRAPE_20_agents_200_tasks.yaml` )
-
 - **Rendering Mode**: 
   - Added `rendering_mode` configuration option to toggle rendering of graphical output.
   - Introduced `rendering_options` under `simulation` configuration section to customize rendering settings when `rendering_mode` is enabled:
