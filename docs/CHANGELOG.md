@@ -15,7 +15,10 @@
 
 ### Changes
 - **Configuration**:
-  - Split `decision_making` from `agents`. 
+  - Splitted `decision_making` from `agents`. 
+- **Decision-Making Status Display**
+  - Moved the decision-making status drawing function from `main.py` to the respective decision-making modules. This change allows developers to implement their own display functions.
+
 
 ## Version 1.2.1 (24-07-16)
 ### New Features

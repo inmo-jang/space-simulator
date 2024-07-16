@@ -1,3 +1,11 @@
+decision_making:
+  plugin: plugins.grape.GRAPE
+  GRAPE:
+    global_situational_awareness: True
+    execute_movements_during_convergence: False
+    initialize_partition: Distance # Options: None; Distance      
+    reinitialize_partition_on_completion: Distance # Options: None; Distance; 
+
 agents:
   quantity: 20
   locations:
@@ -6,13 +14,6 @@ agents:
     y_min: 0
     y_max: 1000
     non_overlap_radius: 0 
-  decision_making_module_path: plugins.grape.GRAPE
-  GRAPE:
-    global_situational_awareness: True
-    execute_movements_during_convergence: False
-    initialize_partition: Distance # Options: None; Distance      
-    reinitialize_partition_on_completion: Distance # Options: None; Distance; 
-  # decision_making_module_path: plugins.my_decision_making_plugin.MyDecisionMakingClass  
   max_speed: 3
   max_accel: 0.1
   max_angular_speed: 0.3

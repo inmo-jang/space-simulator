@@ -2,6 +2,7 @@ import pygame
 import asyncio
 import argparse
 import cProfile
+import importlib
 
 from modules.utils import pre_render_text, save_gif, set_config
 
@@ -23,6 +24,11 @@ gif_recording_fps = config['simulation']['gif_recording_fps']
 profiling_mode = config['simulation']['profiling_mode']
 rendering_mode = config.get('simulation').get('rendering_mode', "Screen")
 rendering_options = config.get('simulation').get('rendering_options', {})
+
+# Dynamically import the decision-making module
+decision_making_module_path = config['decision_making']['plugin']
+module_path, _ = decision_making_module_path.rsplit('.', 1)
+decision_making_module = importlib.import_module(module_path)
 
 # Initialize pygame
 pygame.init()
@@ -130,10 +136,10 @@ async def game_loop():
                 # Display task quantity and elapsed simulation time                
                 task_time_text = pre_render_text(f'Tasks left: {tasks_left} Time: {simulation_time:.2f}s', 36, (0, 0, 0))
                 screen.blit(task_time_text, (screen_width - 300, 20))
-                if 'evolution_number' in agent.message_to_share: # For GRAPE
-                    partition_evolution_number = agent.message_to_share['evolution_number']
-                    partition_evolution_number_text = pre_render_text(f'Partition evolution number: {partition_evolution_number}', 36, (0, 0, 0))
-                    screen.blit(partition_evolution_number_text, (20, 20))
+
+                # Call draw_decision_making_status from the imported module if it exists
+                if hasattr(decision_making_module, 'draw_decision_making_status'):
+                    decision_making_module.draw_decision_making_status(screen, agent)                
 
                 # Check if all tasks are completed
                 if mission_completed:

@@ -1,6 +1,6 @@
 import random
 import copy
-from modules.utils import config
+from modules.utils import config, pre_render_text
 
 USE_GLOBAL_SA = config['decision_making']['GRAPE']['global_situational_awareness']
 KEEP_MOVING_DURING_CONVERGENCE = config['decision_making']['GRAPE']['execute_movements_during_convergence']
@@ -153,3 +153,10 @@ class GRAPE:
 
     def get_assigned_task_id_from_partition(self, partition):
         return next((task_id for task_id, coalition_members_id in partition.items() if self.agent.agent_id in coalition_members_id), None)
+    
+
+def draw_decision_making_status(screen, agent):
+    if 'evolution_number' in agent.message_to_share: # For GRAPE
+        partition_evolution_number = agent.message_to_share['evolution_number']
+        partition_evolution_number_text = pre_render_text(f'Partition evolution number: {partition_evolution_number}', 36, (0, 0, 0))
+        screen.blit(partition_evolution_number_text, (20, 20))    
