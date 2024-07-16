@@ -2,10 +2,10 @@ import random
 import copy
 from modules.utils import config
 
-USE_GLOBAL_SA = config['agents']['GRAPE']['global_situational_awareness']
-KEEP_MOVING_DURING_CONVERGENCE = config['agents']['GRAPE']['execute_movements_during_convergence']
-INITIALIZE_PARTITION = config['agents']['GRAPE']['initialize_partition']
-REINITIALIZE_PARTITION = config['agents']['GRAPE']['reinitialize_partition_on_completion']
+USE_GLOBAL_SA = config['decision_making']['GRAPE']['global_situational_awareness']
+KEEP_MOVING_DURING_CONVERGENCE = config['decision_making']['GRAPE']['execute_movements_during_convergence']
+INITIALIZE_PARTITION = config['decision_making']['GRAPE']['initialize_partition']
+REINITIALIZE_PARTITION = config['decision_making']['GRAPE']['reinitialize_partition_on_completion']
 
 class GRAPE:
     def __init__(self, agent):

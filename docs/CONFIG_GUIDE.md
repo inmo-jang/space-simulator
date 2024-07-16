@@ -2,6 +2,13 @@
 
 This manual provides detailed descriptions of each parameter in the `config.yaml` file used by the SPADE Simulator. Understanding these parameters will help you customize the simulation according to your requirements.
 
+## `decision_making` Section
+
+- **`plugin`**: Specifies the Python module path and class name for the decision-making logic used by agents.
+    - **Type**: String
+    - **Example**: `plugins.my_decision_making_plugin.MyDecisionMakingClass`
+
+
 ## `agents` Section
 
 This section defines the properties and behaviors of the agents in the simulation.
@@ -26,10 +33,6 @@ This section defines the properties and behaviors of the agents in the simulatio
     - **`non_overlap_radius`**: Minimum distance between agents to prevent overlap at the start.
         - **Type**: Integer
         - **Example**: `0`
-
-- **`decision_making_module_path`**: Specifies the Python module path and class name for the decision-making logic used by agents.
-    - **Type**: String
-    - **Example**: `plugins.my_decision_making_plugin.MyDecisionMakingClass`
 
 - **`max_speed`**: Maximum speed an agent can achieve.
     - **Type**: Float

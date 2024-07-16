@@ -62,7 +62,7 @@ from modules.utils import config
 from plugins.my_decision_making_plugin import *
 target_arrive_threshold = config['tasks']['threshold_done_by_arrival']
 
-decision_making_module_path = config['agents']['decision_making_module_path']
+decision_making_module_path = config['decision_making']['plugin']
 module_path, class_name = decision_making_module_path.rsplit('.', 1)
 decision_making_module = importlib.import_module(module_path)
 decision_making_class = getattr(decision_making_module, class_name)

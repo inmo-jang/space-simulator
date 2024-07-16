@@ -13,6 +13,9 @@
     - `agent_assigned_task_id`: Shows the task identifier assigned to each agent.
     - `task_id`: Displays task identifiers on the tasks.
 
+### Changes
+- **Configuration**:
+  - Split `decision_making` from `agents`. 
 
 ## Version 1.2.1 (24-07-16)
 ### New Features
