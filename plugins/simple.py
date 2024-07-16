@@ -2,7 +2,7 @@ import random
 import pygame
 from modules.utils import config
 
-preferred_task_radius = config['decision_making']['LocalRandomSearch'].get('preferred_task_radius', None)
+preferred_task_radius = config['decision_making']['LocalRandomSearch'].get('preferred_task_radius', 0)
 max_random_movement_duration = config['decision_making']['LocalRandomSearch'].get('max_random_movement_duration', 1.0)
 task_locations = config['tasks']['locations']
 
@@ -26,7 +26,7 @@ class LocalRandomSearch: # Random selection within `preferred_task_radius`
             if blackboard['assigned_task_id'] is not None:
                 return blackboard['assigned_task_id']
         
-        if preferred_task_radius:
+        if preferred_task_radius > 0:
             tasks_remaining = [
                 task.task_id 
                 for task in self.agent.tasks_info 
