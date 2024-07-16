@@ -4,6 +4,16 @@
 ### New Features
 - **Configuration File Handling**: Added command-line argument parsing to `main.py` to accept a custom configuration file path using the `--config` option. (e.g., `python main.py --config=./examples/GRAPE_20_agents_200_tasks.yaml` )
 
+- **Rendering Mode**: 
+  - Added `rendering_mode` configuration option to toggle rendering of graphical output.
+  - Introduced `rendering_options` under `simulation` configuration section to customize rendering settings when `rendering_mode` is enabled:
+    - `agent_tail`: Enables drawing of agent trajectory tails.
+    - `agent_communication_topology`: Enables visualization of agent communication topology.
+    - `agent_id`: Displays agent identifiers on the screen.
+    - `agent_assigned_task_id`: Shows the task identifier assigned to each agent.
+    - `task_id`: Displays task identifiers on the tasks.
+
+
 ## Version 1.2.1 (24-07-16)
 ### New Features
 - **Profiling Mode**: Added profiling capability using `cProfile`. Set `simulation.profiling_mode = True` to enable performance analysis of each function.

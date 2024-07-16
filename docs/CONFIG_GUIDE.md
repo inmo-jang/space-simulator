@@ -96,8 +96,14 @@ This section defines the overall simulation parameters.
     - **Type**: Integer
     - **Example**: `1000`
 
-- **`debug_mode`**: Toggle for enabling or disabling debug mode, which provides additional visual information.
+- **`rendering_mode`**: toggle rendering of graphical output.
     - **Type**: Boolean
-    - **Example**: `False`
+    - **Example**: `True`
+- **`rendering_options`**: customize rendering settings when `rendering_mode` is enabled:
+    - `agent_tail`: Enables drawing of agent trajectory tails.
+    - `agent_communication_topology`: Enables visualization of agent communication topology.
+    - `agent_id`: Displays agent identifiers on the screen.
+    - `agent_assigned_task_id`: Shows the task identifier assigned to each agent.
+    - `task_id`: Displays task identifiers on the tasks.
 
 This detailed explanation should help you configure the SPADE Simulator effectively by adjusting the parameters in the `config.yaml` file according to your needs.

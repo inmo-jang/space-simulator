@@ -20,17 +20,16 @@ class Task:
         if self.amount <= 0:
             self.set_done()
 
-    def debug_draw(self, screen):
-        if not self.completed:
-            font = pygame.font.Font(None, 20)
-            text_surface = font.render(f"Task {self.task_id}: {self.amount:.2f}", True, (255, 255, 255))
-            screen.blit(text_surface, (self.position[0] - 10, self.position[1] - 20))
-
     def draw(self, screen):
         self.radius = self.amount / config['simulation']['task_visualisation_factor']        
         if not self.completed:
             pygame.draw.circle(screen, self.color, self.position, int(self.radius))
 
+    def draw_task_id(self, screen):
+        if not self.completed:
+            font = pygame.font.Font(None, 15)
+            text_surface = font.render(f"task_id {self.task_id}: {self.amount:.2f}", True, (250, 250, 250))
+            screen.blit(text_surface, (self.position[0], self.position[1]))
 
 def generate_tasks():
     task_quantity = config['tasks']['quantity']

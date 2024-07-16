@@ -13,7 +13,7 @@ agent_track_size = config['simulation']['agent_track_size']
 work_rate = config['agents']['work_rate']
 agent_communication_radius = config['agents']['communication_radius']
 task_colors = generate_task_colors(config['tasks']['quantity'])
-
+font = pygame.font.Font(None, 15)
 class Agent:
     def __init__(self, agent_id, position, tasks_info):
         self.agent_id = agent_id
@@ -48,14 +48,6 @@ class Agent:
 
     async def run_tree(self):
         return await self.tree.run(self, self.blackboard)
-
-    def debug_draw(self, screen):
-        # Draw assigned_task_id next to agent position
-        font = pygame.font.Font(None, 20)
-        text_surface = font.render(f"Assigned Task ID: {self.blackboard.get('assigned_task_id', None)}", True, (0, 0, 0))
-        screen.blit(text_surface, (self.position[0] + 15, self.position[1] - 30))
-        text_surface_agent_id = font.render(f"{self.agent_id}", True, (255, 255, 255))
-        screen.blit(text_surface_agent_id, (self.position[0] + 15, self.position[1]))
 
     def follow(self, target):
         # Calculate desired velocity
@@ -142,17 +134,28 @@ class Agent:
         self.update_color()
         pygame.draw.polygon(screen, self.color, [p1, p2, p3])
 
+
+    def draw_tail(self, screen):
         # Draw track
         if len(self.memory_location) >= 2:
             pygame.draw.lines(screen, self.color, False, self.memory_location, 1)               
+        
 
     def draw_communication_topology(self, screen, agents):
      # Draw lines to neighbor agents
         for neighbor_agent_id in self.neighbor_agents_id:
             neighbor_position = agents[neighbor_agent_id].position
-            pygame.draw.line(screen, (255, 255, 255), (int(self.position.x), int(self.position.y)), (int(neighbor_position.x), int(neighbor_position.y)))
+            pygame.draw.line(screen, (200, 200, 200), (int(self.position.x), int(self.position.y)), (int(neighbor_position.x), int(neighbor_position.y)))
 
+    def draw_agent_id(self, screen):
+        # Draw assigned_task_id next to agent position
+        text_surface = font.render(f"agent_id: {self.agent_id}", True, (50, 50, 50))
+        screen.blit(text_surface, (self.position[0] + 10, self.position[1] - 10))
 
+    def draw_assigned_task_id(self, screen):
+        # Draw assigned_task_id next to agent position
+        text_surface = font.render(f"task_id: {self.blackboard.get('assigned_task_id', None)}", True, (50, 50, 50))
+        screen.blit(text_surface, (self.position[0] + 10, self.position[1]))
 
     def update_color(self):
         _assigned_task_id = self.blackboard['assigned_task_id']
