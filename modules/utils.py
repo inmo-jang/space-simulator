@@ -12,8 +12,12 @@ def load_config(config_file):
     with open(config_file, 'r') as f:
         return yaml.safe_load(f)
 
-# Load configuration file
-config = load_config('config.yaml')
+# Global variable to hold the configuration
+config = None
+
+def set_config(config_file):
+    global config
+    config = load_config(config_file)
 
 # Pre-render static elements
 def pre_render_text(text, font_size, color):
@@ -75,5 +79,3 @@ def generate_task_colors(quantity):
         color = colors(i)  # Get color from colormap
         task_colors[i] = (int(color[0] * 255), int(color[1] * 255), int(color[2] * 255))  # Convert to RGB tuple
     return task_colors
-
-task_colors = generate_task_colors(config['tasks']['quantity'])

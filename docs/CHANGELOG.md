@@ -1,5 +1,9 @@
 ### CHANGELOG.md
 
+## Version 1.2.2 (24-07-17)
+### New Features
+- **Configuration File Handling**: Added command-line argument parsing to `main.py` to accept a custom configuration file path using the `--config` option. (e.g., `python main.py --config=./examples/GRAPE_20_agents_200_tasks.yaml` )
+
 ## Version 1.2.1 (24-07-16)
 ### New Features
 - **Profiling Mode**: Added profiling capability using `cProfile`. Set `simulation.profiling_mode = True` to enable performance analysis of each function.

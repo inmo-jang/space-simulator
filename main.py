@@ -1,12 +1,19 @@
 import pygame
 import asyncio
-from modules.agent import generate_agents
-from modules.task import generate_tasks
-from modules.behavior_tree import Sequence, Status
-from modules.utils import config, pre_render_text, save_gif
+import argparse
 import cProfile
 
+from modules.utils import pre_render_text, save_gif, set_config
+
+# Parse command line arguments
+parser = argparse.ArgumentParser(description='SPADE (Swarm Planning And Decision Evalution) Simulator')
+parser.add_argument('--config', type=str, default='config.yaml', help='Path to the configuration file (default: --config=config.yaml)')
+args = parser.parse_args()
+
 # Load configuration
+set_config(args.config)
+from modules.utils import config  # Import the global config after setting it
+
 sampling_freq = config['simulation']['sampling_freq']
 sampling_time = 1.0 / sampling_freq  # in seconds
 screen_height = config['simulation']['screen_height']
@@ -27,9 +34,11 @@ pygame.display.set_icon(logo)
 pygame.display.set_caption('SPADE(Swarm Planning And Decision Evaluation) Simulator')  # Change to your desired game title
 
 # Initialize tasks
+from modules.task import generate_tasks
 tasks = generate_tasks()
 
 # Initialize agents with behavior trees, giving them the information of current tasks
+from modules.agent import generate_agents
 agents = generate_agents(tasks)
 
 # Pre-rendered text for performance improvement
@@ -131,7 +140,7 @@ def main():
 
 # Run the game
 if __name__ == "__main__":    
-    if profiling_mode:
+    if config['simulation']['profiling_mode']:
         cProfile.run('main()', sort='cumulative')
     else:
         main()

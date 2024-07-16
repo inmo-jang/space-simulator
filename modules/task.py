@@ -1,6 +1,7 @@
 import pygame
 import random
-from modules.utils import config, generate_positions, task_colors
+from modules.utils import config, generate_positions, generate_task_colors
+task_colors = generate_task_colors(config['tasks']['quantity'])
 
 class Task:
     def __init__(self, task_id, position):

@@ -2,7 +2,7 @@ import pygame
 import math
 import copy
 from modules.behavior_tree import Sequence, DecisionMakingNode, ConsensusCheckingNode, TaskExecutingNode
-from modules.utils import config, generate_positions, task_colors
+from modules.utils import config, generate_positions, generate_task_colors
 
 # Load agent configuration
 agent_max_speed = config['agents']['max_speed']
@@ -12,6 +12,7 @@ agent_approaching_to_target_radius = config['agents']['target_approaching_radius
 agent_track_size = config['simulation']['agent_track_size']
 work_rate = config['agents']['work_rate']
 agent_communication_radius = config['agents']['communication_radius']
+task_colors = generate_task_colors(config['tasks']['quantity'])
 
 class Agent:
     def __init__(self, agent_id, position, tasks_info):
