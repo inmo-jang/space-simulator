@@ -196,17 +196,31 @@ class Agent:
         return local_agents_info
 
    
-    def get_tasks_nearby(self, radius = None):
+    def get_tasks_nearby(self, radius = None, with_completed_task = True):
         _situation_awareness_radius = self.situation_awareness_radius if radius is None else radius
         if _situation_awareness_radius > 0:
             situation_awareness_radius_squared = _situation_awareness_radius ** 2
-            local_tasks_info = [
-                task 
-                for task in self.tasks_info 
-                if (self.position - task.position).length_squared() <= situation_awareness_radius_squared
-            ]                
+            if with_completed_task: # Default
+                local_tasks_info = [
+                    task 
+                    for task in self.tasks_info 
+                    if (self.position - task.position).length_squared() <= situation_awareness_radius_squared
+                ]                
+            else:
+                local_tasks_info = [
+                    task 
+                    for task in self.tasks_info 
+                    if not task.completed and (self.position - task.position).length_squared() <= situation_awareness_radius_squared
+                ]                                
         else:
-            local_tasks_info = self.tasks_info
+            if with_completed_task: # Default
+                local_tasks_info = self.tasks_info
+            else:
+                local_tasks_info = [
+                    task 
+                    for task in self.tasks_info 
+                    if not task.completed
+                ]                                                
         
         return local_tasks_info  
 

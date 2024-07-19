@@ -1,19 +1,13 @@
 import random
 import pygame
 from modules.utils import config
+MODE = config['decision_making']['LocalSearch']['mode']
+W_FACTOR_COST = config['decision_making']['LocalSearch']['weight_factor_cost']
 
-preferred_task_radius = config['decision_making']['LocalRandomSearch'].get('preferred_task_radius', 0)
-max_random_movement_duration = config['decision_making']['LocalRandomSearch'].get('max_random_movement_duration', 1.0)
-task_locations = config['tasks']['locations']
-
-sampling_freq = config['simulation']['sampling_freq']
-sampling_time = 1.0 / sampling_freq  # in seconds
-
-class LocalRandomSearch: # Random selection within `preferred_task_radius`
+class LocalSearch: # Task selection within each agent's `situation_awareness_radius`
     def __init__(self, agent):
         self.agent = agent
-        self.random_move_time = float('inf')
-        self.random_pos = pygame.Vector2(0, 0)
+        self.assigned_task = None
 
     def decide(self, blackboard):
         # Place your decision-making code for each agent
@@ -22,36 +16,62 @@ class LocalRandomSearch: # Random selection within `preferred_task_radius`
             - `task_id`, if task allocation works well
             - `None`, otherwise
         '''        
-        if 'assigned_task_id' in blackboard:
-            if blackboard['assigned_task_id'] is not None:
-                return blackboard['assigned_task_id']
-        
-        if preferred_task_radius > 0:
-            tasks_remaining = [
-                task.task_id 
-                for task in self.agent.tasks_info 
-                if not task.completed and (self.agent.position - task.position).length() <= preferred_task_radius
-            ]
-        else:
-            tasks_remaining = [task.task_id for task in self.agent.tasks_info if not task.completed]
-
-
-        
-        if len(tasks_remaining) > 0:
-            return random.choice(tasks_remaining)
-        
-
-        else: # Random Walk
-            # Move towards a random position
-            if self.random_move_time > max_random_movement_duration:
-                self.random_pos = self.get_random_position(task_locations['x_min'], task_locations['x_max'], task_locations['y_min'], task_locations['y_max'])
-                self.random_move_time = 0 # Initialisation
-            
-            self.agent.follow(self.random_pos)                
-            self.random_move_time += sampling_time            
+        # Give up the decision-making process if there is no task nearby 
+        local_tasks_info = self.agent.get_tasks_nearby(with_completed_task=False)
+        if len(local_tasks_info) == 0: 
             return None
 
-    def get_random_position(self, x_min, x_max, y_min, y_max):
-        pos = (random.randint(x_min, x_max),
-                random.randint(y_min, y_max))
-        return pos
+        # Check if the existing task is done
+        if self.assigned_task is not None and self.assigned_task.completed:
+            self.assigned_task = None
+            blackboard['task_completed'] = None
+            blackboard['assigned_task_id'] = None
+            
+        # Look for a task within situation awareness radius if there is no existing assigned task
+        if self.assigned_task is None:
+            if MODE == "Random": # Choose a task randomly
+                target_task_id = random.choice(local_tasks_info).task_id
+            
+            elif MODE == "MinDist": # Choose the closest task                
+                target_task_id = self.find_min_dist_task(local_tasks_info)
+            
+            elif MODE == "MaxUtil": # Choose the task providing the maximum utility                
+                target_task_id = self.find_max_utility_task(local_tasks_info)
+                
+            self.assigned_task = self.agent.tasks_info[target_task_id]            
+        
+        return self.assigned_task.task_id  
+        
+
+    def find_min_dist_task(self, tasks_info):
+        _tasks_distance = {
+            task.task_id: self.compute_distance(task) if not task.completed else float('inf')
+            for task in tasks_info
+        }
+        _min_task_id = min(_tasks_distance, key=_tasks_distance.get)
+        return _min_task_id
+
+    def find_max_utility_task(self, tasks_info):
+        _current_utilities = {
+            task.task_id: self.compute_utility(task) if not task.completed else float('-inf')
+            for task in tasks_info
+        }
+
+        _max_task_id = max(_current_utilities, key=_current_utilities.get)        
+
+        return _max_task_id
+    
+    def compute_utility(self, task): # Individual Utility Function  
+        if task is None:
+            return float('-inf')
+
+        distance = (self.agent.position - task.position).length()        
+        return task.amount - W_FACTOR_COST * distance
+    
+    def compute_distance(self, task): # Individual Utility Function  
+        if task is None:
+            return float('inf')
+
+        distance = (self.agent.position - task.position).length()        
+        return distance
+        

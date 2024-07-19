@@ -1,14 +1,15 @@
-decision_making: # Case 1
-  plugin: plugins.grape.GRAPE
-  GRAPE:
-    execute_movements_during_convergence: False
-    initialize_partition: Distance # Options: None; Distance      
-    reinitialize_partition_on_completion: Distance # Options: None; Distance; 
+# decision_making: # Case 1
+#   plugin: plugins.grape.GRAPE
+#   GRAPE:
+#     execute_movements_during_convergence: False
+#     initialize_partition: Distance # Options: None; Distance      
+#     reinitialize_partition_on_completion: Distance # Options: None; Distance; 
 
-# decision_making: # Case 2
-#   plugin: plugins.simple.LocalRandomSearch  
-#   LocalRandomSearch:
-#     preferred_task_radius: 300
+decision_making: # Case 2
+  plugin: plugins.simple.LocalSearch
+  LocalSearch:  
+    mode: MaxUtil  # Options: Random; MinDist; MaxUtil
+    weight_factor_cost: 10000.0 # Only used for `MaxUtil` mode
 
 
 agents:
