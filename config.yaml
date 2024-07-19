@@ -1,16 +1,14 @@
-# decision_making: # Case 1
-#   plugin: plugins.grape.GRAPE
-#   GRAPE:
-#     global_situational_awareness: True
-#     execute_movements_during_convergence: False
-#     initialize_partition: Distance # Options: None; Distance      
-#     reinitialize_partition_on_completion: Distance # Options: None; Distance; 
+decision_making: # Case 1
+  plugin: plugins.grape.GRAPE
+  GRAPE:
+    execute_movements_during_convergence: False
+    initialize_partition: Distance # Options: None; Distance      
+    reinitialize_partition_on_completion: Distance # Options: None; Distance; 
 
-decision_making: # Case 2
-  plugin: plugins.simple.LocalRandomSearch  
-  LocalRandomSearch:
-    preferred_task_radius: 1000
-    max_random_movement_duration: 2.0
+# decision_making: # Case 2
+#   plugin: plugins.simple.LocalRandomSearch  
+#   LocalRandomSearch:
+#     preferred_task_radius: 300
 
 
 agents:
@@ -26,8 +24,9 @@ agents:
   max_angular_speed: 0.3
   target_approaching_radius: 50
   work_rate: 1  # work rate for each agent (per 1.0/simulation.sampling_freq)
-  communication_radius: 100
-  situation_awareness_radius: 300 # Only For Visualisation Yet
+  communication_radius: 100 # 0 represents "global", meaning that each agent can access to the information of all the other agents
+  situation_awareness_radius: 500 # 0 represents "global", meaning that each agent can access to the information of all the tasks
+  random_exploration_duration: 2.0
 
 tasks:
   quantity: 20

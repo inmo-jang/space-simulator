@@ -2,7 +2,6 @@ import random
 import copy
 from modules.utils import config, pre_render_text
 
-USE_GLOBAL_SA = config['decision_making']['GRAPE']['global_situational_awareness']
 KEEP_MOVING_DURING_CONVERGENCE = config['decision_making']['GRAPE']['execute_movements_during_convergence']
 INITIALIZE_PARTITION = config['decision_making']['GRAPE']['initialize_partition']
 REINITIALIZE_PARTITION = config['decision_making']['GRAPE']['reinitialize_partition_on_completion']
@@ -15,21 +14,31 @@ class GRAPE:
         self.time_stamp = 0  # Initialize time_stamp            
         self.partition = {task.task_id: set() for task in self.agent.tasks_info}  # Initialize partition with emptysets        
         self.assigned_task = None
-        if INITIALIZE_PARTITION == "Distance":
-            self.partition = self.initialize_partition_by_distance(self.agent.agents_info, self.agent.tasks_info, self.partition)
-            self.assigned_task = self.agent.tasks_info[self.get_assigned_task_id_from_partition(self.partition)] # WARNING: This is global info      
+        _local_tasks_info = self.agent.get_tasks_nearby()
+        _local_agents_info = self.agent.get_agents_nearby()
+        if INITIALIZE_PARTITION == "Distance": 
+            if _local_tasks_info and _local_agents_info:                                
+                self.partition = self.initialize_partition_by_distance(_local_agents_info, _local_tasks_info, self.partition)
+                self.assigned_task = self.get_assigned_task_from_partition(self.partition)                 
 
         self.current_utilities = {}
-    
+        self.agent.message_to_share = { # Message Initialization
+            'agent_id': self.agent.agent_id,
+            'partition': self.partition, 
+            'evolution_number': self.evolution_number,
+            'time_stamp': self.time_stamp
+            } 
+
 
     def initialize_partition_by_distance(self, agents_info, tasks_info, partition):
         for agent in agents_info:
             task_distance = {task.task_id: float('inf') if task.completed else (agent.position - task.position).length() for task in tasks_info}
-            preferred_task_id = min(task_distance, key=task_distance.get)
-            partition[preferred_task_id].add(agent.agent_id)
+            if len(task_distance) > 0:
+                preferred_task_id = min(task_distance, key=task_distance.get)
+                partition[preferred_task_id].add(agent.agent_id)
         return partition
 
-    def get_neighbor_agents_info(self):
+    def get_neighbor_agents_info_in_partition(self):
         _neighbor_agents_info = [neighbor_agent for neighbor_agent in self.agent.agents_info if neighbor_agent.agent_id in self.partition[self.assigned_task.task_id]]
         return _neighbor_agents_info
 
@@ -39,32 +48,37 @@ class GRAPE:
             - `task_id`, if task allocation works well
             - `None`, otherwise
         '''           
-        # Check if the existing task is done
-        if USE_GLOBAL_SA:
-            if self.assigned_task is not None and self.assigned_task.completed: 
-                _neighbour_agents_info = self.get_neighbor_agents_info()    
+
+        # Give up the decision-making process if there is no task nearby 
+        _local_tasks_info = self.agent.get_tasks_nearby()
+        if len(_local_tasks_info) == 0: 
+            return None
+        
+        # Check if the existing task is done        
+        if self.assigned_task is not None and self.assigned_task.completed:            
+                _neighbor_agents_info = self.get_neighbor_agents_info_in_partition()    
                 self.partition[self.assigned_task.task_id] = set()  # Empty the previous task's coalition                  
                 self.assigned_task = None
 
                 if REINITIALIZE_PARTITION == "Distance":                                    
-                    self.partition = self.initialize_partition_by_distance(_neighbour_agents_info, self.agent.tasks_info, self.partition)                    
-                    self.assigned_task = self.agent.tasks_info[self.get_assigned_task_id_from_partition(self.partition)] # WARNING: This is global info
+                    self.partition = self.initialize_partition_by_distance(_neighbor_agents_info, _local_tasks_info, self.partition)   
+                    self.assigned_task = self.get_assigned_task_from_partition(self.partition)                         
 
-                self.neutralize_assignment(blackboard) # TODO: Should be renamed?
-        else:
-            if 'task_completed' in blackboard and blackboard['task_completed'] is True: # TODO: Should be debugged
-                self.neutralize_assignment(blackboard)
-
+                self.satisfied = False
+                blackboard['task_completed'] = None
+                blackboard['assigned_task_id'] = None
 
             
         # GRAPE algorithm for each agent (Phase 1)        
-        if not self.satisfied:
-            _max_task_id, _max_utility = self.find_max_utility_task()
+        if len(_local_tasks_info) == 0:
+            return None
+        if not self.satisfied:            
+            _max_task_id, _max_utility = self.find_max_utility_task(_local_tasks_info)
+            self.assigned_task = self.get_assigned_task_from_partition(self.partition) 
             if _max_utility > self.compute_utility(self.assigned_task):                
                 self.update_partition(_max_task_id)
                 self.evolution_number += 1
-                self.time_stamp = random.uniform(0, 1) 
-                self.assigned_task = self.agent.tasks_info[self.get_assigned_task_id_from_partition(self.partition)] # WARNING: This is global info                    
+                self.time_stamp = random.uniform(0, 1)                   
             
             self.satisfied = True
 
@@ -83,21 +97,16 @@ class GRAPE:
         self.evolution_number, self.time_stamp, self.partition, self.satisfied = self.distributed_mutex(self.agent.messages_received)                
         self.agent.reset_messages_received()
 
-        _assigned_task_id = self.get_assigned_task_id_from_partition(self.partition)
-        self.assigned_task = self.agent.tasks_info[_assigned_task_id] if _assigned_task_id is not None else None
+        self.assigned_task = self.get_assigned_task_from_partition(self.partition)        
 
         if not self.satisfied:
             if not KEEP_MOVING_DURING_CONVERGENCE:
                 self.agent.reset_movement()  # Neutralise the agent's current movement during converging to a Nash stable partition
 
-        return _assigned_task_id
+        return copy.deepcopy(self.assigned_task.task_id) if self.assigned_task is not None else None
 
 
 
-    def neutralize_assignment(self, blackboard): # WARNING: Only used when a task is finished
-        self.satisfied = False
-        blackboard['task_completed'] = None
-        blackboard['assigned_task_id'] = None
 
     def discard_myself_from_coalition(self, task):
         if task is not None:
@@ -109,10 +118,10 @@ class GRAPE:
         self.discard_myself_from_coalition(self.assigned_task)            
         self.partition[preferred_task_id].add(self.agent.agent_id)
 
-    def find_max_utility_task(self):
+    def find_max_utility_task(self, tasks_info):
         _current_utilities = {
             task.task_id: self.compute_utility(task) if not task.completed else float('-inf')
-            for task in self.agent.tasks_info
+            for task in tasks_info
         }
 
         _max_task_id = max(_current_utilities, key=_current_utilities.get)
@@ -151,8 +160,12 @@ class GRAPE:
         return _evolution_number, _time_stamp, _partition, _satisfied
                 
 
-    def get_assigned_task_id_from_partition(self, partition):
-        return next((task_id for task_id, coalition_members_id in partition.items() if self.agent.agent_id in coalition_members_id), None)
+    def get_assigned_task_from_partition(self, partition):
+        
+        _assigned_task_id = next((task_id for task_id, coalition_members_id in partition.items() if self.agent.agent_id in coalition_members_id), None)
+        _assigned_task = self.agent.tasks_info[_assigned_task_id] if _assigned_task_id is not None else None
+        return _assigned_task
+        
     
 
 def draw_decision_making_status(screen, agent):

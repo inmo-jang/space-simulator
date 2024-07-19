@@ -3,6 +3,12 @@
 ## Version 1.2.3 (24.07-19)
 
 ### New Features
+- **GRAPE Algorithm Enhancements (`grape.py`)**:
+  - **Decision-Making Process**: It is now based on agents' local situation awareness (`situation_awareness_radius`) and local communication capability (`communication_radius`), not by global information.
+  - **Decision-Making Process**: Added logic at the beginning of the `decide()` function to stop and exit the decision-making process if no nearby tasks are found using `self.agent.get_tasks_nearby()`.
+  - **Renamed**: `get_assigned_task_id_from_partition()` to `get_assigned_task_from_partition()`: Updated to return the `Task` object directly for efficiency. Note: `self.assigned_task` is the agent's local information about which task it has chosen. This information is not shared outside the behavior tree or used elsewhere.
+  - **Renamed**: `get_neighbor_agents_info()` to `get_neighbor_agents_info_in_partition()`: Changed to avoid confusion with `get_agents_nearby()`. `get_neighbor_agents_info_in_partition()` is used to get a list of agents within the same coalition based on partition information.
+
 - **Local Information for Agents (`agent.py`)**
   - Added `get_tasks_nearby()` to list tasks within the agent's `situation_awareness_radius` as defined in `config.yaml`.
   - Added `get_agents_nearby()` to list agents within the agent's `communication_radius` as defined in `config.yaml`.
