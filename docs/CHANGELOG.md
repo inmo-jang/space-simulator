@@ -1,4 +1,12 @@
-### CHANGELOG.md
+# CHANGELOG.md
+
+## Version 1.2.3 (24.07-19)
+
+### New Features
+- **Local Information for Agents (`agent.py`)**
+  - Added `get_tasks_nearby()` to list tasks within the agent's `situation_awareness_radius` as defined in `config.yaml`.
+  - Added `get_agents_nearby()` to list agents within the agent's `communication_radius` as defined in `config.yaml`.
+
 
 ## Version 1.2.2 (24-07-17)
 ### New Features

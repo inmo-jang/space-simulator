@@ -1,7 +1,7 @@
 import pygame
 import math
 import copy
-from modules.behavior_tree import Sequence, DecisionMakingNode, ConsensusCheckingNode, TaskExecutingNode
+from modules.behavior_tree import Sequence, Fallback, DecisionMakingNode, ExplorationNode, TaskExecutingNode
 from modules.utils import config, generate_positions, generate_task_colors
 
 # Load agent configuration
@@ -13,7 +13,7 @@ agent_track_size = config['simulation']['agent_track_size']
 work_rate = config['agents']['work_rate']
 agent_communication_radius = config['agents']['communication_radius']
 task_colors = generate_task_colors(config['tasks']['quantity'])
-situation_awareness_radius = config.get('agents', {}).get('situation_awareness_radius', None)
+agent_situation_awareness_radius = config.get('agents', {}).get('situation_awareness_radius', 0)
 font = pygame.font.Font(None, 15)
 class Agent:
     def __init__(self, agent_id, position, tasks_info):
@@ -33,7 +33,8 @@ class Agent:
         self.tasks_info = tasks_info # global info
         self.agents_info = None # global info
         self.communication_radius = agent_communication_radius
-        self.neighbor_agents_id = set()
+        self.situation_awareness_radius = agent_situation_awareness_radius
+        self.agents_nearby = []
         self.message_to_share = None
         self.messages_received = []
 
@@ -41,10 +42,12 @@ class Agent:
         self.tree = self._create_behavior_tree()
 
     def _create_behavior_tree(self):
-        return Sequence("Agent Tree", children=[
-            DecisionMakingNode("DecisionMaking", self),
-            ConsensusCheckingNode("ConsensusChecking", self),
-            TaskExecutingNode("TaskExecuting", self)
+        return Fallback("Agent Tree", children=[
+            Sequence("Agent Tree", children=[
+                DecisionMakingNode("DecisionMaking", self),
+                TaskExecutingNode("TaskExecuting", self)    
+            ]),
+            ExplorationNode("ConsensusChecking", self)            
         ])
 
     async def run_tree(self):
@@ -107,14 +110,21 @@ class Agent:
         return vector
 
     def local_broadcast(self, agents):
-        self.neighbor_agents_id = set()
-        communication_radius_squared = self.communication_radius ** 2
+        self.agents_nearby = []
+        if self.communication_radius > 0: # Local communication
+            communication_radius_squared = self.communication_radius ** 2
 
-        for other_agent in agents:
-            distance = (self.position - other_agent.position).length_squared()
-            if distance <= communication_radius_squared:
+            for other_agent in agents:
+                distance = (self.position - other_agent.position).length_squared()
+                if distance <= communication_radius_squared:
+                    other_agent.receive_message(self.message_to_share)
+                    self.agents_nearby.append(other_agent)        
+        else: # Global communication
+            for other_agent in agents:                                
                 other_agent.receive_message(self.message_to_share)
-                self.neighbor_agents_id.add(other_agent.agent_id)        
+                # self.agents_nearby.append(other_agent)        # This isn't processed, as `agents_nearby` is used for visualisation
+                    
+
 
     def reset_messages_received(self):
         self.messages_received = []
@@ -144,8 +154,8 @@ class Agent:
 
     def draw_communication_topology(self, screen, agents):
      # Draw lines to neighbor agents
-        for neighbor_agent_id in self.neighbor_agents_id:
-            neighbor_position = agents[neighbor_agent_id].position
+        for neighbor_agent in self.agents_nearby:
+            neighbor_position = agents[neighbor_agent.agent_id].position
             pygame.draw.line(screen, (200, 200, 200), (int(self.position.x), int(self.position.y)), (int(neighbor_position.x), int(neighbor_position.y)))
 
     def draw_agent_id(self, screen):
@@ -160,8 +170,8 @@ class Agent:
 
     def draw_situation_awareness_circle(self, screen):
         # Draw the situation awareness radius circle    
-        if situation_awareness_radius:    
-            pygame.draw.circle(screen, self.color, (self.position[0], self.position[1]), situation_awareness_radius, 1)
+        if self.situation_awareness_radius > 0:    
+            pygame.draw.circle(screen, self.color, (self.position[0], self.position[1]), self.situation_awareness_radius, 1)
 
 
     def update_color(self):
@@ -170,6 +180,35 @@ class Agent:
 
     def set_global_info_agents(self, agents_info):
         self.agents_info = agents_info
+
+    def get_agents_nearby(self, radius = None):
+        _communication_radius = self.communication_radius if radius is None else radius        
+        if _communication_radius > 0:
+            communication_radius_squared = _communication_radius ** 2        
+            local_agents_info = [
+                other_agent
+                for other_agent in self.agents_info
+                if (self.position - other_agent.position).length_squared() <= communication_radius_squared
+            ]
+        else:
+            local_agents_info = self.agents_info
+        return local_agents_info
+
+   
+    def get_tasks_nearby(self, radius = None):
+        _situation_awareness_radius = self.situation_awareness_radius if radius is None else radius
+        if _situation_awareness_radius > 0:
+            situation_awareness_radius_squared = _situation_awareness_radius ** 2
+            local_tasks_info = [
+                task 
+                for task in self.tasks_info 
+                if (self.position - task.position).length_squared() <= situation_awareness_radius_squared
+            ]                
+        else:
+            local_tasks_info = self.tasks_info
+        
+        return local_tasks_info  
+
 
 def generate_agents(tasks_info):
     agent_quantity = config['agents']['quantity']
