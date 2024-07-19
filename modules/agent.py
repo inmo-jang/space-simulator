@@ -41,6 +41,7 @@ class Agent:
     def create_behavior_tree(self):
         self.tree = self._create_behavior_tree()
 
+    # Agent's Behavior Tree
     def _create_behavior_tree(self):
         return Fallback("Agent Tree", children=[
             Sequence("Agent Tree", children=[

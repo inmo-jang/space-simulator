@@ -61,6 +61,10 @@ import importlib
 from modules.utils import config
 from plugins.my_decision_making_plugin import *
 target_arrive_threshold = config['tasks']['threshold_done_by_arrival']
+task_locations = config['tasks']['locations']
+sampling_freq = config['simulation']['sampling_freq']
+sampling_time = 1.0 / sampling_freq  # in seconds
+agent_max_random_movement_duration = config.get('agents', {}).get('random_exploration_duration', None)
 
 decision_making_module_path = config['decision_making']['plugin']
 module_path, class_name = decision_making_module_path.rsplit('.', 1)
@@ -75,26 +79,15 @@ class DecisionMakingNode(SyncAction):
 
     def _decide(self, agent, blackboard):
         assigned_task_id = self.decision_maker.decide(blackboard)
+        # Post-processing: Set the next waypoint based on the decision
         blackboard['assigned_task_id'] = assigned_task_id
-        return Status.SUCCESS
-
-# Consensus checking node
-class ConsensusCheckingNode(SyncAction):
-    def __init__(self, name, agent):
-        super().__init__(name, self._check_consensus)
-
-    def _check_consensus(self, agent, blackboard):
-        if 'assigned_task_id' not in blackboard:
-            return Status.FAILURE
-        
-        assigned_task_id = blackboard['assigned_task_id']
-
         if assigned_task_id is None:
-            return Status.FAILURE
-        
-        task_position = agent.tasks_info[assigned_task_id].position
-        blackboard['task_position'] = task_position
-        return Status.SUCCESS
+            blackboard['next_waypoint'] = None
+            return Status.FAILURE        
+        else:            
+            blackboard['next_waypoint'] = agent.tasks_info[assigned_task_id].position
+            return Status.SUCCESS
+
 
 # Task executing node
 class TaskExecutingNode(SyncAction):
@@ -102,21 +95,47 @@ class TaskExecutingNode(SyncAction):
         super().__init__(name, self._execute_task)
 
     def _execute_task(self, agent, blackboard):
-        task_position = blackboard.get('task_position')
-        if task_position:
+        next_waypoint = blackboard.get('next_waypoint')
+        if next_waypoint:
             agent_position = agent.position
             # Calculate norm2 distance
-            distance = math.sqrt((task_position[0] - agent_position[0])**2 + (task_position[1] - agent_position[1])**2)
+            distance = math.sqrt((next_waypoint[0] - agent_position[0])**2 + (next_waypoint[1] - agent_position[1])**2)
             
-            assigned_task_id = blackboard['assigned_task_id']            
+            assigned_task_id = blackboard.get('assigned_task_id')
             if distance < agent.tasks_info[assigned_task_id].radius + target_arrive_threshold: # Agent reached the task position                                
                 agent.tasks_info[assigned_task_id].reduce_amount(agent.work_rate)
                 if agent.tasks_info[assigned_task_id].completed:                    
                     blackboard['task_completed'] = True
                     blackboard['assigned_task_id'] = None
+                    blackboard['next_waypoint'] = None
                     return Status.SUCCESS
 
             # Move towards the task position
-            agent.follow(task_position)
+            agent.follow(next_waypoint)
 
         return Status.RUNNING
+
+
+# Consensus checking node
+class ExplorationNode(SyncAction):
+    def __init__(self, name, agent):
+        super().__init__(name, self._random_explore)
+        self.random_move_time = float('inf')
+        self.next_waypoint = (0, 0)
+
+    def _random_explore(self, agent, blackboard):
+        # Move towards a random position
+        if self.random_move_time > agent_max_random_movement_duration:
+            self.next_waypoint = self.get_random_position(task_locations['x_min'], task_locations['x_max'], task_locations['y_min'], task_locations['y_max'])
+            self.random_move_time = 0 # Initialisation
+        
+        blackboard['next_waypoint'] = self.next_waypoint        
+        self.random_move_time += sampling_time   
+        agent.follow(self.next_waypoint)         
+        return Status.RUNNING
+        
+    def get_random_position(self, x_min, x_max, y_min, y_max):
+        pos = (random.randint(x_min, x_max),
+                random.randint(y_min, y_max))
+        return pos
+    

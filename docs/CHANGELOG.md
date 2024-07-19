@@ -6,6 +6,15 @@
 - **Local Information for Agents (`agent.py`)**
   - Added `get_tasks_nearby()` to list tasks within the agent's `situation_awareness_radius` as defined in `config.yaml`.
   - Added `get_agents_nearby()` to list agents within the agent's `communication_radius` as defined in `config.yaml`.
+- **Random Exploration Search (`behavior_tree.py`)**
+  - Added `ExplorationNode`: If there is no task nearby, agent selects a random location within the task generation range and sets it as the `next_waypoint`, enabling the agent to exploare new tasks while moving to this point.
+
+### Changes
+- **Random SearchBehavior Tree (`behavior_tree.py`)**
+  - **Updated**: Enhanced `DecisionMakingNode` to complete the decision-making process by setting the `assigned_task_id` and recording the corresponding `next_waypoint` in the blackboard. This change removes the need for the `ConsensusCheckingNode`.
+  - **Removed**: `ConsensusCheckingNode`
+- **Behavior Tree Structure (`agent.py`)**
+  - Modified to use a Fallback node to sequence Decision Making and Task Execution. If these fail (i.e., decision-making is not successful), the agent performs random movement through the Exploration node.
 
 
 ## Version 1.2.2 (24-07-17)
