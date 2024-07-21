@@ -35,6 +35,7 @@ class GRAPE:
             task_distance = {task.task_id: float('inf') if task.completed else (agent.position - task.position).length() for task in tasks_info}
             if len(task_distance) > 0:
                 preferred_task_id = min(task_distance, key=task_distance.get)
+                self.partition.setdefault(preferred_task_id, set()) # Ensure the task_id key exists in the partition. Set tis value as empty set if it doesn't already exist (This is for dynamic task generation)
                 partition[preferred_task_id].add(agent.agent_id)
         return partition
 
@@ -135,7 +136,7 @@ class GRAPE:
         if task is None:
             return float('-inf')
 
-
+        self.partition.setdefault(task.task_id, set()) # Ensure the task_id key exists in the partition. Set tis value as empty set if it doesn't already exist (This is for dynamic task generation)
         num_collaborator = len(self.partition[task.task_id])
         if self.agent.agent_id not in self.partition[task.task_id]:
             num_collaborator += 1

@@ -1,7 +1,11 @@
 import pygame
 import random
 from modules.utils import config, generate_positions, generate_task_colors
-task_colors = generate_task_colors(config['tasks']['quantity'])
+dynamic_task_generation = config['tasks'].get('dynamic_task_generation', {})
+max_generations = dynamic_task_generation.get('max_generations', 5)
+tasks_per_generation = dynamic_task_generation.get('tasks_per_generation', 5)
+
+task_colors = generate_task_colors(config['tasks']['quantity'] + tasks_per_generation*max_generations)
 
 class Task:
     def __init__(self, task_id, position):
@@ -31,8 +35,9 @@ class Task:
             text_surface = font.render(f"task_id {self.task_id}: {self.amount:.2f}", True, (250, 250, 250))
             screen.blit(text_surface, (self.position[0], self.position[1]))
 
-def generate_tasks():
-    task_quantity = config['tasks']['quantity']
+def generate_tasks(task_quantity=None, task_id_start = 0):
+    if task_quantity is None:
+        task_quantity = config['tasks']['quantity']        
     task_locations = config['tasks']['locations']
 
     tasks_positions = generate_positions(task_quantity,
@@ -43,5 +48,5 @@ def generate_tasks():
                                         radius=task_locations['non_overlap_radius'])
 
     # Initialize tasks
-    tasks = [Task(idx, pos) for idx, pos in enumerate(tasks_positions)]
+    tasks = [Task(idx + task_id_start, pos) for idx, pos in enumerate(tasks_positions)]
     return tasks

@@ -57,6 +57,12 @@ agents = generate_agents(tasks)
 # Pre-rendered text for performance improvement
 mission_completed_text = pre_render_text("MISSION COMPLETED", 72, (0, 0, 0))
 
+# Dynamic task generation parameters
+dynamic_task_generation = config['tasks'].get('dynamic_task_generation', {})
+generation_enabled = dynamic_task_generation.get('enabled', False)
+generation_interval = dynamic_task_generation.get('interval_seconds', 10)
+max_generations = dynamic_task_generation.get('max_generations', 5)
+tasks_per_generation = dynamic_task_generation.get('tasks_per_generation', 5)
 
 
 # Main game loop
@@ -73,6 +79,10 @@ async def game_loop():
     # Initialize simulation time
     simulation_time = 0.0
     last_print_time = 0.0   # Variable to track the last time tasks_left was printed
+
+    # Initialize dynamic task generation time
+    generation_count = 0
+    last_generation_time = 0.0
 
     while running:
         for event in pygame.event.get():
@@ -105,7 +115,18 @@ async def game_loop():
             simulation_time += sampling_time
             tasks_left = sum(1 for task in tasks if not task.completed)
             if tasks_left == 0:
-                mission_completed = True            
+                mission_completed = not generation_enabled or generation_count == max_generations
+
+            # Dynamic task generation
+            if generation_enabled and generation_count < max_generations:                
+                if simulation_time - last_generation_time >= generation_interval:
+                    new_task_id_start = len(tasks)
+                    new_tasks = generate_tasks(task_quantity=tasks_per_generation, task_id_start = new_task_id_start)
+                    tasks.extend(new_tasks)
+                    last_generation_time = simulation_time
+                    generation_count += 1
+                    print(f"[{simulation_time:.2f}] Added {tasks_per_generation} new tasks: Generation {generation_count}.")
+
 
             # Rendering
             if rendering_mode == "Screen":
@@ -159,17 +180,17 @@ async def game_loop():
                         frames.append(frame)            
                         last_frame_time = simulation_time                
 
-            elif rendering_mode == "Terminal": # if rendering_mode is False
-                if simulation_time - last_print_time > 0.5:
-                    print(f'Tasks left: {tasks_left} Time: {simulation_time:.2f}s')
+            elif rendering_mode == "Terminal": 
+                print(f'[{simulation_time:.2f}] Tasks left: {tasks_left}')
+                if simulation_time - last_print_time > 0.5:                    
                     last_print_time = simulation_time
-                if mission_completed:
-                    print(f'Tasks left: {tasks_left} Time: {simulation_time:.2f}s')
+                    
+                if mission_completed:                    
                     print(f'MISSION COMPLETED')
                     running = False
-            else:
+            else: # if rendering_mode is None
                 if mission_completed:
-                    print(f'MISSION COMPLETED with Time: {simulation_time:.2f}s')
+                    print(f'[{simulation_time:.2f}] MISSION COMPLETED')
                     running = False
 
 

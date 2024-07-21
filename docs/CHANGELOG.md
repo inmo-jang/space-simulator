@@ -1,5 +1,13 @@
 # CHANGELOG.md
 
+## Version 1.2.4 (24.07-21)
+
+### New Features
+- **Dynamic Task Generation (`main.py`)**:
+  - By setting `dynamic_task_generation.enabled: True` in the configuration file, additional tasks (`tasks_per_generation`) can be generated at specified intervals (`interval_seconds`) until the maximum number of generations (`max_generations`) is reached.
+  - Various scripts (`agent.py`, `task.py`, `grape.py`) have been updated to be compatible with the integration of these newly-generated tasks during a mission.
+
+
 ## Version 1.2.3 (24.07-19)
 
 ### New Features

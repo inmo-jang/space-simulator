@@ -1,26 +1,26 @@
-# decision_making: # Case 1
-#   plugin: plugins.grape.GRAPE
-#   GRAPE:
-#     execute_movements_during_convergence: False
-#     initialize_partition: Distance # Options: None; Distance      
-#     reinitialize_partition_on_completion: Distance # Options: None; Distance; 
+decision_making: # Case 1
+  plugin: plugins.grape.GRAPE
+  GRAPE:
+    execute_movements_during_convergence: False
+    initialize_partition: Distance # Options: None; Distance      
+    reinitialize_partition_on_completion: Distance # Options: None; Distance; 
 
-decision_making: # Case 2
-  plugin: plugins.simple.LocalSearch
-  LocalSearch:  
-    mode: MaxUtil  # Options: Random; MinDist; MaxUtil
-    weight_factor_cost: 10000.0 # Only used for `MaxUtil` mode
+# decision_making: # Case 2
+#   plugin: plugins.simple.LocalSearch
+#   LocalSearch:  
+#     mode: MinDist  # Options: Random; MinDist; MaxUtil
+#     weight_factor_cost: 10000.0 # Only used for `MaxUtil` mode
 
 
 agents:
-  quantity: 200
+  quantity: 20
   locations:
     x_min: 0
     x_max: 1400
     y_min: 0
     y_max: 1000
     non_overlap_radius: 0 
-  max_speed: 0.5
+  max_speed: 3  
   max_accel: 0.1
   max_angular_speed: 0.3
   target_approaching_radius: 50
@@ -30,7 +30,7 @@ agents:
   random_exploration_duration: 2.0
 
 tasks:
-  quantity: 20
+  quantity: 200
   locations:
     x_min: 0
     x_max: 1400
@@ -39,8 +39,13 @@ tasks:
     non_overlap_radius: 0
   threshold_done_by_arrival: 10.0
   amounts:  # Added amounts range for tasks
-    min: 600.0
-    max: 6000.0
+    min: 6.0
+    max: 60.0      
+  dynamic_task_generation:
+    enabled: True
+    interval_seconds: 5
+    max_generations: 3
+    tasks_per_generation: 50
 
 simulation:
   sampling_freq: 60.0
@@ -49,7 +54,7 @@ simulation:
   screen_height: 1000 
   debug_mode: False
   gif_recording_fps: 10
-  task_visualisation_factor: 100  # visualization factor for tasks : 10 means converting 10 amount to 1 pixel
+  task_visualisation_factor: 3  # visualization factor for tasks : 10 means converting 10 amount to 1 pixel
   profiling_mode: False
   rendering_mode: Screen  # Options: Screen; Terminal; None
   rendering_options: # Only works if `rendering_mode` is `Screen`
