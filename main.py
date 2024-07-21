@@ -152,6 +152,8 @@ async def game_loop():
                         agent.draw_agent_id(screen)
                     if rendering_options.get('agent_assigned_task_id'): # Draw each agent's assigned task ID
                         agent.draw_assigned_task_id(screen)
+                    if rendering_options.get('agent_work_done'): # Draw each agent's assigned task ID
+                        agent.draw_work_done(screen)
                     if rendering_options.get('agent_situation_awareness_circle'): # Draw each agent's situation awareness radius circle    
                         agent.draw_situation_awareness_circle(screen)
                     

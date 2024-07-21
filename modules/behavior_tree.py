@@ -104,6 +104,7 @@ class TaskExecutingNode(SyncAction):
             assigned_task_id = blackboard.get('assigned_task_id')
             if distance < agent.tasks_info[assigned_task_id].radius + target_arrive_threshold: # Agent reached the task position                                
                 agent.tasks_info[assigned_task_id].reduce_amount(agent.work_rate)
+                agent.update_task_amount_done(agent.work_rate)  # Update the amount of task done                
                 if agent.tasks_info[assigned_task_id].completed:                    
                     blackboard['task_completed'] = True
                     blackboard['assigned_task_id'] = None
@@ -116,7 +117,7 @@ class TaskExecutingNode(SyncAction):
         return Status.RUNNING
 
 
-# Consensus checking node
+# Exploration node
 class ExplorationNode(SyncAction):
     def __init__(self, name, agent):
         super().__init__(name, self._random_explore)

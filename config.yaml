@@ -61,6 +61,7 @@ simulation:
     agent_tail: True
     agent_communication_topology: True
     agent_situation_awareness_circle: False
-    agent_id: False
-    agent_assigned_task_id: False
+    agent_id: True
+    agent_work_done: True
+    agent_assigned_task_id: True
     task_id: False

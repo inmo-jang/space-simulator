@@ -38,6 +38,9 @@ class Agent:
         self.message_to_share = None
         self.messages_received = []
 
+        self.distance_moved = 0.0
+        self.task_amount_done = 0.0        
+
     def create_behavior_tree(self):
         self.tree = self._create_behavior_tree()
 
@@ -81,6 +84,8 @@ class Agent:
         self.position += self.velocity
         self.acceleration *= 0  # Reset acceleration
 
+        # Calculate the distance moved in this update and add to distance_moved
+        self.distance_moved += self.velocity.length()
         # Memory of positions to draw track
         self.memory_location.append((self.position.x, self.position.y))
         if len(self.memory_location) > agent_track_size:
@@ -169,6 +174,14 @@ class Agent:
         text_surface = font.render(f"task_id: {self.blackboard.get('assigned_task_id', None)}", True, (50, 50, 50))
         screen.blit(text_surface, (self.position[0] + 10, self.position[1]))
 
+    def draw_work_done(self, screen):
+        # Draw assigned_task_id next to agent position
+        text_surface = font.render(f"dist: {self.distance_moved:.1f}", True, (50, 50, 50))
+        screen.blit(text_surface, (self.position[0] + 10, self.position[1] + 10))
+        text_surface = font.render(f"work: {self.task_amount_done:.1f}", True, (50, 50, 50))
+        screen.blit(text_surface, (self.position[0] + 10, self.position[1] + 20))
+
+
     def draw_situation_awareness_circle(self, screen):
         # Draw the situation awareness radius circle    
         if self.situation_awareness_radius > 0:    
@@ -223,7 +236,9 @@ class Agent:
                 ]                                                
         
         return local_tasks_info  
-
+    
+    def update_task_amount_done(self, amount):
+        self.task_amount_done += amount
 
 def generate_agents(tasks_info):
     agent_quantity = config['agents']['quantity']
