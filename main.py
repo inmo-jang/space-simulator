@@ -4,7 +4,7 @@ import argparse
 import cProfile
 import importlib
 
-from modules.utils import pre_render_text, save_gif, set_config
+from modules.utils import pre_render_text, save_gif, set_config, save_to_csv, plot_time_series_result
 
 # Parse command line arguments
 parser = argparse.ArgumentParser(description='SPADE (Swarm Planning And Decision Evalution) Simulator')
@@ -64,6 +64,9 @@ generation_interval = dynamic_task_generation.get('interval_seconds', 10)
 max_generations = dynamic_task_generation.get('max_generations', 5)
 tasks_per_generation = dynamic_task_generation.get('tasks_per_generation', 5)
 
+# Initialize data recording
+time_records = []
+data_records = []
 
 # Main game loop
 async def game_loop():
@@ -127,6 +130,20 @@ async def game_loop():
                     generation_count += 1
                     print(f"[{simulation_time:.2f}] Added {tasks_per_generation} new tasks: Generation {generation_count}.")
 
+            # Record data if time recording mode is enabled
+            if config['simulation'].get('time_recording_mode', False):
+                agents_total_distance_moved = sum(agent.distance_moved for agent in agents)
+                agents_total_task_amount_done = sum(agent.task_amount_done for agent in agents)
+                remaining_tasks = len([task for task in tasks if not task.completed])
+                tasks_total_amount_left = sum(task.amount for task in tasks)
+
+                time_records.append(simulation_time)
+                data_records.append([
+                    agents_total_distance_moved,
+                    agents_total_task_amount_done,
+                    remaining_tasks,
+                    tasks_total_amount_left
+                ])
 
             # Rendering
             if rendering_mode == "Screen":
@@ -198,6 +215,11 @@ async def game_loop():
 
 
     pygame.quit()
+
+    # Save data to file if time recording mode is enabled
+    if config['simulation'].get('time_recording_mode', False):        
+        csv_file_path = save_to_csv(time_records, data_records)        
+        plot_time_series_result(csv_file_path)
 
 def main():
     asyncio.run(game_loop())

@@ -10,6 +10,10 @@
 - **Rendering Mode**: 
   - Introduced `agent_work_done` feature: Displays the total distance moved and the amount of work done by each agent.
 
+- **Time Series Plot Mode**  
+  - When `time_recording_mode` is set to `True`, the simulation will save the time series data of agents' activities to CSV files and generate corresponding PNG plots. This feature provides a comprehensive view of the simulation's progress over time, including metrics such as total distance moved by agents, total task amount done, the number of remaining tasks, and the total amount of tasks.
+
+
 ## Version 1.2.3 (24.07-19)
 
 ### New Features

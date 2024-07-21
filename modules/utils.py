@@ -7,6 +7,8 @@ from PIL import Image
 import os
 import matplotlib.cm as cm
 import shutil
+import pandas as pd
+import matplotlib.pyplot as plt
 
 def load_config(config_file):
     with open(config_file, 'r') as f:
@@ -79,3 +81,84 @@ def generate_task_colors(quantity):
         color = colors(i)  # Get color from colormap
         task_colors[i] = (int(color[0] * 255), int(color[1] * 255), int(color[2] * 255))  # Convert to RGB tuple
     return task_colors
+
+def generate_output_filename(extension = "csv"):
+    agent_quantity = config['agents']['quantity']
+    task_quantity = config['tasks']['quantity']
+    decision_making_module_path = config['decision_making']['plugin']
+    module_path, class_name = decision_making_module_path.rsplit('.', 1)
+    datetime_now = datetime.datetime.now()
+    current_time_string = datetime_now.strftime("%Y-%m-%d_%H-%M-%S")        
+    
+    current_date_string = datetime.datetime.now().strftime("%Y-%m-%d")
+    output_dir = os.path.join('output', current_date_string)       
+    os.makedirs(output_dir, exist_ok=True) 
+    file_path = os.path.join(output_dir, f"{class_name}_{agent_quantity}_agents_{task_quantity}_tasks_{current_time_string}.{extension}")
+
+    return file_path
+
+def save_to_csv(time_records, data_records):
+
+    csv_file_path = generate_output_filename(extension="csv")
+
+    # Prepare data for DataFrame
+    df = pd.DataFrame(data_records, columns=['agents_total_distance_moved', 'agents_total_task_amount_done', 'remaining_tasks', 'tasks_total_amount_left'])
+    df.insert(0, 'time', time_records)  # Insert 'time' column at the beginning
+    
+    # Save the DataFrame to a CSV file    
+    df.to_csv(csv_file_path, index=False)    
+        
+    return csv_file_path
+
+
+def plot_time_series_result(csv_file_path):
+    # Read the CSV file
+    df = pd.read_csv(csv_file_path)
+    
+    # Extract time and data columns
+    time = df['time']
+    agents_total_distance_moved = df['agents_total_distance_moved']
+    agents_total_task_amount_done = df['agents_total_task_amount_done']
+    remaining_tasks = df['remaining_tasks']
+    tasks_total_amount_left = df['tasks_total_amount_left']
+
+
+    plt.figure(figsize=(12, 8))
+
+    plt.subplot(2, 2, 1)
+    plt.plot(time, agents_total_distance_moved, label='Total Distance Moved by Agents')
+    plt.xlabel('Time')
+    plt.ylabel('Distance Moved')
+    plt.legend()
+    plt.grid(True)  
+
+    plt.subplot(2, 2, 2)
+    plt.plot(time, agents_total_task_amount_done, label='Total Task Amount Done by Agents')
+    plt.xlabel('Time')
+    plt.ylabel('Task Amount Done')
+    plt.legend()
+    plt.grid(True)  
+
+    plt.subplot(2, 2, 3)
+    plt.plot(time, remaining_tasks, label='The Number of Remaining Tasks')
+    plt.xlabel('Time')
+    plt.ylabel('The Number of Remaining Tasks')
+    plt.legend()
+    plt.grid(True)  
+
+    plt.subplot(2, 2, 4)
+    plt.plot(time, tasks_total_amount_left, label='Total Amount of Tasks')
+    plt.xlabel('Time')
+    plt.ylabel('Tasks Total Amount')
+    plt.legend()
+    plt.grid(True)  
+
+    plt.tight_layout()
+    img_file_path = change_file_extension(csv_file_path, "png")    
+    plt.savefig(img_file_path)
+    plt.show()
+
+def change_file_extension(file_path, new_extension):
+    base, _ = os.path.splitext(file_path)  # Split the file path into base and extension
+    new_file_path = f"{base}.{new_extension}"  # Combine base with new extension
+    return new_file_path
