@@ -1,6 +1,20 @@
 from enum import Enum
 import math
 
+# BT Node List
+class BehaviorTreeList:
+    CONTROL_NODES = [        
+        'Sequence',
+        'Fallback'
+    ]
+
+    ACTION_NODES = [
+        'DecisionMakingNode',
+        'TaskExecutingNode',
+        'ExplorationNode'
+    ]
+
+
 # Status enumeration for behavior tree nodes
 class Status(Enum):
     SUCCESS = 1

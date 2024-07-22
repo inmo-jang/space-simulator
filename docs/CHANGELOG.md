@@ -1,6 +1,11 @@
 # CHANGELOG.md
+## Version 1.2.5 (24-07-22)
+### New Features
+- **Behavior Tree Defined by Groot**
+  - Using [Groot2](https://www.behaviortree.dev/groot/), the visualization tool for BT.CPP, you can now define and visualize the behavior tree of agents in the SPADE simulator. The behavior tree file (`.xml`) should be specified by the `behavior_tree_xml` entry in the configuration file.
 
-## Version 1.2.4 (24.07-21)
+
+## Version 1.2.4 (24-07-21)
 
 ### New Features
 - **Dynamic Task Generation (`main.py`)**:
@@ -14,7 +19,7 @@
   - When `time_recording_mode` is set to `True`, the simulation will save the time series data of agents' activities to CSV files and generate corresponding PNG plots. This feature provides a comprehensive view of the simulation's progress over time, including metrics such as total distance moved by agents, total task amount done, the number of remaining tasks, and the total amount of tasks.
 
 
-## Version 1.2.3 (24.07-19)
+## Version 1.2.3 (24-07-19)
 
 ### New Features
 - **GRAPE Algorithm Enhancements (`grape.py`)**:

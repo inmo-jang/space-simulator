@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root BTCPP_format="4" project_name="Project">
+    <include path="default_bt.xml"/>
+    <!-- Description of Node Models (used by Groot) -->
+    <TreeNodesModel>
+        <Action ID="DecisionMakingNode" editable="true"/>
+        <Action ID="ExplorationNode" editable="true"/>
+        <Action ID="TaskExecutingNode" editable="true"/>
+    </TreeNodesModel>
+</root>

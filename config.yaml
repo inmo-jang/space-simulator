@@ -13,6 +13,7 @@ decision_making: # Case 1
 
 
 agents:
+  behavior_tree_xml: default_bt.xml 
   quantity: 20
   locations:
     x_min: 0

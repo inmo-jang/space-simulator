@@ -9,6 +9,7 @@ import matplotlib.cm as cm
 import shutil
 import pandas as pd
 import matplotlib.pyplot as plt
+import xml.etree.ElementTree as ET
 
 def load_config(config_file):
     with open(config_file, 'r') as f:
@@ -162,3 +163,10 @@ def change_file_extension(file_path, new_extension):
     base, _ = os.path.splitext(file_path)  # Split the file path into base and extension
     new_file_path = f"{base}.{new_extension}"  # Combine base with new extension
     return new_file_path
+
+# BT xml
+def parse_behavior_tree(xml_path):
+    tree = ET.parse(xml_path)
+    root = tree.getroot()
+    return root
+    

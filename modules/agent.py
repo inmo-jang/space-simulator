@@ -1,8 +1,8 @@
 import pygame
 import math
 import copy
-from modules.behavior_tree import Sequence, Fallback, DecisionMakingNode, ExplorationNode, TaskExecutingNode
-from modules.utils import config, generate_positions
+from modules.behavior_tree import *
+from modules.utils import config, generate_positions, parse_behavior_tree
 from modules.task import task_colors
 
 # Load agent configuration
@@ -15,6 +15,11 @@ work_rate = config['agents']['work_rate']
 agent_communication_radius = config['agents']['communication_radius']
 agent_situation_awareness_radius = config.get('agents', {}).get('situation_awareness_radius', 0)
 font = pygame.font.Font(None, 15)
+
+# Load behavior tree
+behavior_tree_xml = config['agents']['behavior_tree_xml']
+xml_root = parse_behavior_tree(f"bt_xml/{behavior_tree_xml}")
+
 class Agent:
     def __init__(self, agent_id, position, tasks_info):
         self.agent_id = agent_id
@@ -46,13 +51,26 @@ class Agent:
 
     # Agent's Behavior Tree
     def _create_behavior_tree(self):
-        return Fallback("Agent Tree", children=[
-            Sequence("Agent Tree", children=[
-                DecisionMakingNode("DecisionMaking", self),
-                TaskExecutingNode("TaskExecuting", self)    
-            ]),
-            ExplorationNode("ConsensusChecking", self)            
-        ])
+        behavior_tree = self._parse_xml_to_bt(xml_root.find('BehaviorTree'))
+        return behavior_tree        
+    
+    def _parse_xml_to_bt(self, xml_node):
+        node_type = xml_node.tag
+        children = []
+
+        for child in xml_node:
+            children.append(self._parse_xml_to_bt(child))
+
+        if node_type in BehaviorTreeList.CONTROL_NODES:
+            control_class = globals()[node_type]  # Control class should be globally available
+            return control_class(node_type, children=children)
+        elif node_type in BehaviorTreeList.ACTION_NODES:
+            action_class = globals()[node_type]  # Action class should be globally available
+            return action_class(node_type, self)
+        elif node_type == "BehaviorTree": # Root
+            return children[0]
+        else:
+            raise ValueError(f"[ERROR] Unknown behavior node type: {node_type}")    
 
     async def run_tree(self):
         return await self.tree.run(self, self.blackboard)
