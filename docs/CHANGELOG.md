@@ -4,6 +4,12 @@
 - **Behavior Tree Defined by Groot**
   - Using [Groot2](https://www.behaviortree.dev/groot/), the visualization tool for BT.CPP, you can now define and visualize the behavior tree of agents in the SPADE simulator. The behavior tree file (`.xml`) should be specified by the `behavior_tree_xml` entry in the configuration file.
 
+### Changes
+- **Behavior Tree Blackboard Variables**
+  - Removed unnecessary variables from the `blackboard`, such as `next_waypoint` and `task_completed`. Consequently, the `DecisionMakingNode` (including decision-making plugins like `grape.py` and `simple.py`) now only sets the `assigned_task_id` as its output, enhancing the readability of decision-making plugins.
+  - Renamed `next_waypoint` to `random_waypoint` in the `ExplorationNode` to avoid confusion, as the original name might be misleading.
+  - Added `_reset_bt_action_node_status()` to reset the statuses of behavior tree action nodes for each agent before starting the tree.
+
 
 ## Version 1.2.4 (24-07-21)
 

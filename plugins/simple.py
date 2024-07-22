@@ -24,8 +24,6 @@ class LocalSearch: # Task selection within each agent's `situation_awareness_rad
         # Check if the existing task is done
         if self.assigned_task is not None and self.assigned_task.completed:
             self.assigned_task = None
-            blackboard['task_completed'] = None
-            blackboard['assigned_task_id'] = None
             
         # Look for a task within situation awareness radius if there is no existing assigned task
         if self.assigned_task is None:

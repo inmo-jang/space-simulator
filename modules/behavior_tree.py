@@ -92,14 +92,11 @@ class DecisionMakingNode(SyncAction):
         self.decision_maker = decision_making_class(agent)
 
     def _decide(self, agent, blackboard):
-        assigned_task_id = self.decision_maker.decide(blackboard)
-        # Post-processing: Set the next waypoint based on the decision
+        assigned_task_id = self.decision_maker.decide(blackboard)        
         blackboard['assigned_task_id'] = assigned_task_id
-        if assigned_task_id is None:
-            blackboard['next_waypoint'] = None
+        if assigned_task_id is None:            
             return Status.FAILURE        
-        else:            
-            blackboard['next_waypoint'] = agent.tasks_info[assigned_task_id].position
+        else:                        
             return Status.SUCCESS
 
 
@@ -108,10 +105,11 @@ class TaskExecutingNode(SyncAction):
     def __init__(self, name, agent):
         super().__init__(name, self._execute_task)
 
-    def _execute_task(self, agent, blackboard):
-        next_waypoint = blackboard.get('next_waypoint')
-        if next_waypoint:
+    def _execute_task(self, agent, blackboard):        
+        assigned_task_id = blackboard.get('assigned_task_id')        
+        if assigned_task_id is not None:
             agent_position = agent.position
+            next_waypoint = agent.tasks_info[assigned_task_id].position
             # Calculate norm2 distance
             distance = math.sqrt((next_waypoint[0] - agent_position[0])**2 + (next_waypoint[1] - agent_position[1])**2)
             
@@ -120,9 +118,6 @@ class TaskExecutingNode(SyncAction):
                 agent.tasks_info[assigned_task_id].reduce_amount(agent.work_rate)
                 agent.update_task_amount_done(agent.work_rate)  # Update the amount of task done                
                 if agent.tasks_info[assigned_task_id].completed:                    
-                    blackboard['task_completed'] = True
-                    blackboard['assigned_task_id'] = None
-                    blackboard['next_waypoint'] = None
                     return Status.SUCCESS
 
             # Move towards the task position
@@ -136,17 +131,17 @@ class ExplorationNode(SyncAction):
     def __init__(self, name, agent):
         super().__init__(name, self._random_explore)
         self.random_move_time = float('inf')
-        self.next_waypoint = (0, 0)
+        self.random_waypoint = (0, 0)
 
     def _random_explore(self, agent, blackboard):
         # Move towards a random position
         if self.random_move_time > agent_max_random_movement_duration:
-            self.next_waypoint = self.get_random_position(task_locations['x_min'], task_locations['x_max'], task_locations['y_min'], task_locations['y_max'])
+            self.random_waypoint = self.get_random_position(task_locations['x_min'], task_locations['x_max'], task_locations['y_min'], task_locations['y_max'])
             self.random_move_time = 0 # Initialisation
         
-        blackboard['next_waypoint'] = self.next_waypoint        
+        blackboard['random_waypoint'] = self.random_waypoint        
         self.random_move_time += sampling_time   
-        agent.follow(self.next_waypoint)         
+        agent.follow(self.random_waypoint)         
         return Status.RUNNING
         
     def get_random_position(self, x_min, x_max, y_min, y_max):

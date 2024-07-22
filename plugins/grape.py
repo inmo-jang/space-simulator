@@ -39,8 +39,8 @@ class GRAPE:
                 partition[preferred_task_id].add(agent.agent_id)
         return partition
 
-    def get_neighbor_agents_info_in_partition(self):
-        _neighbor_agents_info = [neighbor_agent for neighbor_agent in self.agent.agents_info if neighbor_agent.agent_id in self.partition[self.assigned_task.task_id]]
+    def get_neighbor_agents_info_in_partition(self, partition):
+        _neighbor_agents_info = [neighbor_agent for neighbor_agent in self.agent.agents_info if neighbor_agent.agent_id in partition[self.assigned_task.task_id]]
         return _neighbor_agents_info
 
     def decide(self, blackboard):
@@ -57,17 +57,18 @@ class GRAPE:
         
         # Check if the existing task is done        
         if self.assigned_task is not None and self.assigned_task.completed:            
-                _neighbor_agents_info = self.get_neighbor_agents_info_in_partition()    
-                self.partition[self.assigned_task.task_id] = set()  # Empty the previous task's coalition                  
-                self.assigned_task = None
+            _neighbor_agents_info = self.get_neighbor_agents_info_in_partition(self.partition)    
+            # Default routine
+            self.partition[self.assigned_task.task_id] = set()  # Empty the previous task's coalition                  
+            self.assigned_task = None
+            self.satisfied = False
+            
+            # Special routine
+            if REINITIALIZE_PARTITION == "Distance":                                    
+                self.partition = self.initialize_partition_by_distance(_neighbor_agents_info, _local_tasks_info, self.partition)   
+                self.assigned_task = self.get_assigned_task_from_partition(self.partition)                         
 
-                if REINITIALIZE_PARTITION == "Distance":                                    
-                    self.partition = self.initialize_partition_by_distance(_neighbor_agents_info, _local_tasks_info, self.partition)   
-                    self.assigned_task = self.get_assigned_task_from_partition(self.partition)                         
 
-                self.satisfied = False
-                blackboard['task_completed'] = None
-                blackboard['assigned_task_id'] = None
 
             
         # GRAPE algorithm for each agent (Phase 1)        

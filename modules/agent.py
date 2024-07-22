@@ -72,7 +72,14 @@ class Agent:
         else:
             raise ValueError(f"[ERROR] Unknown behavior node type: {node_type}")    
 
+    def _reset_bt_action_node_status(self):
+        action_nodes = BehaviorTreeList.ACTION_NODES
+        self.blackboard = {key: None if key in action_nodes else value for key, value in self.blackboard.items()}
+
+
+
     async def run_tree(self):
+        self._reset_bt_action_node_status()
         return await self.tree.run(self, self.blackboard)
 
     def follow(self, target):
