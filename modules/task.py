@@ -2,8 +2,8 @@ import pygame
 import random
 from modules.utils import config, generate_positions, generate_task_colors
 dynamic_task_generation = config['tasks'].get('dynamic_task_generation', {})
-max_generations = dynamic_task_generation.get('max_generations', 5)
-tasks_per_generation = dynamic_task_generation.get('tasks_per_generation', 5)
+max_generations = dynamic_task_generation.get('max_generations', 0) if dynamic_task_generation.get('enabled', False) else 0
+tasks_per_generation = dynamic_task_generation.get('tasks_per_generation', 0) if dynamic_task_generation.get('enabled', False) else 0
 
 task_colors = generate_task_colors(config['tasks']['quantity'] + tasks_per_generation*max_generations)
 
