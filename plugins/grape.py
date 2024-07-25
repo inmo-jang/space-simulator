@@ -154,12 +154,14 @@ class GRAPE:
         
         for message in messages_received:
             if message['evolution_number'] > _evolution_number or (message['evolution_number'] == _evolution_number and message['time_stamp'] > _time_stamp):
-                _evolution_number = copy.deepcopy(message['evolution_number'])
-                _time_stamp = copy.deepcopy(message['time_stamp'])
-                _partition = copy.deepcopy(message['partition'])
+                _evolution_number = message['evolution_number']
+                _time_stamp = message['time_stamp']
+                _partition = message['partition']
+
                 _satisfied = False
         
-        return _evolution_number, _time_stamp, _partition, _satisfied
+        _final_partition = {k: v.copy() for k, v in _partition.items()}
+        return _evolution_number, _time_stamp, _final_partition, _satisfied
                 
 
     def get_assigned_task_from_partition(self, partition):

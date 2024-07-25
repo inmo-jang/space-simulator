@@ -143,13 +143,10 @@ class Agent:
     def local_broadcast(self, agents):
         self.agents_nearby = []
         if self.communication_radius > 0: # Local communication
-            communication_radius_squared = self.communication_radius ** 2
+            self.agents_nearby = self.get_agents_nearby()
+            for other_agent in self.agents_nearby:
+                other_agent.receive_message(self.message_to_share)                      
 
-            for other_agent in agents:
-                distance = (self.position - other_agent.position).length_squared()
-                if distance <= communication_radius_squared:
-                    other_agent.receive_message(self.message_to_share)
-                    self.agents_nearby.append(other_agent)        
         else: # Global communication
             for other_agent in agents:                                
                 other_agent.receive_message(self.message_to_share)
@@ -161,8 +158,7 @@ class Agent:
         self.messages_received = []
 
     def receive_message(self, message):
-        if message not in self.messages_received:
-            self.messages_received.append(copy.copy(message))            
+        self.messages_received.append(message)            
 
     def draw(self, screen):
         size = 10
@@ -186,8 +182,9 @@ class Agent:
     def draw_communication_topology(self, screen, agents):
      # Draw lines to neighbor agents
         for neighbor_agent in self.agents_nearby:
-            neighbor_position = agents[neighbor_agent.agent_id].position
-            pygame.draw.line(screen, (200, 200, 200), (int(self.position.x), int(self.position.y)), (int(neighbor_position.x), int(neighbor_position.y)))
+            if neighbor_agent.agent_id > self.agent_id:
+                neighbor_position = agents[neighbor_agent.agent_id].position
+                pygame.draw.line(screen, (200, 200, 200), (int(self.position.x), int(self.position.y)), (int(neighbor_position.x), int(neighbor_position.y)))
 
     def draw_agent_id(self, screen):
         # Draw assigned_task_id next to agent position

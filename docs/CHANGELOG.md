@@ -1,4 +1,15 @@
 # CHANGELOG.md
+## Version 1.2.6 (24-07-25)
+### Changes
+- **Computation Optimisation**
+  - `grape.py`: Minimized the use of `deepcopy()` in `distributed_mutex()`. Utilised an equivalent function to reduce computational overhead.
+  - `agent.py`: 
+    - Optimized `local_broadcast()` function.
+    - Removed redundant `if` statement in `receive_message()` to enhance performance.
+    - Improved `draw_communication_topology()` by preventing redundant line drawing.
+
+
+
 ## Version 1.2.5 (24-07-22)
 ### New Features
 - **Behavior Tree Defined by Groot**
