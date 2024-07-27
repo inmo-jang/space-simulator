@@ -5,6 +5,8 @@ from modules.utils import config, pre_render_text
 KEEP_MOVING_DURING_CONVERGENCE = config['decision_making']['GRAPE']['execute_movements_during_convergence']
 INITIALIZE_PARTITION = config['decision_making']['GRAPE']['initialize_partition']
 REINITIALIZE_PARTITION = config['decision_making']['GRAPE']['reinitialize_partition_on_completion']
+COST_WEIGHT_FACTOR = config['decision_making']['GRAPE']['cost_weight_factor']
+SOCIAL_INHIBITION_FACTOR = config['decision_making']['GRAPE']['social_inhibition_factor']
 
 class GRAPE:
     def __init__(self, agent):
@@ -142,9 +144,9 @@ class GRAPE:
         if self.agent.agent_id not in self.partition[task.task_id]:
             num_collaborator += 1
 
-        distance = (self.agent.position - task.position).length()
-        weight_factor_cost = 1.0
-        return task.amount / (num_collaborator) - weight_factor_cost * distance
+        distance = (self.agent.position - task.position).length()              
+        utility = task.amount / (num_collaborator) - COST_WEIGHT_FACTOR * distance * (num_collaborator ** SOCIAL_INHIBITION_FACTOR) 
+        return utility
 
     def distributed_mutex(self, messages_received):        
         _satisfied = True

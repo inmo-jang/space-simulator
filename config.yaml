@@ -1,11 +1,21 @@
-decision_making: # Case 1
-  plugin: plugins.grape.GRAPE
-  GRAPE:
-    execute_movements_during_convergence: False
-    initialize_partition: Distance # Options: None; Distance      
-    reinitialize_partition_on_completion: Distance # Options: None; Distance; 
+# decision_making: # Case 1
+#   plugin: plugins.grape.GRAPE
+#   GRAPE:
+#     execute_movements_during_convergence: True
+#     cost_weight_factor: 0.5
+#     social_inhibition_factor: 100.0
+#     initialize_partition: Distance # Options: None; Distance      
+#     reinitialize_partition_on_completion: Distance # Options: None; Distance; 
 
-# decision_making: # Case 2
+decision_making: # Case 2
+  plugin: plugins.cbba.CBBA
+  CBBA:  
+    max_tasks_per_agent: 5 
+    task_reward_discount_factor: 0.99 
+    winngin_bid_discount_factor: 0.99999999 # Note: 1 is default. This factor might be required to be less than 1 for dynamic task generation scenario. 
+    
+
+# decision_making: # Case 3
 #   plugin: plugins.simple.LocalSearch
 #   LocalSearch:  
 #     mode: MinDist  # Options: Random; MinDist; MaxUtil
@@ -66,4 +76,5 @@ simulation:
     agent_id: True
     agent_work_done: True
     agent_assigned_task_id: True
+    agent_path_to_assigned_tasks: True
     task_id: False
