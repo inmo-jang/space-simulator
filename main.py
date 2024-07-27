@@ -173,7 +173,8 @@ async def game_loop():
                         agent.draw_work_done(screen)
                     if rendering_options.get('agent_situation_awareness_circle'): # Draw each agent's situation awareness radius circle    
                         agent.draw_situation_awareness_circle(screen)
-                    
+                    if rendering_options.get('agent_path_to_assigned_tasks'): # Draw each agent's path to its assigned tasks
+                        agent.draw_path_to_assigned_tasks(screen)
 
                 # Display task quantity and elapsed simulation time                
                 task_time_text = pre_render_text(f'Tasks left: {tasks_left} Time: {simulation_time:.2f}s', 36, (0, 0, 0))

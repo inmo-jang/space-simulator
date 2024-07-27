@@ -10,7 +10,7 @@ task_colors = generate_task_colors(config['tasks']['quantity'] + tasks_per_gener
 class Task:
     def __init__(self, task_id, position):
         self.task_id = task_id
-        self.position = position        
+        self.position = pygame.Vector2(position)
         self.amount = random.uniform(config['tasks']['amounts']['min'], config['tasks']['amounts']['max'])
         self.radius = self.amount / config['simulation']['task_visualisation_factor']
         self.completed = False
