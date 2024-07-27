@@ -65,10 +65,11 @@ simulation:
   screen_width: 1400 
   screen_height: 1000 
   debug_mode: False
+  output_folder: monte_carlo_results
   gif_recording_fps: 10
   task_visualisation_factor: 3  # visualization factor for tasks : 10 means converting 10 amount to 1 pixel
   profiling_mode: False
-  time_recording_mode: False
+  time_recording_mode: True
   rendering_mode: Screen  # Options: Screen; Terminal; None
   rendering_options: # Only works if `rendering_mode` is `Screen`
     agent_tail: True

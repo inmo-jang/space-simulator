@@ -10,6 +10,8 @@
 - **GRAPE Algorithm Enhancements (`grape.py`)**:
   - Addded `cost_weight_factor` and `social_inhibition_factor` to accomodate MT-SR scenario
 
+- **Monte Carlo Test**:
+  - Added `output_folder` in the configuration, where the results of each scenario is saved. 
 
 ### Changes
 - **Minor Revision**

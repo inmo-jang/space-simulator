@@ -51,7 +51,8 @@ def save_gif(frames):
         current_time_string = datetime_now.strftime("%Y-%m-%d_%H-%M-%S")        
         
         current_date_string = datetime.datetime.now().strftime("%Y-%m-%d")
-        output_dir = os.path.join('output', current_date_string)       
+        output_parent_folder = config['simulation'].get('output_folder', 'output')
+        output_dir = os.path.join(output_parent_folder, current_date_string)       
         os.makedirs(output_dir, exist_ok=True) 
         gif_filename = os.path.join(output_dir, f"{class_name}_{agent_quantity}_agents_{task_quantity}_tasks_{current_time_string}.gif")
 
@@ -92,7 +93,8 @@ def generate_output_filename(extension = "csv"):
     current_time_string = datetime_now.strftime("%Y-%m-%d_%H-%M-%S")        
     
     current_date_string = datetime.datetime.now().strftime("%Y-%m-%d")
-    output_dir = os.path.join('output', current_date_string)       
+    output_parent_folder = config['simulation'].get('output_folder', 'output')
+    output_dir = os.path.join(output_parent_folder, current_date_string)       
     os.makedirs(output_dir, exist_ok=True) 
     file_path = os.path.join(output_dir, f"{class_name}_{agent_quantity}_agents_{task_quantity}_tasks_{current_time_string}.{extension}")
 
