@@ -8,6 +8,12 @@
 - **GRAPE Algorithm Enhancements (`grape.py`)**:
   - Addded `cost_weight_factor` and `social_inhibition_factor` to accomodate MT-SR scenario
 
+
+### Changes
+- `agent.py`: Removed redundant code structure in `local_broadcast()`
+
+
+
 ## Version 1.2.6 (24-07-25)
 ### Changes
 - **Computation Optimisation**

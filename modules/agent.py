@@ -143,18 +143,10 @@ class Agent:
         return vector
 
     def local_broadcast(self, agents):
-        self.agents_nearby = []
-        if self.communication_radius > 0: # Local communication
-            self.agents_nearby = self.get_agents_nearby()
-            for other_agent in self.agents_nearby:
-                if other_agent.agent_id != self.agent_id:                         
-                    other_agent.receive_message(self.message_to_share)                      
-
-        else: # Global communication # TODO: This might be redundant as `get_agents_nearby()` already accomodate global and local communication. 
-            for other_agent in agents:       
-                if other_agent.agent_id != self.agent_id:                         
-                    other_agent.receive_message(self.message_to_share)
-                    self.agents_nearby.append(other_agent)        
+        self.agents_nearby = self.get_agents_nearby()
+        for other_agent in self.agents_nearby:
+            if other_agent.agent_id != self.agent_id:                         
+                other_agent.receive_message(self.message_to_share)                          
                     
 
 
