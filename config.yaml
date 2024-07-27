@@ -11,8 +11,9 @@ decision_making: # Case 2
   plugin: plugins.cbba.CBBA
   CBBA:  
     max_tasks_per_agent: 5 
-    task_reward_discount_factor: 0.99 
-    winngin_bid_discount_factor: 0.99999999 # Note: 1 is default. This factor might be required to be less than 1 for dynamic task generation scenario. 
+    execute_movements_during_convergence: True    
+    task_reward_discount_factor: 0.999 
+    winngin_bid_discount_factor: 1.0 # Note: 1 is default. This factor might be required to be less than 1 for dynamic task generation scenario. 
     
 
 # decision_making: # Case 3
@@ -67,7 +68,7 @@ simulation:
   gif_recording_fps: 10
   task_visualisation_factor: 3  # visualization factor for tasks : 10 means converting 10 amount to 1 pixel
   profiling_mode: False
-  time_recording_mode: True
+  time_recording_mode: False
   rendering_mode: Screen  # Options: Screen; Terminal; None
   rendering_options: # Only works if `rendering_mode` is `Screen`
     agent_tail: True

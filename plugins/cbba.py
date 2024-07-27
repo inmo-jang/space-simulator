@@ -7,6 +7,7 @@ import copy
 import time
 from modules.utils import merge_dicts
 
+KEEP_MOVING_DURING_CONVERGENCE = config['decision_making']['CBBA']['execute_movements_during_convergence']
 MAX_TASKS_PER_AGENT = config['decision_making']['CBBA']['max_tasks_per_agent']
 LAMBDA = config['decision_making']['CBBA']['task_reward_discount_factor']
 WINNGIN_BID_DISCOUNT_FACTOR = config['decision_making']['CBBA']['winngin_bid_discount_factor']
@@ -213,9 +214,13 @@ class CBBA:
                 self.agent.set_planned_tasks(self.path) # For visualisation
                 self.assigned_task = None # NOTE: 불만족 상황이 되었으니 assigned_task 초기화
                 self.phase = Phase.BUILD_BUNDLE
-            
         
-        return None
+        if KEEP_MOVING_DURING_CONVERGENCE:
+            # Even though not being converged, let's move to the first task that I prefer to go
+            self.assigned_task = self.path[0] if self.path else None
+            return copy.deepcopy(self.assigned_task.task_id) if self.assigned_task is not None else None
+        else:
+            return None
     
     def _update(self, task_id, y_k, z_k):
         self.y[task_id] = y_k[task_id]   # Winning bid update
@@ -371,8 +376,8 @@ class CBBA:
             next_position = pygame.Vector2(task.position)
             distance_to_next_task_from_start += current_position.distance_to(next_position)
             # Time-discounted reward
-            # expected_reward_from_task_task += LAMBDA**(distance_to_next_task_from_start/self.agent.max_speed)*task.amount            
-            expected_reward_from_task_task += (task.amount - (distance_to_next_task_from_start/self.agent.max_speed))
+            # expected_reward_from_task_task += LAMBDA**(distance_to_next_task_from_start/self.agent.max_speed + task.amount/self.agent.work_rate)*task.amount            
+            expected_reward_from_task_task += (task.amount - (distance_to_next_task_from_start/self.agent.max_speed + task.amount/self.agent.work_rate))
             current_position = next_position
 
         return expected_reward_from_task_task
