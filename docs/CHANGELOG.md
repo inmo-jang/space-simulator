@@ -10,7 +10,13 @@
 
 
 ### Changes
-- `agent.py`: Removed redundant code structure in `local_broadcast()`
+- **Minor Revision**
+  - `agent.py`: Removed redundant code structure in `local_broadcast()`
+- **Behavior Tree Refinement**
+  - Removed the use of `blackboard` for retrieving values outside of the Behavior Tree. The `blackboard` is now strictly used within the Behavior Tree nodes for internal communication and data storage.
+- **Agent Structure Update**
+  - Added `agent.assigned_task_id` to facilitate the visualization of assigned tasks for each agent, ensuring a clear representation of task assignments.
+  - Renamed `agent.assigned_tasks` to  `agent.planned_path` to represent the path planned by the agent, such as the outcome from CBBA (Consensus-Based Bundle Algorithm) or other algorithms.
 
 
 

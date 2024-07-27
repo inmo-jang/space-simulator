@@ -79,7 +79,7 @@ class CBBA:
                 } 
             
             self.phase = Phase.ASSIGNMENT_CONSENSUS
-            self.set_assigned_tasks(self.path) # For visualisation
+            self.agent.set_planned_tasks(self.path) # For visualisation
             return None
         
         if self.phase == Phase.ASSIGNMENT_CONSENSUS:
@@ -210,7 +210,7 @@ class CBBA:
             else:
                 self.bundle = updated_bundle
                 self.path = updated_path
-                self.set_assigned_tasks(self.path) # For visualisation
+                self.agent.set_planned_tasks(self.path) # For visualisation
                 self.assigned_task = None # NOTE: 불만족 상황이 되었으니 assigned_task 초기화
                 self.phase = Phase.BUILD_BUNDLE
             
@@ -376,8 +376,5 @@ class CBBA:
             current_position = next_position
 
         return expected_reward_from_task_task
-
-    def set_assigned_tasks(self, path):
-        self.agent.assigned_tasks = path
 
         

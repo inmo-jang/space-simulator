@@ -92,7 +92,8 @@ class DecisionMakingNode(SyncAction):
         self.decision_maker = decision_making_class(agent)
 
     def _decide(self, agent, blackboard):
-        assigned_task_id = self.decision_maker.decide(blackboard)        
+        assigned_task_id = self.decision_maker.decide(blackboard)      
+        agent.set_assigned_task_id(assigned_task_id)  
         blackboard['assigned_task_id'] = assigned_task_id
         if assigned_task_id is None:            
             return Status.FAILURE        

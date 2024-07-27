@@ -43,7 +43,9 @@ class Agent:
         self.message_to_share = None
         self.messages_received = []
 
-        self.assigned_tasks = [] # To draw path
+        self.assigned_task_id = None         # Local decision-making result.
+        self.planned_tasks = []              # Local decision-making result.
+        
 
         self.distance_moved = 0.0
         self.task_amount_done = 0.0        
@@ -189,8 +191,10 @@ class Agent:
 
     def draw_assigned_task_id(self, screen):
         # Draw assigned_task_id next to agent position
-        # text_surface = font.render(f"task_id: {self.blackboard.get('assigned_task_id', None)}", True, (50, 50, 50))
-        assigned_task_id_list = [task.task_id for task in self.assigned_tasks]
+        if len(self.planned_tasks) > 0:
+            assigned_task_id_list = [task.task_id for task in self.planned_tasks]
+        else:
+            assigned_task_id_list = self.assigned_task_id
         text_surface = font.render(f"task_id: {assigned_task_id_list}", True, (50, 50, 50))
         screen.blit(text_surface, (self.position[0] + 10, self.position[1]))
 
@@ -229,7 +233,7 @@ class Agent:
         ]
                 
         # Iterate over the assigned tasks and draw lines connecting them
-        for task in self.assigned_tasks:
+        for task in self.planned_tasks:
             task_position = task.position
             pygame.draw.line(
                 screen,
@@ -243,9 +247,16 @@ class Agent:
             start_pos = task_position
 
 
-    def update_color(self):
-        _assigned_task_id = self.blackboard['assigned_task_id']
-        self.color = task_colors.get(_assigned_task_id, (20, 20, 20))  # Default to Dark Grey if no task is assigned
+    def update_color(self):        
+        self.color = task_colors.get(self.assigned_task_id, (20, 20, 20))  # Default to Dark Grey if no task is assigned
+
+
+    def set_assigned_task_id(self, task_id):
+        self.assigned_task_id = task_id
+
+    def set_planned_tasks(self, task_list): # This is for visualisation
+        self.planned_tasks = task_list    
+
 
     def set_global_info_agents(self, agents_info):
         self.agents_info = agents_info
