@@ -4,7 +4,7 @@ import argparse
 import cProfile
 import importlib
 
-from modules.utils import pre_render_text, save_gif, set_config, save_to_csv, plot_time_series_result
+from modules.utils import pre_render_text, set_config, ResultSaver
 
 # Parse command line arguments
 parser = argparse.ArgumentParser(description='SPADE (Swarm Planning And Decision Evalution) Simulator')
@@ -19,11 +19,14 @@ sampling_freq = config['simulation']['sampling_freq']
 sampling_time = 1.0 / sampling_freq  # in seconds
 screen_height = config['simulation']['screen_height']
 screen_width = config['simulation']['screen_width']
-debug_mode = config['simulation']['debug_mode']
 gif_recording_fps = config['simulation']['gif_recording_fps']
 profiling_mode = config['simulation']['profiling_mode']
 rendering_mode = config.get('simulation').get('rendering_mode', "Screen")
 rendering_options = config.get('simulation').get('rendering_options', {})
+
+save_gif = config.get('simulation').get('saving_options').get('save_gif', False)
+save_time_series_plot = config.get('simulation').get('saving_options').get('save_time_series_plot', False)
+save_yaml = config.get('simulation').get('saving_options').get('save_yaml', False)
 
 # Dynamically import the decision-making module
 decision_making_module_path = config['decision_making']['plugin']
@@ -67,6 +70,7 @@ tasks_per_generation = dynamic_task_generation.get('tasks_per_generation', 5)
 # Initialize data recording
 time_records = []
 data_records = []
+result_saver = ResultSaver(args.config)
 
 # Main game loop
 async def game_loop():
@@ -75,10 +79,6 @@ async def game_loop():
     game_paused = False
     mission_completed = False
 
-    # Recording variables
-    recording = False
-    frames = []    
-
     # Initialize simulation time
     simulation_time = 0.0
     last_print_time = 0.0   # Variable to track the last time tasks_left was printed
@@ -86,6 +86,15 @@ async def game_loop():
     # Initialize dynamic task generation time
     generation_count = 0
     last_generation_time = 0.0
+
+    # Recording variables
+    recording = False
+    frames = []    
+    if save_gif and rendering_mode == "Screen":
+        recording = True
+        frames = [] # Clear any existing frames
+        last_frame_time = simulation_time
+        print("Recording started...") 
 
     while running:
         for event in pygame.event.get():
@@ -105,7 +114,7 @@ async def game_loop():
                     else:
                         recording = False
                         print("Recording stopped.")
-                        save_gif(frames)            
+                        result_saver.save_gif(frames)            
 
         if not game_paused and not mission_completed:
             # Run behavior trees for each agent without rendering
@@ -131,7 +140,7 @@ async def game_loop():
                     print(f"[{simulation_time:.2f}] Added {tasks_per_generation} new tasks: Generation {generation_count}.")
 
             # Record data if time recording mode is enabled
-            if config['simulation'].get('time_recording_mode', False):
+            if save_time_series_plot:
                 agents_total_distance_moved = sum(agent.distance_moved for agent in agents)
                 agents_total_task_amount_done = sum(agent.task_amount_done for agent in agents)
                 remaining_tasks = len([task for task in tasks if not task.completed])
@@ -217,10 +226,23 @@ async def game_loop():
 
     pygame.quit()
 
-    # Save data to file if time recording mode is enabled
-    if config['simulation'].get('time_recording_mode', False):        
-        csv_file_path = save_to_csv(time_records, data_records)        
-        plot_time_series_result(csv_file_path)
+    # Save gif
+    if save_gif and rendering_mode == "Screen":        
+        recording = False
+        print("Recording stopped.")
+        result_saver.save_gif(frames)           
+
+    # Save time series data
+    if save_time_series_plot:        
+        csv_file_path = result_saver.save_to_csv(time_records, data_records)          
+        if rendering_mode == "Screen":
+            result_saver.save_time_series_plot(csv_file_path)
+    
+    # Save yaml 
+    if save_yaml:                
+        result_saver.save_yaml()           
+
+
 
 def main():
     asyncio.run(game_loop())

@@ -1,4 +1,13 @@
 # CHANGELOG.md
+## Version 1.2.8 (24-07-28)
+### Changes
+- **Result Saver (`utils.py`)**
+  - Refactored the result-saving functionality into a `ResultSaver` class, and updated the configuration YAML file format accordingly.
+  - Added the `with_date_subfolder` option (Boolean) to allow saving results in a subfolder named after the current date (`YYYY-MM-DD`). This option is recommended to be set to `False` for Monte Carlo tests.
+  - Introduced the `save_gif` option to enable recording a GIF of the simulation from the start.
+  - Renamed `time_recording_mode` to `save_time_series_plot` for clarity.
+  - Added the `save_yaml` option for saving the configuration file used in the simulation.
+
 
 ## Version 1.2.7 (24-07-27)
 ### New Features

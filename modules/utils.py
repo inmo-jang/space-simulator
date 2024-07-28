@@ -39,41 +39,6 @@ def generate_positions(quantity, x_min, x_max, y_min, y_max, radius=10):
             positions.append(pos)
     return positions
 
-def save_gif(frames):
-    if frames:        
-        gif_recording_fps = config['simulation']['gif_recording_fps']
-
-        agent_quantity = config['agents']['quantity']
-        task_quantity = config['tasks']['quantity']
-        decision_making_module_path = config['decision_making']['plugin']
-        module_path, class_name = decision_making_module_path.rsplit('.', 1)
-        datetime_now = datetime.datetime.now()
-        current_time_string = datetime_now.strftime("%Y-%m-%d_%H-%M-%S")        
-        
-        current_date_string = datetime.datetime.now().strftime("%Y-%m-%d")
-        output_parent_folder = config['simulation'].get('output_folder', 'output')
-        output_dir = os.path.join(output_parent_folder, current_date_string)       
-        os.makedirs(output_dir, exist_ok=True) 
-        gif_filename = os.path.join(output_dir, f"{class_name}_{agent_quantity}_agents_{task_quantity}_tasks_{current_time_string}.gif")
-
-        
-
-        # Convert pygame surface to PIL Image and save as GIF
-        image_list = []
-        for frame in frames:
-            image = frame.swapaxes(0, 1)  # Swap axes to fix orientation
-            image = Image.fromarray(image)
-            image_list.append(image)
-
-        imageio.mimsave(gif_filename, image_list, duration=1.0/gif_recording_fps)  # Adjust duration for faster playback                    
-        # imageio.mimsave(gif_filename, frames)
-        print(f"Saved GIF: {gif_filename}")
-
-        # Copy config.yaml to the same directory
-        config_file_path = 'config.yaml'        
-        new_config_filename = os.path.join(output_dir, os.path.basename(gif_filename).replace('.gif', '.yaml'))
-        shutil.copy(config_file_path, new_config_filename)
-        print(f"Copied config.yaml to: {new_config_filename}")        
 
 # Generate task_colors based on tasks.quantity
 def generate_task_colors(quantity):
@@ -84,87 +49,8 @@ def generate_task_colors(quantity):
         task_colors[i] = (int(color[0] * 255), int(color[1] * 255), int(color[2] * 255))  # Convert to RGB tuple
     return task_colors
 
-def generate_output_filename(extension = "csv"):
-    agent_quantity = config['agents']['quantity']
-    task_quantity = config['tasks']['quantity']
-    decision_making_module_path = config['decision_making']['plugin']
-    module_path, class_name = decision_making_module_path.rsplit('.', 1)
-    datetime_now = datetime.datetime.now()
-    current_time_string = datetime_now.strftime("%Y-%m-%d_%H-%M-%S")        
-    
-    current_date_string = datetime.datetime.now().strftime("%Y-%m-%d")
-    output_parent_folder = config['simulation'].get('output_folder', 'output')
-    output_dir = os.path.join(output_parent_folder, current_date_string)       
-    os.makedirs(output_dir, exist_ok=True) 
-    file_path = os.path.join(output_dir, f"{class_name}_{agent_quantity}_agents_{task_quantity}_tasks_{current_time_string}.{extension}")
-
-    return file_path
-
-def save_to_csv(time_records, data_records):
-
-    csv_file_path = generate_output_filename(extension="csv")
-
-    # Prepare data for DataFrame
-    df = pd.DataFrame(data_records, columns=['agents_total_distance_moved', 'agents_total_task_amount_done', 'remaining_tasks', 'tasks_total_amount_left'])
-    df.insert(0, 'time', time_records)  # Insert 'time' column at the beginning
-    
-    # Save the DataFrame to a CSV file    
-    df.to_csv(csv_file_path, index=False)    
-        
-    return csv_file_path
 
 
-def plot_time_series_result(csv_file_path):
-    # Read the CSV file
-    df = pd.read_csv(csv_file_path)
-    
-    # Extract time and data columns
-    time = df['time']
-    agents_total_distance_moved = df['agents_total_distance_moved']
-    agents_total_task_amount_done = df['agents_total_task_amount_done']
-    remaining_tasks = df['remaining_tasks']
-    tasks_total_amount_left = df['tasks_total_amount_left']
-
-
-    plt.figure(figsize=(12, 8))
-
-    plt.subplot(2, 2, 1)
-    plt.plot(time, agents_total_distance_moved, label='Total Distance Moved by Agents')
-    plt.xlabel('Time')
-    plt.ylabel('Distance Moved')
-    plt.legend()
-    plt.grid(True)  
-
-    plt.subplot(2, 2, 2)
-    plt.plot(time, agents_total_task_amount_done, label='Total Task Amount Done by Agents')
-    plt.xlabel('Time')
-    plt.ylabel('Task Amount Done')
-    plt.legend()
-    plt.grid(True)  
-
-    plt.subplot(2, 2, 3)
-    plt.plot(time, remaining_tasks, label='The Number of Remaining Tasks')
-    plt.xlabel('Time')
-    plt.ylabel('The Number of Remaining Tasks')
-    plt.legend()
-    plt.grid(True)  
-
-    plt.subplot(2, 2, 4)
-    plt.plot(time, tasks_total_amount_left, label='Total Amount of Tasks')
-    plt.xlabel('Time')
-    plt.ylabel('Tasks Total Amount')
-    plt.legend()
-    plt.grid(True)  
-
-    plt.tight_layout()
-    img_file_path = change_file_extension(csv_file_path, "png")    
-    plt.savefig(img_file_path)
-    plt.show()
-
-def change_file_extension(file_path, new_extension):
-    base, _ = os.path.splitext(file_path)  # Split the file path into base and extension
-    new_file_path = f"{base}.{new_extension}"  # Combine base with new extension
-    return new_file_path
 
 # BT xml
 def parse_behavior_tree(xml_path):
@@ -187,3 +73,120 @@ def merge_dicts(dict1, dict2):
             merged_dict[key] = value
             
     return merged_dict    
+
+
+# Results saving
+class ResultSaver:
+    def __init__(self, config_file_path):
+        self.config_file_path = config_file_path
+        self.result_file_path = self.generate_output_filename()
+
+    def generate_output_filename(self, extension = "csv"):
+        agent_quantity = config['agents']['quantity']
+        task_quantity = config['tasks']['quantity']
+        decision_making_module_path = config['decision_making']['plugin']
+        module_path, class_name = decision_making_module_path.rsplit('.', 1)
+        datetime_now = datetime.datetime.now()
+        current_time_string = datetime_now.strftime("%Y-%m-%d_%H-%M-%S")        
+        
+        current_date_string = datetime.datetime.now().strftime("%Y-%m-%d")
+        output_parent_folder = config['simulation']['saving_options'].get('output_folder', 'output')
+        with_date_subfolder = config['simulation']['saving_options'].get('with_date_subfolder', True)
+        if with_date_subfolder:
+            output_dir = os.path.join(output_parent_folder, current_date_string)       
+        else:
+            output_dir = output_parent_folder        
+        os.makedirs(output_dir, exist_ok=True) 
+        file_path = os.path.join(output_dir, f"{class_name}_{agent_quantity}_agents_{task_quantity}_tasks_{current_time_string}.{extension}")
+
+        return file_path
+
+    def change_file_extension(self, file_path, new_extension):
+        base, _ = os.path.splitext(file_path)  # Split the file path into base and extension
+        new_file_path = f"{base}.{new_extension}"  # Combine base with new extension
+        return new_file_path
+
+
+
+    def save_gif(self, frames):
+        if frames:                  
+            gif_recording_fps = config['simulation']['gif_recording_fps']
+            gif_file_path = self.change_file_extension(self.result_file_path, "gif")
+
+            # Convert pygame surface to PIL Image and save as GIF
+            image_list = []
+            for frame in frames:
+                image = frame.swapaxes(0, 1)  # Swap axes to fix orientation
+                image = Image.fromarray(image)
+                image_list.append(image)
+
+            imageio.mimsave(gif_file_path, image_list, duration=1.0/gif_recording_fps)  # Adjust duration for faster playback                    
+            # imageio.mimsave(gif_file_path, frames)
+            print(f"Saved GIF: {gif_file_path}")            
+
+    def save_yaml(self):
+        # Copy config.yaml to the result directory                 
+        yaml_file_path = self.change_file_extension(self.result_file_path, "yaml")    
+        shutil.copy(self.config_file_path, yaml_file_path)
+        print(f"Copied {self.config_file_path} to: {yaml_file_path}")        
+
+    def save_to_csv(self, time_records, data_records):
+        csv_file_path = self.change_file_extension(self.result_file_path, "csv")    
+
+        # Prepare data for DataFrame
+        df = pd.DataFrame(data_records, columns=['agents_total_distance_moved', 'agents_total_task_amount_done', 'remaining_tasks', 'tasks_total_amount_left'])
+        df.insert(0, 'time', time_records)  # Insert 'time' column at the beginning
+        
+        # Save the DataFrame to a CSV file    
+        df.to_csv(csv_file_path, index=False)    
+            
+        return csv_file_path
+
+    def save_time_series_plot(self, csv_file_path):
+        # Read the CSV file
+        df = pd.read_csv(csv_file_path)
+        
+        # Extract time and data columns
+        time = df['time']
+        agents_total_distance_moved = df['agents_total_distance_moved']
+        agents_total_task_amount_done = df['agents_total_task_amount_done']
+        remaining_tasks = df['remaining_tasks']
+        tasks_total_amount_left = df['tasks_total_amount_left']
+
+
+        plt.figure(figsize=(12, 8))
+
+        plt.subplot(2, 2, 1)
+        plt.plot(time, agents_total_distance_moved, label='Total Distance Moved by Agents')
+        plt.xlabel('Time')
+        plt.ylabel('Distance Moved')
+        plt.legend()
+        plt.grid(True)  
+
+        plt.subplot(2, 2, 2)
+        plt.plot(time, agents_total_task_amount_done, label='Total Task Amount Done by Agents')
+        plt.xlabel('Time')
+        plt.ylabel('Task Amount Done')
+        plt.legend()
+        plt.grid(True)  
+
+        plt.subplot(2, 2, 3)
+        plt.plot(time, remaining_tasks, label='The Number of Remaining Tasks')
+        plt.xlabel('Time')
+        plt.ylabel('The Number of Remaining Tasks')
+        plt.legend()
+        plt.grid(True)  
+
+        plt.subplot(2, 2, 4)
+        plt.plot(time, tasks_total_amount_left, label='Total Amount of Tasks')
+        plt.xlabel('Time')
+        plt.ylabel('Tasks Total Amount')
+        plt.legend()
+        plt.grid(True)  
+
+        plt.tight_layout()
+
+        img_file_path = self.change_file_extension(self.result_file_path, "png")   
+        
+        plt.savefig(img_file_path)
+        plt.show()
