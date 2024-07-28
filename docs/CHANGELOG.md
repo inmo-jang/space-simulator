@@ -1,5 +1,16 @@
 # CHANGELOG.md
 ## Version 1.2.8 (24-07-28)
+### New Features
+
+- **Monte Carlo Runner (`mc_runner.py`)**
+  - To run the Monte Carlo simulations, use the following command:
+    ```bash
+    python mc_runner.py --config=my_config.yaml --num_runs=10
+    ```
+  - This will execute the configuration specified in my_config.yaml 10 times.
+
+
+
 ### Changes
 - **Result Saver (`utils.py`)**
   - Refactored the result-saving functionality into a `ResultSaver` class, and updated the configuration YAML file format accordingly.
@@ -7,6 +18,7 @@
   - Introduced the `save_gif` option to enable recording a GIF of the simulation from the start.
   - Renamed `time_recording_mode` to `save_time_series_plot` for clarity.
   - Added the `save_yaml` option for saving the configuration file used in the simulation.
+  - By default, time-series plot results are saved as a PNG file without displaying them in a new window.
 
 
 ## Version 1.2.7 (24-07-27)

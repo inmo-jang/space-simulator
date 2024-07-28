@@ -235,8 +235,7 @@ async def game_loop():
     # Save time series data
     if save_time_series_plot:        
         csv_file_path = result_saver.save_to_csv(time_records, data_records)          
-        if rendering_mode == "Screen":
-            result_saver.save_time_series_plot(csv_file_path)
+        result_saver.save_time_series_plot(csv_file_path)
     
     # Save yaml 
     if save_yaml:                

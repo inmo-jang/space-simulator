@@ -25,7 +25,7 @@ decision_making: # Case 2
 
 agents:
   behavior_tree_xml: default_bt.xml 
-  quantity: 20
+  quantity: 30
   locations:
     x_min: 0
     x_max: 1400
@@ -67,7 +67,7 @@ simulation:
   gif_recording_fps: 10  
   task_visualisation_factor: 3  # visualization factor for tasks : 10 means converting 10 amount to 1 pixel
   profiling_mode: False
-  rendering_mode: Screen  # Options: Screen; Terminal; None
+  rendering_mode: Terminal  # Options: Screen; Terminal; None
   rendering_options: # Only works if `rendering_mode` is `Screen`
     agent_tail: True
     agent_communication_topology: True
@@ -78,8 +78,8 @@ simulation:
     agent_path_to_assigned_tasks: True
     task_id: False
   saving_options:
-    output_folder: output
-    with_date_subfolder: True
+    output_folder: monte_carlo_results/CBBA/
+    with_date_subfolder: False
     save_gif: True  # Only works if `rendering_mode` is `Screen`
     save_time_series_plot: True    
     save_yaml: True

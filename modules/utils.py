@@ -189,4 +189,4 @@ class ResultSaver:
         img_file_path = self.change_file_extension(self.result_file_path, "png")   
         
         plt.savefig(img_file_path)
-        plt.show()
+        # plt.show()
