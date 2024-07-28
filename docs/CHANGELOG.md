@@ -9,6 +9,15 @@
     ```
   - This will execute the configuration specified in my_config.yaml 10 times.
 
+- **Monte Carlo Analyzer (`mc_analyzer.py`)**
+  - To analyze the Monte Carlo simulation results, use the command:
+    ```bash
+    python mc_analyzer.py --config=mc_comparison.yaml
+    ```
+  - `mc_comparison.yaml` file should contain the following settings:
+    - `cases`: Specifies the directories and filenames (excluding the YYYY-MM-DD date part) where the CSV results are stored.
+    - `labels`: Specifies the names to use as labels in the plots.
+
 
 
 ### Changes

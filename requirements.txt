@@ -4,3 +4,4 @@ pyyaml
 imageio
 pandas
 matplotlib
+seaborn

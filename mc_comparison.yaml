@@ -1,0 +1,7 @@
+cases:
+  - monte_carlo_results/CBBA/CBBA_30_agents_200_tasks
+  - monte_carlo_results/GRAPE/GRAPE_30_agents_200_tasks
+
+labels:
+  - CBBA
+  - GRAPE
