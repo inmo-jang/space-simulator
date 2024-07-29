@@ -1,2 +1,6 @@
 __pycache__
 *.pyc
+
+# Ignore everything under the 'output' folder
+output/
+monte_carlo_analysis/
