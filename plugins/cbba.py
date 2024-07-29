@@ -11,6 +11,7 @@ KEEP_MOVING_DURING_CONVERGENCE = config['decision_making']['CBBA']['execute_move
 MAX_TASKS_PER_AGENT = config['decision_making']['CBBA']['max_tasks_per_agent']
 LAMBDA = config['decision_making']['CBBA']['task_reward_discount_factor']
 WINNGIN_BID_DISCOUNT_FACTOR = config['decision_making']['CBBA']['winngin_bid_discount_factor']
+ENFORCED_COLLABORATION = config['decision_making']['CBBA']['enforced_collaboration']
 SAMPLE_FREQ = config['simulation']['sampling_freq']
 
 class Phase(Enum):
@@ -46,15 +47,10 @@ class CBBA:
             - `task_id`, if task allocation works well
             - `None`, otherwise
         '''        
-        # Give up the decision-making process if there is no task nearby 
         local_tasks_info = self.agent.get_tasks_nearby(with_completed_task=False)
-        if len(local_tasks_info) == 0: 
-            return None
 
         # Check if the existing task is done
         if self.assigned_task is not None and self.assigned_task.completed:
-            if len(self.path) == 0:
-                print(f"agent_id = {self.agent.agent_id}; bundle = {self.bundle}; path = {self.path}; assigned_task_id = {self.assigned_task.task_id}")
             if len(self.path) != 0 and self.path[0] == self.assigned_task:
                 self.path.pop(0)
                 self.bundle.pop(0)
@@ -63,7 +59,16 @@ class CBBA:
 
         if len(self.bundle) == 0:
             self.phase = Phase.BUILD_BUNDLE
+
+        # Give up the decision-making process if there is no task nearby 
+        if len(local_tasks_info) == 0: 
+            return None
             
+        # Given that there is only one task nearby, then enforced to select this
+        if ENFORCED_COLLABORATION and len(local_tasks_info) == 1 and len(self.bundle) == 0:
+            self.assigned_task = local_tasks_info[0] 
+            return self.assigned_task.task_id
+
         # Discount winning bid
         self.discount_winning_bid(WINNGIN_BID_DISCOUNT_FACTOR)
         # Look for a task within situation awareness radius if there is no existing assigned task

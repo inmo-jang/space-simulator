@@ -8,8 +8,9 @@
   - Updated `main.py` to append the suffix `timewise` to time series data and `agentwise` to data by agent.
   - Added `output_folder` to `mc_comparison.yaml` to specify the folder for saving Monte Carlo Analysis results.
 
-- **CBBA Computation Optimization (`cbba.py`)**
+- **CBBA (`cbba.py`)**
   - Reduced `deepcopy` for faster operation. 
+  - Added the `enforced_collaboration` option to prevent idle agents when the number of tasks decreases towards the end of an episode. When `enforced_collaboration` is set to True, agents will collaborate if only one local task remains visible.
 
 - **First Claim Greedy (`greedy.py`)**
   - Renamed `LocalSearch` to `FirstClaimGreedy`.
