@@ -59,6 +59,18 @@ Refer to the configuration guide [CONFIG_GUIDE.md](/docs/CONFIG_GUIDE.md)
 - `P`: Pause/unpause the simulation
 - `R`: Start/stop recording the simulation as a GIF file
 
+### Monte Carlo Analysis
+
+1. Set `my_config.yaml` for your purpose and run the following:
+    ```sh
+    python mc_runner.py --config=my_config.yaml --num_runs=50
+    ``` 
+
+2. Set `mc_comparison.yaml` and run the following:
+    ```sh
+    python mc_analyzer.py
+    ``` 
+
 
 
 ## Code Structure
