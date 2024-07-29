@@ -8,6 +8,8 @@
   - Updated `main.py` to append the suffix `timewise` to time series data and `agentwise` to data by agent.
   - Added `output_folder` to `mc_comparison.yaml` to specify the folder for saving Monte Carlo Analysis results.
 
+- **CBBA Computation Optimization (`cbba.py`)**
+  - Reduced `deepcopy` for faster operation. 
 
 
 ## Version 1.2.8 (24-07-28)

@@ -206,7 +206,7 @@ class CBBA:
                 # _next_assigned_task = next((task for task in self.agent.assigned_tasks if task.completed is False), None)
                 self.assigned_task = self.path[0] if self.path else None
                 
-                return copy.deepcopy(self.assigned_task.task_id) if self.assigned_task is not None else None
+                return self.assigned_task.task_id if self.assigned_task is not None else None
 
             else:
                 self.bundle = updated_bundle
@@ -218,7 +218,7 @@ class CBBA:
         if KEEP_MOVING_DURING_CONVERGENCE:
             # Even though not being converged, let's move to the first task that I prefer to go
             self.assigned_task = self.path[0] if self.path else None
-            return copy.deepcopy(self.assigned_task.task_id) if self.assigned_task is not None else None
+            return self.assigned_task.task_id if self.assigned_task is not None else None
         else:
             return None
     
@@ -332,7 +332,8 @@ class CBBA:
         return my_bid_list, best_insertion_idx_list
     
     def get_alternative_path(self, path, task, idx):
-        _new_path = copy.deepcopy(path)
+        # _new_path = copy.deepcopy(path)
+        _new_path = path[:] # Creates a shallow copy of the list
         try:
             if idx < 0:
                 raise IndexError("Index cannot be negative.")
