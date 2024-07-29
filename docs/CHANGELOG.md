@@ -11,6 +11,11 @@
 - **CBBA Computation Optimization (`cbba.py`)**
   - Reduced `deepcopy` for faster operation. 
 
+- **First Claim Greedy (`greedy.py`)**
+  - Renamed `LocalSearch` to `FirstClaimGreedy`.
+  - Enhanced the task selection mechanism to exclude tasks already claimed by neighboring agents during the local task selection process (That's why it is renamed as `FirstClaimGreedy`) 
+  - Added the `enforced_collaboration` option to prevent idle agents when the number of tasks decreases towards the end of an episode. When `enforced_collaboration` is set to True, agents will collaborate if only one local task remains visible.
+
 
 ## Version 1.2.8 (24-07-28)
 ### New Features
