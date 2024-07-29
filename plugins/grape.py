@@ -52,10 +52,8 @@ class GRAPE:
             - `None`, otherwise
         '''           
 
-        # Give up the decision-making process if there is no task nearby 
+
         _local_tasks_info = self.agent.get_tasks_nearby()
-        if len(_local_tasks_info) == 0: 
-            return None
         
         # Check if the existing task is done        
         if self.assigned_task is not None and self.assigned_task.completed:            
@@ -70,7 +68,9 @@ class GRAPE:
                 self.partition = self.initialize_partition_by_distance(_neighbor_agents_info, _local_tasks_info, self.partition)   
                 self.assigned_task = self.get_assigned_task_from_partition(self.partition)                         
 
-
+        # Give up the decision-making process if there is no task nearby 
+        if len(_local_tasks_info) == 0: 
+            return None
 
             
         # GRAPE algorithm for each agent (Phase 1)        
