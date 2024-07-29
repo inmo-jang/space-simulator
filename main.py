@@ -25,8 +25,9 @@ rendering_mode = config.get('simulation').get('rendering_mode', "Screen")
 rendering_options = config.get('simulation').get('rendering_options', {})
 
 save_gif = config.get('simulation').get('saving_options').get('save_gif', False)
-save_time_series_plot = config.get('simulation').get('saving_options').get('save_time_series_plot', False)
-save_yaml = config.get('simulation').get('saving_options').get('save_yaml', False)
+save_timewise_result_csv = config.get('simulation').get('saving_options').get('save_timewise_result_csv', False)
+save_agentwise_result_csv = config.get('simulation').get('saving_options').get('save_agentwise_result_csv', False)
+save_config_yaml = config.get('simulation').get('saving_options').get('save_config_yaml', False)
 
 # Dynamically import the decision-making module
 decision_making_module_path = config['decision_making']['plugin']
@@ -68,7 +69,6 @@ max_generations = dynamic_task_generation.get('max_generations', 5)
 tasks_per_generation = dynamic_task_generation.get('tasks_per_generation', 5)
 
 # Initialize data recording
-time_records = []
 data_records = []
 result_saver = ResultSaver(args.config)
 
@@ -140,14 +140,14 @@ async def game_loop():
                     print(f"[{simulation_time:.2f}] Added {tasks_per_generation} new tasks: Generation {generation_count}.")
 
             # Record data if time recording mode is enabled
-            if save_time_series_plot:
+            if save_timewise_result_csv:
                 agents_total_distance_moved = sum(agent.distance_moved for agent in agents)
                 agents_total_task_amount_done = sum(agent.task_amount_done for agent in agents)
                 remaining_tasks = len([task for task in tasks if not task.completed])
                 tasks_total_amount_left = sum(task.amount for task in tasks)
-
-                time_records.append(simulation_time)
+                
                 data_records.append([
+                    simulation_time, 
                     agents_total_distance_moved,
                     agents_total_task_amount_done,
                     remaining_tasks,
@@ -233,15 +233,21 @@ async def game_loop():
         result_saver.save_gif(frames)           
 
     # Save time series data
-    if save_time_series_plot:        
-        csv_file_path = result_saver.save_to_csv(time_records, data_records)          
-        result_saver.save_time_series_plot(csv_file_path)
+    if save_timewise_result_csv:        
+        csv_file_path = result_saver.save_to_csv("timewise", data_records, ['time', 'agents_total_distance_moved', 'agents_total_task_amount_done', 'remaining_tasks', 'tasks_total_amount_left'])          
+        result_saver.plot_timewise_result(csv_file_path)
     
+    # Save agent-wise data            
+    if save_agentwise_result_csv:        
+        variables_to_save = ['agent_id', 'task_amount_done', 'distance_moved']
+        agentwise_results = result_saver.get_agentwise_results(agents, variables_to_save)                        
+        csv_file_path = result_saver.save_to_csv('agentwise', agentwise_results, variables_to_save)
+        
+        result_saver.plot_boxplot(csv_file_path, variables_to_save[1:])
+
     # Save yaml 
-    if save_yaml:                
-        result_saver.save_yaml()           
-
-
+    if save_config_yaml:                
+        result_saver.save_config_yaml()    
 
 def main():
     asyncio.run(game_loop())

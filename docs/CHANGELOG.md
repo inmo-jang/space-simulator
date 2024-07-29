@@ -1,4 +1,15 @@
 # CHANGELOG.md
+
+## Version 1.2.9 (24-07-30)
+### Changes
+- **Refactoring Monte Carlo Analyzer (`mc_analyzer.py`) and and Util (`utils.py`)**
+  - Added functionality to aggregate data by agent and generate boxplots of the inequality indices (Gini coefficient) for `task_amount_done` and `distance_moved`.
+  - Refactored `utils.py`: `ResultSaver` now saves episode data to CSV files and `mc_analyzer.py` handles the necessary analysis.
+  - Updated `main.py` to append the suffix `timewise` to time series data and `agentwise` to data by agent.
+  - Added `output_folder` to `mc_comparison.yaml` to specify the folder for saving Monte Carlo Analysis results.
+
+
+
 ## Version 1.2.8 (24-07-28)
 ### New Features
 

@@ -80,8 +80,12 @@ class ResultSaver:
     def __init__(self, config_file_path):
         self.config_file_path = config_file_path
         self.result_file_path = self.generate_output_filename()
+        self.timewise_result_file_path = self.generate_output_filename(additional_keyword="timewise")
+        self.agentwise_result_file_path = self.generate_output_filename(additional_keyword="agentwise")
+        self.df_timewise_result = None
+        self.df_agentwise_result = None
 
-    def generate_output_filename(self, extension = "csv"):
+    def generate_output_filename(self, extension = "csv", additional_keyword = None):
         agent_quantity = config['agents']['quantity']
         task_quantity = config['tasks']['quantity']
         decision_making_module_path = config['decision_making']['plugin']
@@ -97,7 +101,10 @@ class ResultSaver:
         else:
             output_dir = output_parent_folder        
         os.makedirs(output_dir, exist_ok=True) 
-        file_path = os.path.join(output_dir, f"{class_name}_{agent_quantity}_agents_{task_quantity}_tasks_{current_time_string}.{extension}")
+        if additional_keyword == None:
+            file_path = os.path.join(output_dir, f"{class_name}_a{agent_quantity}_t{task_quantity}_{current_time_string}.{extension}")
+        else:
+            file_path = os.path.join(output_dir, f"{class_name}_a{agent_quantity}_t{task_quantity}_{current_time_string}_{additional_keyword}.{extension}")
 
         return file_path
 
@@ -124,25 +131,37 @@ class ResultSaver:
             # imageio.mimsave(gif_file_path, frames)
             print(f"Saved GIF: {gif_file_path}")            
 
-    def save_yaml(self):
+    def save_config_yaml(self):
         # Copy config.yaml to the result directory                 
         yaml_file_path = self.change_file_extension(self.result_file_path, "yaml")    
         shutil.copy(self.config_file_path, yaml_file_path)
         print(f"Copied {self.config_file_path} to: {yaml_file_path}")        
 
-    def save_to_csv(self, time_records, data_records):
-        csv_file_path = self.change_file_extension(self.result_file_path, "csv")    
+    def save_to_csv(self, type, data_records, data_labels):
+        """
+        save list to csv
+        - type: "agentwise" or "timewise" or None
+        - data
+        - label        
+        """
 
         # Prepare data for DataFrame
-        df = pd.DataFrame(data_records, columns=['agents_total_distance_moved', 'agents_total_task_amount_done', 'remaining_tasks', 'tasks_total_amount_left'])
-        df.insert(0, 'time', time_records)  # Insert 'time' column at the beginning
+        df = pd.DataFrame(data_records, columns=data_labels)
+        if type == "agentwise":
+            csv_file_path = self.change_file_extension(self.agentwise_result_file_path, "csv")
+            self.df_timewise_result = df
+        elif type == "timewise":
+            csv_file_path = self.change_file_extension(self.timewise_result_file_path, "csv")
+            self.df_agentwise_result = df
+        else:
+            csv_file_path = self.change_file_extension(self.result_file_path, "csv")
         
         # Save the DataFrame to a CSV file    
         df.to_csv(csv_file_path, index=False)    
             
         return csv_file_path
 
-    def save_time_series_plot(self, csv_file_path):
+    def plot_timewise_result(self, csv_file_path):
         # Read the CSV file
         df = pd.read_csv(csv_file_path)
         
@@ -186,7 +205,57 @@ class ResultSaver:
 
         plt.tight_layout()
 
-        img_file_path = self.change_file_extension(self.result_file_path, "png")   
+        img_file_path = self.change_file_extension(self.timewise_result_file_path, "png")   
         
         plt.savefig(img_file_path)
         # plt.show()
+
+    def plot_boxplot(self, csv_file_path, columns):
+        """
+        Create and save a boxplot for specified columns from a CSV file using subplots.
+        - csv_file_path: Path to the CSV file.
+        - columns: List of column names to plot.
+        - title: Title of the plot.
+        - y_label: Label for the y-axis.
+        - file_name: Name of the file to save the plot.
+        """
+        # Read the CSV file
+        df = pd.read_csv(csv_file_path)
+        
+        # Number of subplots needed
+        num_plots = len(columns)
+        
+        # Create a figure with subplots
+        plt.figure(figsize=(8, 6))
+        # plt.figure(figsize=(15, 5 * num_plots))
+        
+        for i, col in enumerate(columns):
+            plt.subplot(1, num_plots, i + 1)  # Create a subplot for each column
+            plt.boxplot(df[col], patch_artist=True)                        
+            plt.xlabel(col)
+            plt.grid(True)  
+        
+        plt.tight_layout()  # Adjust layout to prevent overlap
+
+        img_file_path = self.change_file_extension(self.agentwise_result_file_path, "png")  
+
+        plt.savefig(img_file_path)
+        plt.close()
+
+   
+    def get_agentwise_results(self, agents, variable_list):
+        """
+        Get results for each agent based on specified attributes.
+
+        Args:
+            agents (list): List of agent objects.
+            variable_list (list): List of attribute names as strings to be included in the results.
+
+        Returns:
+            list: A list of tuples where each tuple contains the values of the specified attributes for an agent.
+        """
+        agentwise_results = [
+            tuple(getattr(agent, variable) for variable in variable_list)
+            for agent in agents
+        ]
+        return agentwise_results    

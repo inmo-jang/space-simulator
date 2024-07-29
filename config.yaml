@@ -2,8 +2,8 @@
 #   plugin: plugins.grape.GRAPE
 #   GRAPE:
 #     execute_movements_during_convergence: True
-#     cost_weight_factor: 0.5
-#     social_inhibition_factor: 100.0
+#     cost_weight_factor: 1.0
+#     social_inhibition_factor: 100
 #     initialize_partition: Distance # Options: None; Distance      
 #     reinitialize_partition_on_completion: Distance # Options: None; Distance; 
 
@@ -78,9 +78,9 @@ simulation:
     agent_path_to_assigned_tasks: True
     task_id: False
   saving_options:
-    output_folder: monte_carlo_results/CBBA/
+    output_folder: monte_carlo_analysis/data/CBBA
     with_date_subfolder: False
-    save_gif: True  # Only works if `rendering_mode` is `Screen`
-    save_time_series_plot: True    
-    save_yaml: True
-
+    save_gif: False  # Only works if `rendering_mode` is `Screen`
+    save_timewise_result_csv: True    
+    save_agentwise_result_csv: True
+    save_config_yaml: True
