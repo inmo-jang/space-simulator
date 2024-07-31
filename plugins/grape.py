@@ -52,8 +52,7 @@ class GRAPE:
             - `None`, otherwise
         '''           
 
-
-        _local_tasks_info = self.agent.get_tasks_nearby()
+        _local_tasks_info = blackboard['local_tasks_info']
         
         # Check if the existing task is done        
         if self.assigned_task is not None and self.assigned_task.completed:            

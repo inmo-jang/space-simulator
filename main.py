@@ -120,7 +120,6 @@ async def game_loop():
             # Run behavior trees for each agent without rendering
             for agent in agents:
                 await agent.run_tree()    
-                agent.local_broadcast(agents)
                 agent.update()
 
             # Status retrieval

@@ -1,13 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <root BTCPP_format="4">
   <BehaviorTree ID="spade-simulator">
-    <Fallback>
-      <Sequence>
-        <DecisionMakingNode/>
-        <TaskExecutingNode/>
-      </Sequence>
-      <ExplorationNode/>
-    </Fallback>
+    <Sequence>
+      <LocalSensingNode/>
+      <Fallback>
+        <Sequence>
+          <DecisionMakingNode/>
+          <TaskExecutingNode/>
+        </Sequence>
+        <ExplorationNode/>
+      </Fallback>
+    </Sequence>
   </BehaviorTree>
 
   <!-- Description of Node Models (used by Groot) -->
@@ -15,6 +18,8 @@
     <Action ID="DecisionMakingNode"
             editable="true"/>
     <Action ID="ExplorationNode"
+            editable="true"/>
+    <Action ID="LocalSensingNode"
             editable="true"/>
     <Action ID="TaskExecutingNode"
             editable="true"/>

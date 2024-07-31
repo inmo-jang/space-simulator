@@ -9,6 +9,7 @@ class BehaviorTreeList:
     ]
 
     ACTION_NODES = [
+        'LocalSensingNode',
         'DecisionMakingNode',
         'TaskExecutingNode',
         'ExplorationNode'
@@ -85,6 +86,17 @@ module_path, class_name = decision_making_module_path.rsplit('.', 1)
 decision_making_module = importlib.import_module(module_path)
 decision_making_class = getattr(decision_making_module, class_name)
 
+# Local Sensing node
+class LocalSensingNode(SyncAction):
+    def __init__(self, name, agent):
+        super().__init__(name, self._local_sensing)
+
+    def _local_sensing(self, agent, blackboard):        
+        blackboard['local_tasks_info'] = agent.get_tasks_nearby(with_completed_task = False)
+        blackboard['local_agents_info'] = agent.local_broadcast()
+
+        return Status.SUCCESS
+    
 # Decision-making node
 class DecisionMakingNode(SyncAction):
     def __init__(self, name, agent):
@@ -116,10 +128,10 @@ class TaskExecutingNode(SyncAction):
             
             assigned_task_id = blackboard.get('assigned_task_id')
             if distance < agent.tasks_info[assigned_task_id].radius + target_arrive_threshold: # Agent reached the task position                                
+                if agent.tasks_info[assigned_task_id].completed:  # 이렇게 먼저 해줘야 중복해서 task_amount_done이 올라가지 않는다.                  
+                    return Status.SUCCESS
                 agent.tasks_info[assigned_task_id].reduce_amount(agent.work_rate)
                 agent.update_task_amount_done(agent.work_rate)  # Update the amount of task done                
-                if agent.tasks_info[assigned_task_id].completed:                    
-                    return Status.SUCCESS
 
             # Move towards the task position
             agent.follow(next_waypoint)

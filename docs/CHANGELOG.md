@@ -1,4 +1,9 @@
 # CHANGELOG.md
+## Version 1.2.10 (24-07-31)
+### Changes
+- **Behavior Tree (`behavior_tree.py`)**
+  - Added `LocalSensingNode` and moved local sensing functionalities (e.g., `get_tasks_nearby()`) from `main.py` and `DecisionMakingNode` to this new node.
+
 
 ## Version 1.2.9 (24-07-30)
 ### Changes
