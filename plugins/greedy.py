@@ -17,7 +17,7 @@ class FirstClaimGreedy: # Task selection within each agent's `situation_awarenes
             - `task_id`, if task allocation works well
             - `None`, otherwise
         '''        
-        local_tasks_info = self.agent.get_tasks_nearby(with_completed_task=False)
+        local_tasks_info = blackboard['local_tasks_info']
         
         # Check if the existing task is done
         if self.assigned_task is not None and self.assigned_task.completed:
@@ -71,7 +71,7 @@ class FirstClaimGreedy: # Task selection within each agent's `situation_awarenes
     def filter_unassigned_tasks_from_neighbor_messages(self, tasks_info):
         occupied_tasks_id = []
         for message in self.agent.messages_received:
-            occupied_tasks_id.append(message['assigned_task_id'])
+            occupied_tasks_id.append(message.get('assigned_task_id'))
 
         unassigned_tasks = [task for task in tasks_info if task.task_id not in occupied_tasks_id]        
 

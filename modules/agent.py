@@ -40,7 +40,7 @@ class Agent:
         self.communication_radius = agent_communication_radius
         self.situation_awareness_radius = agent_situation_awareness_radius
         self.agents_nearby = []
-        self.message_to_share = None
+        self.message_to_share = {}
         self.messages_received = []
 
         self.assigned_task_id = None         # Local decision-making result.
