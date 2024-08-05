@@ -1,4 +1,13 @@
 # CHANGELOG.md
+
+## Version 1.2.11 (24-08-05)
+### Changes
+- **Winning Bids Canceling to CBBA (`cbba.py`)**
+  - Removed the `enforced_collaboration` option as it had no effect.
+  - Added the `winning_bid_cancel` option: If an agent is aware of local tasks but fails to form a bundle (repeatedly over the simulator's sampling frequency), it will cancel the winning bid.
+  - Bug fixes: Ensured that if bundle convergence is not achieved, the robot movement is definitely stopped (`self.agent.reset_movement()`).
+
+
 ## Version 1.2.10 (24-07-31)
 ### Changes
 - **Behavior Tree (`behavior_tree.py`)**

@@ -11,10 +11,9 @@ decision_making: # Case 2
   plugin: plugins.cbba.CBBA
   CBBA:  
     max_tasks_per_agent: 5 
-    execute_movements_during_convergence: True    
+    execute_movements_during_convergence: False    
     task_reward_discount_factor: 0.999 
-    winngin_bid_discount_factor: 1.0 # Note: 1 is default. This factor might be required to be less than 1 for dynamic task generation scenario. 
-    
+    winning_bid_cancel: True
 
 # decision_making: # Case 3
 #   plugin: plugins.simple.LocalSearch
@@ -60,7 +59,7 @@ tasks:
     tasks_per_generation: 50
 
 simulation:
-  sampling_freq: 60.0
+  sampling_freq: 20.0
   agent_track_size: 100  
   screen_width: 1400 
   screen_height: 1000 
@@ -78,8 +77,8 @@ simulation:
     agent_path_to_assigned_tasks: True
     task_id: False
   saving_options:
-    output_folder: monte_carlo_analysis/data/CBBA
-    with_date_subfolder: False
+    output_folder: output
+    with_date_subfolder: True
     save_gif: False  # Only works if `rendering_mode` is `Screen`
     save_timewise_result_csv: True    
     save_agentwise_result_csv: True

@@ -10,8 +10,7 @@ from modules.utils import merge_dicts
 KEEP_MOVING_DURING_CONVERGENCE = config['decision_making']['CBBA']['execute_movements_during_convergence']
 MAX_TASKS_PER_AGENT = config['decision_making']['CBBA']['max_tasks_per_agent']
 LAMBDA = config['decision_making']['CBBA']['task_reward_discount_factor']
-WINNGIN_BID_DISCOUNT_FACTOR = config['decision_making']['CBBA']['winngin_bid_discount_factor']
-ENFORCED_COLLABORATION = config['decision_making']['CBBA']['enforced_collaboration']
+WINNING_BID_CANCEL = config['decision_making']['CBBA']['winning_bid_cancel']
 SAMPLE_FREQ = config['simulation']['sampling_freq']
 
 class Phase(Enum):
@@ -39,6 +38,7 @@ class CBBA:
         
         
         self.assigned_task = None
+        self.no_bundle_count = 0
 
     def decide(self, blackboard):
         # Place your decision-making code for each agent
@@ -47,7 +47,7 @@ class CBBA:
             - `task_id`, if task allocation works well
             - `None`, otherwise
         '''        
-        local_tasks_info = self.agent.get_tasks_nearby(with_completed_task=False)
+        local_tasks_info = blackboard['local_tasks_info']
 
         # Check if the existing task is done
         if self.assigned_task is not None and self.assigned_task.completed:
@@ -63,14 +63,19 @@ class CBBA:
         # Give up the decision-making process if there is no task nearby 
         if len(local_tasks_info) == 0: 
             return None
-            
-        # Given that there is only one task nearby, then enforced to select this
-        if ENFORCED_COLLABORATION and len(local_tasks_info) == 1 and len(self.bundle) == 0:
-            self.assigned_task = local_tasks_info[0] 
-            return self.assigned_task.task_id
+        
+        # Neutralize all the winning bid information if there are local tasks nearby but the agent cannot choose any of them for a certain period
+        if WINNING_BID_CANCEL:
+            if len(self.bundle) == 0:
+                self.no_bundle_count += 1                   
 
-        # Discount winning bid
-        self.discount_winning_bid(WINNGIN_BID_DISCOUNT_FACTOR)
+            if self.no_bundle_count > SAMPLE_FREQ:
+                # Neutralize
+                self.z = {} 
+                self.y = {} 
+                self.s = {}                  
+                self.no_bundle_count = 0         
+
         # Look for a task within situation awareness radius if there is no existing assigned task
         # if self.assigned_task is None:
         if self.phase == Phase.BUILD_BUNDLE:
@@ -86,6 +91,7 @@ class CBBA:
             
             self.phase = Phase.ASSIGNMENT_CONSENSUS
             self.agent.set_planned_tasks(self.path) # For visualisation
+            self.assigned_task = None   # 아직 consensus 안된거니까 None 이라고 해줘야함
             return None
         
         if self.phase == Phase.ASSIGNMENT_CONSENSUS:
@@ -204,6 +210,9 @@ class CBBA:
             
             # Reset Message
             self.agent.reset_messages_received()
+            if WINNING_BID_CANCEL:
+                if len(updated_bundle) > 0:
+                    self.no_bundle_count = 0
 
             if updated_bundle == self.bundle: # NOTE: 원래 모든 agents가 다 converge할 때까지 기다려야하는데, 분산화 현실성상 진행
                 # Converged!
@@ -225,6 +234,7 @@ class CBBA:
             self.assigned_task = self.path[0] if self.path else None
             return self.assigned_task.task_id if self.assigned_task is not None else None
         else:
+            self.agent.reset_movement()  # Neutralise the agent's current movement during converging to a consensus
             return None
     
     def _update(self, task_id, y_k, z_k):
@@ -251,8 +261,6 @@ class CBBA:
 
         return _bundle, _path
 
-    def discount_winning_bid(self, discount_factor = 0.999):
-        return {key: value * discount_factor for key, value in self.y.items()}
         
 
 
@@ -382,8 +390,8 @@ class CBBA:
             next_position = pygame.Vector2(task.position)
             distance_to_next_task_from_start += current_position.distance_to(next_position)
             # Time-discounted reward
-            # expected_reward_from_task_task += LAMBDA**(distance_to_next_task_from_start/self.agent.max_speed + task.amount/self.agent.work_rate)*task.amount            
-            expected_reward_from_task_task += (task.amount - (distance_to_next_task_from_start/self.agent.max_speed + task.amount/self.agent.work_rate))
+            expected_reward_from_task_task += LAMBDA**(distance_to_next_task_from_start/self.agent.max_speed + task.amount/self.agent.work_rate)*task.amount            
+            # expected_reward_from_task_task += (task.amount - (distance_to_next_task_from_start/self.agent.max_speed + task.amount/self.agent.work_rate))
             current_position = next_position
 
         return expected_reward_from_task_task
