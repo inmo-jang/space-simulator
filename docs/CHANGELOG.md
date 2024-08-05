@@ -7,6 +7,8 @@
   - Added the `winning_bid_cancel` option: If an agent is aware of local tasks but fails to form a bundle (repeatedly over the simulator's sampling frequency), it will cancel the winning bid.
   - Bug fixes: Ensured that if bundle convergence is not achieved, the robot movement is definitely stopped (`self.agent.reset_movement()`).
 
+- **Support for Multiple Configuration Files in Monte Carlo Runner (`mc_runner.py`)**
+  - Modified to read `mc_runner.yaml` and perform Monte Carlo Tests for the corresponding cases all at once. Previously, only one `config.yaml` could be used for Monte Carlo Tests. Now, multiple configurations can be set and executed at once.
 
 ## Version 1.2.10 (24-07-31)
 ### Changes
