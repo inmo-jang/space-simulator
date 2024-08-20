@@ -60,6 +60,8 @@ tasks:
 
 simulation:
   sampling_freq: 20.0
+  speed_up_factor: 0 # 0 mean max booster; 1 means normal; 10 means 10-times faster
+  max_simulation_time: 8000 # 0 means no limit  
   agent_track_size: 100  
   screen_width: 1400 
   screen_height: 1000 
