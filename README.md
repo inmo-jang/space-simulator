@@ -11,6 +11,12 @@ By integrating your custom decision-making algorithms as plugins, SPADE enables 
 
 - Example: (Left) `num_agents = 100`, `num_tasks = 300`; (Right) `num_agents = 1000`, `num_tasks = 3000`
 
+<div style="display: flex; flex-direction: row;">
+    <img src="output/2024-07-27/GRAPE_30_agents_200_tasks_2024-07-27_01-35-35.gif" alt="GIF" width="400" height="300">
+    <img src="output/2024-07-27/CBBA_30_agents_200_tasks_2024-07-27_01-34-05.gif" alt="GIF" width="400" height="300">
+</div>
+
+- Example: (Left) `GRAPE`; (Right) `CBBA`; (Common) `num_agents = 30`, `num_tasks = 200 (static); 50 x 3 times (dynamic)`
 
 
 ## Features
