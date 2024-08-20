@@ -1,4 +1,4 @@
-# SPADE (Swarm Planning And Decision Evaluation) Simulator
+# SPADE (Swarm Planning And Decision-making Evaluation) Simulator
 
 **SPADE** Simulator is a pygame-based application for simulating decentralized agent behavior using behavior trees. 
 By integrating your custom decision-making algorithms as plugins, SPADE enables rigorous testing and comparative analysis against pre-existing algorithms. 
