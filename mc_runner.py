@@ -9,7 +9,7 @@ def run_simulation(config_file):
     command = f"python main.py --config={config_file}"
     try:
         result = subprocess.run(command, shell=True, capture_output=True, text=True, check=True)
-        print(result.stdout)  # Output the result for debugging or logging
+        # print(result.stdout)  # Output the result for debugging or logging
     except subprocess.CalledProcessError as e:
         print(f"Error during simulation: {e.stderr}")  # Output the error for debugging or logging
 

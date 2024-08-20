@@ -12,6 +12,12 @@
   - Modified the `winning_bid_cancel` option based on simulation time; and renamed its parameter to `acceptable_empty_bundle_duration` 
 
 
+- **Changed how to use `mc_runner.py`**
+  - Updated usage for `mc_runner.py`: Now, to run multiple configurations simultaneously, list the desired configuration file names under `cases` and set `num_runs` in `mc_runner.yaml`. Then, execute the following command:  
+  ```bash
+  python mc_runner.py --config=mc_runner.yaml
+  ```
+
 
 ## Version 1.2.11 (24-08-05)
 ### Changes

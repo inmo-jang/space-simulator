@@ -61,9 +61,9 @@ Refer to the configuration guide [CONFIG_GUIDE.md](/docs/CONFIG_GUIDE.md)
 
 ### Monte Carlo Analysis
 
-1. Set `my_config.yaml` for your purpose and run the following:
+1. Set `mc_runner.yaml` for your purpose and run the following:
     ```sh
-    python mc_runner.py --config=my_config.yaml --num_runs=50
+    python mc_runner.py
     ``` 
 
 2. Set `mc_comparison.yaml` and run the following:

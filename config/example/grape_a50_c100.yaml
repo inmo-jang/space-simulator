@@ -1,0 +1,73 @@
+decision_making: # Case 1
+  plugin: plugins.grape.GRAPE
+  GRAPE:
+    execute_movements_during_convergence: False
+    cost_weight_factor: 1.0
+    social_inhibition_factor: 100
+    initialize_partition: Distance # Options: None; Distance      
+    reinitialize_partition_on_completion: Distance # Options: None; Distance; 
+
+
+agents:
+  behavior_tree_xml: default_bt.xml 
+  quantity: 50
+  locations:
+    x_min: 0
+    x_max: 1400
+    y_min: 0
+    y_max: 1000
+    non_overlap_radius: 0 
+  max_speed: 0.25  
+  max_accel: 0.05
+  max_angular_speed: 0.25
+  target_approaching_radius: 50
+  work_rate: 1  # work rate for each agent (per 1.0/simulation.sampling_freq)
+  communication_radius: 100 # 0 represents "global", meaning that each agent can access to the information of all the other agents
+  situation_awareness_radius: 300 # 0 represents "global", meaning that each agent can access to the information of all the tasks
+  random_exploration_duration: 1000.0 # sec
+
+tasks:
+  quantity: 250
+  locations:
+    x_min: 0
+    x_max: 1400
+    y_min: 0
+    y_max: 1000
+    non_overlap_radius: 0
+  threshold_done_by_arrival: 10.0
+  amounts:  # Added amounts range for tasks
+    min: 6.0
+    max: 60.0      
+  dynamic_task_generation:
+    enabled: True
+    interval_seconds: 1000
+    max_generations: 3
+    tasks_per_generation: 50
+
+simulation:
+  sampling_freq: 1.0 
+  speed_up_factor: 0 # 0 mean max booster; 1 means normal; 10 means 10-times faster
+  max_simulation_time: 8000 # 0 means no limit
+  agent_track_size: 400  
+  screen_width: 1400 
+  screen_height: 1000 
+  gif_recording_fps: 10  
+  task_visualisation_factor: 3  # visualization factor for tasks : 10 means converting 10 amount to 1 pixel
+  profiling_mode: False
+  rendering_mode: Terminal  # Options: Screen; Terminal; None
+  rendering_options: # Only works if `rendering_mode` is `Screen`
+    agent_tail: True
+    agent_communication_topology: True
+    agent_situation_awareness_circle: False
+    agent_id: True
+    agent_work_done: True
+    agent_assigned_task_id: True
+    agent_path_to_assigned_tasks: True
+    task_id: False
+  saving_options:
+    output_folder: monte_carlo_analysis/data/example/c100_s300/GRAPE
+    with_date_subfolder: False
+    save_gif: False  # Only works if `rendering_mode` is `Screen`
+    save_timewise_result_csv: True    
+    save_agentwise_result_csv: True
+    save_config_yaml: True
