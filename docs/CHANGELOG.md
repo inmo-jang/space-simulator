@@ -27,6 +27,10 @@
 - **Refactored `my_decision_making_plugin.py`**
   - Refactored based on usecases of GRAPE and CBBA
 
+- **Decision-Making Plugins Restructured**
+  - Moved each decision-making plugin into its own subfolder, each accompanied by a README.md for detailed descriptions. 
+
+
 ## Version 1.2.11 (24-08-05)
 ### Changes
 - **Winning Bids Canceling to CBBA (`cbba.py`)**

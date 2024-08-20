@@ -1,5 +1,5 @@
 decision_making:
-  plugin: plugins.grape.GRAPE
+  plugin: plugins.grape.grape.GRAPE
   GRAPE:
     global_situational_awareness: True
     execute_movements_during_convergence: False

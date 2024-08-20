@@ -1,5 +1,5 @@
 decision_making: # Case 3
-  plugin: plugins.greedy.FirstClaimGreedy
+  plugin: plugins.greedy.greedy.FirstClaimGreedy
   FirstClaimGreedy:  
     mode: MinDist  # Options: Random; MinDist; MaxUtil
     weight_factor_cost: 10000.0 # Only used for `MaxUtil` mode

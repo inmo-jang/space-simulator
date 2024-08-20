@@ -1,5 +1,5 @@
 decision_making: # Case 2
-  plugin: plugins.cbba.CBBA
+  plugin: plugins.cbba.cbba.CBBA
   CBBA:  
     max_tasks_per_agent: 5 
     execute_movements_during_convergence: False    
