@@ -4,3 +4,6 @@ __pycache__
 # Ignore everything under the 'output' folder
 output/
 monte_carlo_analysis/
+
+# Ignore BT-related auto-generated file
+*.btproj
