@@ -108,13 +108,13 @@ class Agent:
 
     def update(self):
         # Update velocity and position
-        self.velocity += self.acceleration
+        self.velocity += self.acceleration * sampling_time
         self.velocity = self.limit(self.velocity, self.max_speed)
-        self.position += self.velocity
+        self.position += self.velocity * sampling_time
         self.acceleration *= 0  # Reset acceleration
 
         # Calculate the distance moved in this update and add to distance_moved
-        self.distance_moved += self.velocity.length()
+        self.distance_moved += self.velocity.length() * sampling_time
         # Memory of positions to draw track
         self.memory_location.append((self.position.x, self.position.y))
         if len(self.memory_location) > agent_track_size:
@@ -132,7 +132,7 @@ class Agent:
         if abs(rotation_diff) > self.max_angular_speed:
             rotation_diff = math.copysign(self.max_angular_speed, rotation_diff)
 
-        self.rotation += rotation_diff
+        self.rotation += rotation_diff * sampling_time
 
     def reset_movement(self):
         self.velocity = pygame.Vector2(0, 0)

@@ -7,6 +7,8 @@ tasks_per_generation = dynamic_task_generation.get('tasks_per_generation', 0) if
 
 task_colors = generate_task_colors(config['tasks']['quantity'] + tasks_per_generation*max_generations)
 
+sampling_freq = config['simulation']['sampling_freq']
+sampling_time = 1.0 / sampling_freq  # in seconds
 class Task:
     def __init__(self, task_id, position):
         self.task_id = task_id
@@ -20,7 +22,7 @@ class Task:
         self.completed = True
 
     def reduce_amount(self, work_rate):
-        self.amount -= work_rate
+        self.amount -= work_rate * sampling_time
         if self.amount <= 0:
             self.set_done()
 
