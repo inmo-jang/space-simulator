@@ -1,5 +1,5 @@
 from modules.utils import config
-MY_PARAMETER = config['decision_making']['my_decision_making_plugin']['my_parameter']
+# MY_PARAMETER = config['decision_making']['my_decision_making_plugin']['my_parameter']
 
 # Define decision-making class
 class MyDecisionMakingClass:
