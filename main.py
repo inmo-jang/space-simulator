@@ -7,7 +7,7 @@ import importlib
 from modules.utils import pre_render_text, set_config, ResultSaver
 
 # Parse command line arguments
-parser = argparse.ArgumentParser(description='SPADE (Swarm Planning And Decision Evalution) Simulator')
+parser = argparse.ArgumentParser(description='SPADE (Swarm Planning And Decision-making Evalution) Simulator')
 parser.add_argument('--config', type=str, default='config.yaml', help='Path to the configuration file (default: --config=config.yaml)')
 args = parser.parse_args()
 
@@ -44,13 +44,14 @@ else:
     screen = None  # No screen initialization if rendering is disabled
 
 # screen = pygame.display.set_mode((screen_width, screen_height), pygame.RESIZABLE)
-background_color = (173, 255, 47)
+# background_color = (173, 255, 47)
+background_color = (224, 224, 224)
 
 # Set logo and title
 logo_image_path = 'assets/logo.jpg'  # Change to the path of your logo image
 logo = pygame.image.load(logo_image_path)
 pygame.display.set_icon(logo)
-pygame.display.set_caption('SPADE(Swarm Planning And Decision Evaluation) Simulator')  # Change to your desired game title
+pygame.display.set_caption('SPADE(Swarm Planning And Decision-making Evaluation) Simulator')  # Change to your desired game title
 
 # Initialize tasks
 from modules.task import generate_tasks
@@ -162,11 +163,7 @@ async def game_loop():
             if rendering_mode == "Screen":
                 screen.fill(background_color)
 
-                # Draw tasks with task_id displayed
-                for task in tasks:
-                    task.draw(screen)
-                    if rendering_options.get('task_id'): # Draw each task's ID
-                        task.draw_task_id(screen)
+
 
                 # Draw agents network topology
                 if rendering_options.get('agent_communication_topology'):
@@ -174,8 +171,9 @@ async def game_loop():
                         agent.draw_communication_topology(screen, agents)
 
                 # Draw agents
-                for agent in agents:
-                    agent.draw(screen)
+                for agent in agents:                    
+                    if rendering_options.get('agent_path_to_assigned_tasks'): # Draw each agent's path to its assigned tasks
+                        agent.draw_path_to_assigned_tasks(screen)                    
                     if rendering_options.get('agent_tail'): # Draw each agent's trajectory tail
                         agent.draw_tail(screen)
                     if rendering_options.get('agent_id'): # Draw each agent's ID
@@ -186,12 +184,18 @@ async def game_loop():
                         agent.draw_work_done(screen)
                     if rendering_options.get('agent_situation_awareness_circle'): # Draw each agent's situation awareness radius circle    
                         agent.draw_situation_awareness_circle(screen)
-                    if rendering_options.get('agent_path_to_assigned_tasks'): # Draw each agent's path to its assigned tasks
-                        agent.draw_path_to_assigned_tasks(screen)
+                    agent.draw(screen)
+
+                # Draw tasks with task_id displayed
+                for task in tasks:
+                    task.draw(screen)
+                    if rendering_options.get('task_id'): # Draw each task's ID
+                        task.draw_task_id(screen)
+                        
 
                 # Display task quantity and elapsed simulation time                
-                task_time_text = pre_render_text(f'Tasks left: {tasks_left} Time: {simulation_time:.2f}s', 36, (0, 0, 0))
-                screen.blit(task_time_text, (screen_width - 300, 20))
+                task_time_text = pre_render_text(f'Tasks left: {tasks_left}; Time: {simulation_time:.2f}s', 36, (0, 0, 0))
+                screen.blit(task_time_text, (screen_width - 350, 20))
 
                 # Call draw_decision_making_status from the imported module if it exists
                 if hasattr(decision_making_module, 'draw_decision_making_status'):
