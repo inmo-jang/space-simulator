@@ -11,7 +11,9 @@ KEEP_MOVING_DURING_CONVERGENCE = config['decision_making']['CBBA']['execute_move
 MAX_TASKS_PER_AGENT = config['decision_making']['CBBA']['max_tasks_per_agent']
 LAMBDA = config['decision_making']['CBBA']['task_reward_discount_factor']
 WINNING_BID_CANCEL = config['decision_making']['CBBA']['winning_bid_cancel']
+NO_BUNDLE_DURATION = config['decision_making']['CBBA']['acceptable_empty_bundle_duration']
 SAMPLE_FREQ = config['simulation']['sampling_freq']
+SAMPLE_TIME = 1.0 / SAMPLE_FREQ  # in seconds
 
 class Phase(Enum):
     BUILD_BUNDLE = 1
@@ -38,7 +40,7 @@ class CBBA:
         
         
         self.assigned_task = None
-        self.no_bundle_count = 0
+        self.no_bundle_duration = 0
 
     def decide(self, blackboard):
         # Place your decision-making code for each agent
@@ -67,14 +69,14 @@ class CBBA:
         # Neutralize all the winning bid information if there are local tasks nearby but the agent cannot choose any of them for a certain period
         if WINNING_BID_CANCEL:
             if len(self.bundle) == 0:
-                self.no_bundle_count += 1                   
+                self.no_bundle_duration += SAMPLE_TIME                   
 
-            if self.no_bundle_count > SAMPLE_FREQ:
+            if self.no_bundle_duration > NO_BUNDLE_DURATION:
                 # Neutralize
                 self.z = {} 
                 self.y = {} 
                 self.s = {}                  
-                self.no_bundle_count = 0         
+                self.no_bundle_duration = 0         
 
         # Look for a task within situation awareness radius if there is no existing assigned task
         # if self.assigned_task is None:
@@ -212,7 +214,7 @@ class CBBA:
             self.agent.reset_messages_received()
             if WINNING_BID_CANCEL:
                 if len(updated_bundle) > 0:
-                    self.no_bundle_count = 0
+                    self.no_bundle_duration = 0
 
             if updated_bundle == self.bundle: # NOTE: 원래 모든 agents가 다 converge할 때까지 기다려야하는데, 분산화 현실성상 진행
                 # Converged!

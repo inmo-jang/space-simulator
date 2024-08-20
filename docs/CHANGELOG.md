@@ -8,6 +8,11 @@
   - Added a `speed_up_factor` option in `config.yaml` to allow simulations to run faster than real-time.
   - Introduced `max_simulation_time` to terminate the simulation after a specified duration.
 
+- **Winning Bids Canceling to CBBA (`cbba.py`)**
+  - Modified the `winning_bid_cancel` option based on simulation time; and renamed its parameter to `acceptable_empty_bundle_duration` 
+
+
+
 ## Version 1.2.11 (24-08-05)
 ### Changes
 - **Winning Bids Canceling to CBBA (`cbba.py`)**

@@ -14,6 +14,7 @@ decision_making: # Case 2
     execute_movements_during_convergence: False    
     task_reward_discount_factor: 0.999 
     winning_bid_cancel: True
+    acceptable_empty_bundle_duration: 500 # sec
 
 # decision_making: # Case 3
 #   plugin: plugins.simple.LocalSearch
