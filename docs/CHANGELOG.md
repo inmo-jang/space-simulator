@@ -1,5 +1,10 @@
 # CHANGELOG.md
 
+## Version 1.2.12 (24-08-20)
+### Changes
+- Removed `local_broadcast()` and replaced it with `local_message_receive()`.
+
+
 ## Version 1.2.11 (24-08-05)
 ### Changes
 - **Winning Bids Canceling to CBBA (`cbba.py`)**

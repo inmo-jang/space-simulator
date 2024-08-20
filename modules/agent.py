@@ -144,12 +144,13 @@ class Agent:
             vector.scale_to_length(max_value)
         return vector
 
-    def local_broadcast(self):
+    def local_message_receive(self):
         self.agents_nearby = self.get_agents_nearby()
         for other_agent in self.agents_nearby:
             if other_agent.agent_id != self.agent_id:                         
-                other_agent.receive_message(self.message_to_share)                          
-        
+                self.receive_message(other_agent.message_to_share)
+                # other_agent.receive_message(self.message_to_share)                          
+
         return self.agents_nearby
 
 

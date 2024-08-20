@@ -93,7 +93,7 @@ class LocalSensingNode(SyncAction):
 
     def _local_sensing(self, agent, blackboard):        
         blackboard['local_tasks_info'] = agent.get_tasks_nearby(with_completed_task = False)
-        blackboard['local_agents_info'] = agent.local_broadcast()
+        blackboard['local_agents_info'] = agent.local_message_receive()
 
         return Status.SUCCESS
     
