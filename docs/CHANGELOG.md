@@ -2,10 +2,11 @@
 
 ## Version 1.2.12 (24-08-20)
 ### Changes
-- Removed `local_broadcast()` and replaced it with `local_message_receive()`.
-- Updated agent movement in the simulation to be based on per second rather than per loop.
-- Added a `speed_up_factor` option in `config.yaml` to allow simulations to run faster than real-time.
-- Introduced `max_simulation_time` to terminate the simulation after a specified duration.
+- **Simulation**
+  - Removed `local_broadcast()` and replaced it with `local_message_receive()`.
+  - Updated agent movement in the simulation to be based on per second rather than per loop.
+  - Added a `speed_up_factor` option in `config.yaml` to allow simulations to run faster than real-time.
+  - Introduced `max_simulation_time` to terminate the simulation after a specified duration.
 
 ## Version 1.2.11 (24-08-05)
 ### Changes
