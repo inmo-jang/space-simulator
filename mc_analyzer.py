@@ -3,14 +3,18 @@ import glob
 import os
 import argparse
 import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 import seaborn as sns
 import yaml
+import numpy as np
 
 class MonteCarloAnalyzer:
     def __init__(self, config_path):
         self.config = self.load_config(config_path)
         self.output_folder = self.config['output_folder']
-        self.case_names = self.config['labels']
+        self.case_names = self.config['cases']
+        self.xticklabels = self.config['xticklabels']
+        self.colors = self.config.get('colors', [])  # Load colors from YAML config        
         os.makedirs(self.output_folder, exist_ok=True)
 
     def load_config(self, config_path):
@@ -77,6 +81,10 @@ class MonteCarloAnalyzer:
         """Perform agentwise data analysis."""
         gini_coeff_task_amount_done = []
         gini_coeff_distance_moved = []
+        average_task_amount_done_per_agent = []
+        average_distance_moved_per_agent = []
+        std_task_amount_done = []
+        std_distance_moved = []
         
         for data in data_list:
             task_amount_done = data['task_amount_done'].tolist()
@@ -87,18 +95,54 @@ class MonteCarloAnalyzer:
             
             gini_coeff_task_amount_done.append(gini_task)
             gini_coeff_distance_moved.append(gini_distance)
+
+            average_task_amount_done_per_agent.append(sum(task_amount_done)/len(task_amount_done))
+            average_distance_moved_per_agent.append(sum(distance_moved)/len(distance_moved))
+
+            std_task_amount_done.append(np.std(task_amount_done)/np.mean(task_amount_done))
+            std_distance_moved.append(np.std(distance_moved)/np.mean(distance_moved))
         
         return {"gini_coeff_task_amount_done": gini_coeff_task_amount_done, 
-                "gini_coeff_distance_moved": gini_coeff_distance_moved}
+                "gini_coeff_distance_moved": gini_coeff_distance_moved, 
+                "average_task_amount_done_per_agent": average_task_amount_done_per_agent, 
+                "average_distance_moved_per_agent": average_distance_moved_per_agent, 
+                "std_task_amount_done": std_task_amount_done, 
+                "std_distance_moved": std_distance_moved
+                }
 
-    def plot_box_plots(self, data, labels, title, ylabel, filename):
+    def plot_box_plots(self, data, xticklabels, title, ylabel, filename, ylim = None):
         """Plot and save box plots."""
-        plt.figure(figsize=(10, 6))
-        sns.boxplot(data=data)
-        plt.xticks(range(len(labels)), labels)
-        plt.title(title)
-        plt.ylabel(ylabel)
-        plt.savefig(os.path.join(self.output_folder, filename))
+        plt.figure(figsize=(6, 3))
+
+        color_map = plt.get_cmap('tab10')  # Choose a color map (or any other you prefer)
+
+
+        box_plot = sns.boxplot(data=data, width=0.5, palette=[color_map(i) for i in self.colors])
+
+        plt.xticks(range(len(xticklabels)), xticklabels, fontsize=12)  # Increase font size for x-ticks
+    
+        plt.title(title, fontsize=14)  # Increase font size for title
+        plt.ylabel(ylabel, fontsize=12)  # Increase font size for y-axis label    
+        if self.config.get('xlabel'):            
+            plt.xlabel(self.config.get('xlabel'), fontsize=12)  # Increase font size for y-axis label
+
+        # Add a legend
+        if 'legends' in self.config and 'legend_colors' in self.config:
+            legends = self.config['legends']
+            legend_colors = self.config['legend_colors']
+            
+            # Create legend handles
+            legend_handles = [
+                patches.Patch(color=color_map(color_index), label=label)
+                for color_index, label in zip(legend_colors, legends)
+            ]
+            plt.legend(handles=legend_handles, loc='upper right', fontsize=12)
+                    
+        plt.grid(True, linestyle='--', which='major', axis='y')  # Only horizontal grid
+        plt.tight_layout(pad=0.1)
+        if ylim:
+            plt.ylim(ylim)
+        plt.savefig(os.path.join(self.output_folder, filename), bbox_inches='tight', pad_inches=0.1)        
         plt.close()
 
     def plot_combined_quartile_box_plots(self, quartile_data, case_names, title, ylabel, filename):
@@ -120,7 +164,7 @@ class MonteCarloAnalyzer:
         agentwise_case_data = {}
         
         for idx, case_path in enumerate(self.config['cases']):
-            case_name = self.case_names[idx]
+            case_name = case_path
             timewise_data_list = self.load_data(f"{case_path}_*_timewise.csv")
             timewise_case_data[case_name] = self.analyze_timewise_data(timewise_data_list)
 
@@ -129,33 +173,45 @@ class MonteCarloAnalyzer:
         
         # Plotting the results
         self.plot_box_plots([timewise_case_data[case]["final_times"] for case in self.case_names], 
-                            self.case_names, 'Mission Completion Time Box Plot', 'Time (s)', 'mission_completion_time.png')
+                            self.xticklabels, 'Mission Completion Time', 'Time (s)', 'mission_completion_time.png')
         
-        self.plot_box_plots([timewise_case_data[case]["final_distances"] for case in self.case_names], 
-                            self.case_names, 'Agents Total Distance Moved Box Plot', 'Distance', 'total_distance_moved.png')
+        # self.plot_box_plots([timewise_case_data[case]["final_distances"] for case in self.case_names], 
+        #                     self.xticklabels, 'Sum(Agents Distance Moved)', 'Distance', 'total_distance_moved.png')
         
-        self.plot_box_plots([timewise_case_data[case]["final_tasks_done"] for case in self.case_names], 
-                            self.case_names, 'Agents Total Task Amount Done Box Plot', 'Tasks Amount Done', 'total_task_amount_done.png')
+        # self.plot_box_plots([timewise_case_data[case]["final_tasks_done"] for case in self.case_names], 
+        #                     self.xticklabels, 'Sum(Agents Task Amount Done)', 'Tasks Amount Done', 'total_task_amount_done.png')
         
-        self.plot_combined_quartile_box_plots({case: timewise_case_data[case]["quartile_distances"] for case in self.case_names},
-                                              self.case_names, 'Total Distance Moved Per Second by Mission Time Quartiles', 'Distance', 'quartile_distance_moved.png')
+        # self.plot_combined_quartile_box_plots({case: timewise_case_data[case]["quartile_distances"] for case in self.case_names},
+        #                                       self.case_names, 'Total Distance Moved Per Second by Mission Time Quartiles', 'Distance', 'quartile_distance_moved.png')
         
-        self.plot_combined_quartile_box_plots({case: timewise_case_data[case]["quartile_tasks_done"] for case in self.case_names},
-                                              self.case_names, 'Total Task Amount Done Per Second by Mission Time Quartiles', 'Tasks Done', 'quartile_task_done.png')
+        # self.plot_combined_quartile_box_plots({case: timewise_case_data[case]["quartile_tasks_done"] for case in self.case_names},
+        #                                       self.case_names, 'Total Task Amount Done Per Second by Mission Time Quartiles', 'Tasks Done', 'quartile_task_done.png')
 
-        self.plot_box_plots([agentwise_case_data[case]["gini_coeff_task_amount_done"] for case in self.case_names],
-                            self.case_names, 'Gini Coefficient for Task Amount Done', 'Gini Coefficient', 'gini_task_amount_done.png')
+        # self.plot_box_plots([agentwise_case_data[case]["gini_coeff_task_amount_done"] for case in self.case_names],
+        #                     self.xticklabels, 'Gini Coefficient for Task Amount Done', 'Gini Coefficient', 'gini_task_amount_done.png')
 
-        self.plot_box_plots([agentwise_case_data[case]["gini_coeff_distance_moved"] for case in self.case_names],
-                            self.case_names, 'Gini Coefficient for Distance Moved', 'Gini Coefficient', 'gini_distance_moved.png')
+        # self.plot_box_plots([agentwise_case_data[case]["gini_coeff_distance_moved"] for case in self.case_names],
+        #                     self.xticklabels, 'Gini Coefficient for Distance Moved', 'Gini Coefficient', 'gini_distance_moved.png')
+
+        self.plot_box_plots([agentwise_case_data[case]["average_task_amount_done_per_agent"] for case in self.case_names],
+                            self.xticklabels, 'Average Task Amount Done Per Agent', 'Tasks Amount Done', 'agent_task_amount_done.png')
+        
+        self.plot_box_plots([agentwise_case_data[case]["average_distance_moved_per_agent"] for case in self.case_names],
+                            self.xticklabels, 'Average Distance Moved Per Agent', 'Distance', 'agent_distance_moved.png')        
+
+        # self.plot_box_plots([agentwise_case_data[case]["std_task_amount_done"] for case in self.case_names],
+        #                     self.xticklabels, 'Std/Ave of Task Amount Done', 'Coefficient of Variation', 'std_task_amount_done.png')
+        
+        # self.plot_box_plots([agentwise_case_data[case]["std_distance_moved"] for case in self.case_names],
+        #                     self.xticklabels, 'Std/Ave of Distance Moved', 'Coefficient of Variation', 'std_distance_moved.png')        
+
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Analyze Monte Carlo simulation results.")
-    parser.add_argument("--config", type=str, default='mc_comparison.yaml', help="Path to the YAML configuration file (default: mc_comparison.yaml)")
+    parser.add_argument("--config", type=str, default='mc_analyzer.yaml', help="Path to the YAML configuration file (default: mc_analyzer.yaml)")
     args = parser.parse_args()
 
     analyzer = MonteCarloAnalyzer(args.config)
     analyzer.run_analysis()
 
-    debug = 1

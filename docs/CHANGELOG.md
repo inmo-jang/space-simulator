@@ -18,6 +18,11 @@
   python mc_runner.py --config=mc_runner.yaml
   ```
 
+- **Changed how to use `mc_analyzer.py`**
+  - Updated usage for `mc_analyzer.py`: 
+    ```bash
+    python mc_analyzer.py --config=mc_analyzer.yaml
+    ```
 
 ## Version 1.2.11 (24-08-05)
 ### Changes

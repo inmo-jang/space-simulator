@@ -1,9 +1,0 @@
-cases:
-  - monte_carlo_analysis/data/CBBA/CBBA_a30_t200
-  - monte_carlo_analysis/data/GRAPE/GRAPE_a30_t200
-
-labels:
-  - CBBA
-  - GRAPE
-
-output_folder: monte_carlo_analysis/result  

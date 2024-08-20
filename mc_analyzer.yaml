@@ -1,0 +1,64 @@
+##### Comparison: GRAPE vs CBBA vs Greedy
+xlabel: Communication Radius
+
+xticklabels:
+  - 100
+  - 200
+  - 300
+  - 100
+  - 200
+  - 300
+  - 100
+  - 200
+  - 300
+
+colors: [0, 0, 0, 1, 1, 1, 2, 2, 2]
+
+legends:
+- GRAPE
+- CBBA
+- FCG 
+
+legend_colors: [0, 1, 2]
+
+# ========== num_agents = 50
+# output_folder: monte_carlo_analysis/results/example/a50_t250
+
+# cases: # 
+#   - monte_carlo_analysis/data/example/c100_s300/GRAPE/GRAPE_a50_t250
+#   - monte_carlo_analysis/data/example/c200_s300/GRAPE/GRAPE_a50_t250
+#   - monte_carlo_analysis/data/example/c300_s300/GRAPE/GRAPE_a50_t250
+#   - monte_carlo_analysis/data/example/c100_s300/CBBA/CBBA_a50_t250
+#   - monte_carlo_analysis/data/example/c200_s300/CBBA/CBBA_a50_t250
+#   - monte_carlo_analysis/data/example/c300_s300/CBBA/CBBA_a50_t250
+#   - monte_carlo_analysis/data/example/c100_s300/Greedy/FirstClaimGreedy_a50_t250
+#   - monte_carlo_analysis/data/example/c200_s300/Greedy/FirstClaimGreedy_a50_t250
+#   - monte_carlo_analysis/data/example/c300_s300/Greedy/FirstClaimGreedy_a50_t250
+
+# ========== num_agents = 30
+# output_folder: monte_carlo_analysis/results/example/a30_t250
+
+# cases: # 
+#   - monte_carlo_analysis/data/example/c100_s300/GRAPE/GRAPE_a30_t250
+#   - monte_carlo_analysis/data/example/c200_s300/GRAPE/GRAPE_a30_t250
+#   - monte_carlo_analysis/data/example/c300_s300/GRAPE/GRAPE_a30_t250
+#   - monte_carlo_analysis/data/example/c100_s300/CBBA/CBBA_a30_t250
+#   - monte_carlo_analysis/data/example/c200_s300/CBBA/CBBA_a30_t250
+#   - monte_carlo_analysis/data/example/c300_s300/CBBA/CBBA_a30_t250
+#   - monte_carlo_analysis/data/example/c100_s300/Greedy/FirstClaimGreedy_a30_t250
+#   - monte_carlo_analysis/data/example/c200_s300/Greedy/FirstClaimGreedy_a30_t250
+#   - monte_carlo_analysis/data/example/c300_s300/Greedy/FirstClaimGreedy_a30_t250
+
+# ========== num_agents = 10
+output_folder: monte_carlo_analysis/results/example/a10_t250
+
+cases: # 
+  - monte_carlo_analysis/data/example/c100_s300/GRAPE/GRAPE_a10_t250
+  - monte_carlo_analysis/data/example/c200_s300/GRAPE/GRAPE_a10_t250
+  - monte_carlo_analysis/data/example/c300_s300/GRAPE/GRAPE_a10_t250
+  - monte_carlo_analysis/data/example/c100_s300/CBBA/CBBA_a10_t250
+  - monte_carlo_analysis/data/example/c200_s300/CBBA/CBBA_a10_t250
+  - monte_carlo_analysis/data/example/c300_s300/CBBA/CBBA_a10_t250
+  - monte_carlo_analysis/data/example/c100_s300/Greedy/FirstClaimGreedy_a10_t250
+  - monte_carlo_analysis/data/example/c200_s300/Greedy/FirstClaimGreedy_a10_t250
+  - monte_carlo_analysis/data/example/c300_s300/Greedy/FirstClaimGreedy_a10_t250
