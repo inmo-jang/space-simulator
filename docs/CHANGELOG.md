@@ -24,6 +24,9 @@
     python mc_analyzer.py --config=mc_analyzer.yaml
     ```
 
+- **Refactored `my_decision_making_plugin.py`**
+  - Refactored based on usecases of GRAPE and CBBA
+
 ## Version 1.2.11 (24-08-05)
 ### Changes
 - **Winning Bids Canceling to CBBA (`cbba.py`)**
