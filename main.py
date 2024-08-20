@@ -17,11 +17,13 @@ from modules.utils import config  # Import the global config after setting it
 
 sampling_freq = config['simulation']['sampling_freq']
 sampling_time = 1.0 / sampling_freq  # in seconds
+max_simulation_time = config.get('simulation').get('max_simulation_time', 0)
 screen_height = config['simulation']['screen_height']
 screen_width = config['simulation']['screen_width']
 gif_recording_fps = config['simulation']['gif_recording_fps']
 profiling_mode = config['simulation']['profiling_mode']
 rendering_mode = config.get('simulation').get('rendering_mode', "Screen")
+speed_up_factor = config.get('simulation').get('speed_up_factor', 1)
 rendering_options = config.get('simulation').get('rendering_options', {})
 
 save_gif = config.get('simulation').get('saving_options').get('save_gif', False)
@@ -116,6 +118,9 @@ async def game_loop():
                         print("Recording stopped.")
                         result_saver.save_gif(frames)            
 
+        if max_simulation_time > 0 and simulation_time > max_simulation_time:
+            running = False
+
         if not game_paused and not mission_completed:
             # Run behavior trees for each agent without rendering
             for agent in agents:
@@ -199,7 +204,7 @@ async def game_loop():
 
 
                 pygame.display.flip()
-                clock.tick(sampling_freq)
+                clock.tick(sampling_freq*speed_up_factor)
 
                 # Capture frame for recording
                 if recording:
