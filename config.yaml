@@ -7,7 +7,7 @@
 #     reinitialize_partition_on_completion: Distance # Options: None; Distance; 
 
 decision_making: # Case 2
-  plugin: plugins.cbba.cbba.CBBA.CBBA
+  plugin: plugins.cbba.cbba.CBBA
   CBBA:  
     max_tasks_per_agent: 5 
     task_reward_discount_factor: 0.999 
