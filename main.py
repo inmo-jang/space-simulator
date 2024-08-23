@@ -142,7 +142,8 @@ async def game_loop():
                     tasks.extend(new_tasks)
                     last_generation_time = simulation_time
                     generation_count += 1
-                    print(f"[{simulation_time:.2f}] Added {tasks_per_generation} new tasks: Generation {generation_count}.")
+                    if rendering_mode != "None":
+                        print(f"[{simulation_time:.2f}] Added {tasks_per_generation} new tasks: Generation {generation_count}.")
 
             # Record data if time recording mode is enabled
             if save_timewise_result_csv:
