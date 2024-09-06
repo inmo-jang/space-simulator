@@ -1,7 +1,7 @@
-# SPADE (Swarm Planning And Decision-making Evaluation) Simulator
+# SPACE (Swarm Planning And Control Evaluation) Simulator
 
-**SPADE** Simulator is a pygame-based application for simulating decentralized agent behavior using behavior trees. 
-By integrating your custom decision-making algorithms as plugins, SPADE enables rigorous testing and comparative analysis against pre-existing algorithms. 
+**SPACE** Simulator is a pygame-based application for simulating decentralized agent behavior using behavior trees. 
+By integrating your custom decision-making algorithms as plugins, SPACE enables rigorous testing and comparative analysis against pre-existing algorithms. 
 
 
 <div style="display: flex; flex-direction: row;">
@@ -32,8 +32,8 @@ By integrating your custom decision-making algorithms as plugins, SPADE enables 
 
 1. Clone the repository:
     ```sh
-    git clone https://github.com/inmo-jang/spade-simulator.git
-    cd spade-simulator
+    git clone https://github.com/inmo-jang/space-simulator.git
+    cd space-simulator
     ```
 
 2. Install the required dependencies:

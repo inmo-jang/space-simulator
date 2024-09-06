@@ -136,7 +136,7 @@
 ## Version 1.2.5 (24-07-22)
 ### New Features
 - **Behavior Tree Defined by Groot**
-  - Using [Groot2](https://www.behaviortree.dev/groot/), the visualization tool for BT.CPP, you can now define and visualize the behavior tree of agents in the SPADE simulator. The behavior tree file (`.xml`) should be specified by the `behavior_tree_xml` entry in the configuration file.
+  - Using [Groot2](https://www.behaviortree.dev/groot/), the visualization tool for BT.CPP, you can now define and visualize the behavior tree of agents in the SPACE simulator. The behavior tree file (`.xml`) should be specified by the `behavior_tree_xml` entry in the configuration file.
 
 ### Changes
 - **Behavior Tree Blackboard Variables**

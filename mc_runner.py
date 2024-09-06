@@ -5,7 +5,7 @@ import time
 
 
 def run_simulation(config_file):
-    """Run the SPADE simulator with the given configuration file and save the results."""
+    """Run the SPACE simulator with the given configuration file and save the results."""
     command = f"python main.py --config={config_file}"
     try:
         result = subprocess.run(command, shell=True, capture_output=True, text=True, check=True)

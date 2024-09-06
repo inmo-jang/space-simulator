@@ -7,7 +7,7 @@ import importlib
 from modules.utils import pre_render_text, set_config, ResultSaver
 
 # Parse command line arguments
-parser = argparse.ArgumentParser(description='SPADE (Swarm Planning And Decision-making Evalution) Simulator')
+parser = argparse.ArgumentParser(description='SPACE (Swarm Planning And Control Evalution) Simulator')
 parser.add_argument('--config', type=str, default='config.yaml', help='Path to the configuration file (default: --config=config.yaml)')
 args = parser.parse_args()
 
@@ -51,7 +51,7 @@ background_color = (224, 224, 224)
 logo_image_path = 'assets/logo.jpg'  # Change to the path of your logo image
 logo = pygame.image.load(logo_image_path)
 pygame.display.set_icon(logo)
-pygame.display.set_caption('SPADE(Swarm Planning And Decision-making Evaluation) Simulator')  # Change to your desired game title
+pygame.display.set_caption('SPACE(Swarm Planning And Control Evaluation) Simulator')  # Change to your desired game title
 
 # Initialize tasks
 from modules.task import generate_tasks

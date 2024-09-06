@@ -1,6 +1,6 @@
-# Configuration Manual for SPADE Simulator
+# Configuration Manual for SPACE Simulator
 
-This manual provides detailed descriptions of each parameter in the `config.yaml` file used by the SPADE Simulator. Understanding these parameters will help you customize the simulation according to your requirements.
+This manual provides detailed descriptions of each parameter in the `config.yaml` file used by the SPACE Simulator. Understanding these parameters will help you customize the simulation according to your requirements.
 
 ## `decision_making` Section
 
@@ -109,4 +109,4 @@ This section defines the overall simulation parameters.
     - `agent_assigned_task_id`: Shows the task identifier assigned to each agent.
     - `task_id`: Displays task identifiers on the tasks.
 
-This detailed explanation should help you configure the SPADE Simulator effectively by adjusting the parameters in the `config.yaml` file according to your needs.
+This detailed explanation should help you configure the SPACE Simulator effectively by adjusting the parameters in the `config.yaml` file according to your needs.
