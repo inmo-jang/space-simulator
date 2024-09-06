@@ -3,6 +3,8 @@
 **SPACE** Simulator is a pygame-based application for simulating decentralized agent behavior using behavior trees. 
 By integrating your custom decision-making algorithms as plugins, SPACE enables rigorous testing and comparative analysis against pre-existing algorithms. 
 
+The official documentation of the SPACE simulator is available at [http://space-simulator.rtfd.io/](http://space-simulator.rtfd.io/). 
+
 
 <div style="display: flex; flex-direction: row;">
     <img src="output/2024-07-13/RandomAssignment_100_agents_300_tasks_2024-07-13_00-41-18.gif" alt="GIF" width="400" height="300">
