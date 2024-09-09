@@ -96,6 +96,10 @@ Refer to the configuration guide [CONFIG_GUIDE.md](/docs/CONFIG_GUIDE.md)
 Feel free to fork the repository and submit pull requests. 
 Refer to [TODO.md](/docs/TODO.md) for a list of pending tasks and upcoming features.
 
+## Citations
+Please cite this work in your papers!
+- [Inmo Jang, *"SPACE: A Python-based Simulator for Evaluating Decentralized Multi-Robot Task Allocation Algorithms"*, arXiv:2409.04230 [cs.RO], 2024](https://arxiv.org/abs/2409.04230)
+
 
 ## License
 [GNU GPLv3](LICENSE)
