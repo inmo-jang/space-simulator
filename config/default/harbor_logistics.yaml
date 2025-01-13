@@ -28,12 +28,12 @@ decision_making: # Case 3
 
 agents:
   behavior_tree_xml: default_bt.xml 
-  quantity: 4
+  quantity: 3
   locations:
-    x_min: 500
-    x_max: 1100
+    x_min: 300 #500
+    x_max: 1300 #1100
     y_min: 0
-    y_max: 1000
+    y_max: 900 #1000
     non_overlap_radius: 0 
   max_speed: 0.8  
   max_accel: 0.8
@@ -45,12 +45,18 @@ agents:
   random_exploration_duration: 1000.0 # sec
 
 tasks:
-  quantity: 5
-  locations:
-    x_min: 300
-    x_max: 300
-    y_min: 570
-    y_max: 570
+  quantity: 10
+  locations1:
+    x_min: 205
+    x_max: 205
+    y_min: 370
+    y_max: 370
+    non_overlap_radius: 0
+  locations2:
+    x_min: 205
+    x_max: 205
+    y_min: 660
+    y_max: 660
     non_overlap_radius: 0
   threshold_done_by_arrival: 1.0
   amounts:  # Added amounts range for tasks
@@ -81,6 +87,7 @@ simulation:
     agent_work_done: True
     agent_assigned_task_id: True
     agent_path_to_assigned_tasks: True
+    agent_battery_status: True  # Add battery status
     task_id: False
   saving_options:
     output_folder: output
@@ -89,3 +96,9 @@ simulation:
     save_timewise_result_csv: True    
     save_agentwise_result_csv: True
     save_config_yaml: True
+
+charging_station_position: 
+  x: 1220
+  y: 630
+  offset_x: 10
+  

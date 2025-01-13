@@ -1,29 +1,41 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <root BTCPP_format="4">
   <BehaviorTree ID="space-simulator">
-    <Sequence>
-      <LocalSensingNode/>
-      <Fallback>
-        <IsFinishedTask/>
+    <Fallback>
+      <Sequence>
+        <IsBatteryLow/>
         <Sequence>
           <Fallback>
-            <IsHoldingItem/>
-            <Sequence>
-              <Fallback>
-                <IsArrivedAtShip/>
-                <GoToShip/>
-              </Fallback>
-              <PickItem/>
-            </Sequence>
+            <IsArrivedAtChargingStation/>
+            <GoToChargingStation/>
           </Fallback>
-          <Fallback>
-            <IsArrivedAtDestination/>
-            <GoToDestination/>
-          </Fallback>
-          <PlaceItem/>
+          <ChargeBattery/>
         </Sequence>
-      </Fallback>
-    </Sequence>
+      </Sequence>
+      <Sequence>
+        <LocalSensingNode/>
+        <Fallback>
+          <IsFinishedTask/>
+          <Sequence>
+            <Fallback>
+              <IsHoldingItem/>
+              <Sequence>
+                <Fallback>
+                  <IsArrivedAtShip/>
+                  <GoToShip/>
+                </Fallback>
+                <PickItem/>
+              </Sequence>
+            </Fallback>
+            <Fallback>
+              <IsArrivedAtDestination/>
+              <GoToDestination/>
+            </Fallback>
+            <PlaceItem/>
+          </Sequence>
+        </Fallback>
+      </Sequence>
+    </Fallback>
   </BehaviorTree>
 
   <!-- Description of Node Models (used by Groot) -->
@@ -36,6 +48,8 @@
                editable="true"/>
     <Condition ID="IsArrivedAtShip"
                editable="true"/>
+    <Condition ID="IsArrivedAtChargingStation"
+               editable="true"/>
     <Condition ID="IsFinishedTask"
                editable="true"/>
     <Condition ID="IsHoldingItem"
@@ -45,6 +59,12 @@
     <Action ID="PickItem"
             editable="true"/>
     <Action ID="PlaceItem"
+            editable="true"/>
+    <Condition ID="IsBatteryLow"
+               editable="true"/>
+    <Action ID="GoToChargingStation"
+            editable="true"/>
+    <Action ID="ChargeBattery"
             editable="true"/>
   </TreeNodesModel>
 
