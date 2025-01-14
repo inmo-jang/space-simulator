@@ -25,8 +25,12 @@ task_colors = [
     'gray', 
     'brown'
 ]
-task_width = 80
-task_height = 150
+
+# # container 크기로 이미지를 조정
+task_width = 35
+task_height = 50   
+# task_x = 50
+# task_y = 150
 
 # 목적지 좌표를 생성 (1열에 2개씩 배치)
 start_x = 300  # 첫 번째 열의 x 좌표 시작점
@@ -56,6 +60,7 @@ task_images = {
     'brown': pygame.image.load('scenarios/harbor_logistics/assets/tasks/brown.png')
 }
 
+
 sampling_freq = config['simulation']['sampling_freq']
 sampling_time = 1.0 / sampling_freq  # in seconds
 class Task(BaseTask):
@@ -66,11 +71,8 @@ class Task(BaseTask):
         random_index = random.randrange(len(task_colors))
         self.color = task_colors[random_index]
         self.position_to_deliver = destination_positions[random_index]
-        
-        # container 크기로 이미지를 조정
-        container_width = 35
-        container_height = 50        
-        self.image = pygame.transform.scale(task_images[self.color], (container_width, container_height))
+             
+        self.image = pygame.transform.scale(task_images[self.color], (task_width, task_height))
 
     def set_assigned_to(self, agent_id):
         self.assigned_to = agent_id
@@ -88,16 +90,26 @@ class Task(BaseTask):
 
 def generate_tasks(task_quantity=None, task_id_start = 0):
     if task_quantity is None:
-        task_quantity = config['tasks']['quantity']        
-    task_locations = config['tasks']['locations']
+        task_quantity = config['tasks']['quantity']
+    tasks_per_group = task_quantity // 2 #task개수를 선박의 개수만큼 나눔
 
-    tasks_positions = generate_positions(task_quantity,
-                                        task_locations['x_min'],
-                                        task_locations['x_max'],
-                                        task_locations['y_min'],
-                                        task_locations['y_max'],
-                                        radius=task_locations['non_overlap_radius'])
+    task_locations1 = config['tasks']['locations1']
+    tasks_positions1 = generate_positions(tasks_per_group,
+                                        task_locations1['x_min'],
+                                        task_locations1['x_max'],
+                                        task_locations1['y_min'],
+                                        task_locations1['y_max'],
+                                        radius=task_locations1['non_overlap_radius'])
 
+    task_locations2 = config['tasks']['locations2']
+    tasks_positions2 = generate_positions(tasks_per_group,
+                                        task_locations2['x_min'],
+                                        task_locations2['x_max'],
+                                        task_locations2['y_min'],
+                                        task_locations2['y_max'],
+                                        radius=task_locations2['non_overlap_radius'])
+    
+    all_positions = tasks_positions1 + tasks_positions2
     # Initialize tasks
-    tasks = [Task(idx + task_id_start, pos) for idx, pos in enumerate(tasks_positions)]
+    tasks = [Task(idx + task_id_start, pos) for idx, pos in enumerate(all_positions)]
     return tasks

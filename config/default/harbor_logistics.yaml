@@ -46,11 +46,17 @@ agents:
 
 tasks:
   quantity: 5
-  locations:
-    x_min: 300
-    x_max: 300
-    y_min: 570
-    y_max: 570
+  locations1:
+    x_min: 187
+    x_max: 187
+    y_min: 310
+    y_max: 310
+    non_overlap_radius: 0
+  locations2:
+    x_min: 187
+    x_max: 187
+    y_min: 610
+    y_max: 610
     non_overlap_radius: 0
   threshold_done_by_arrival: 1.0
   amounts:  # Added amounts range for tasks

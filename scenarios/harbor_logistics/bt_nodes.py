@@ -25,7 +25,8 @@ BTNodeList.CONDITION_NODES.extend(CUSTOM_CONDITION_NODES)
 # Scenario-specific Action/Condition Nodes
 from modules.utils import config
 target_arrive_threshold = config['tasks']['threshold_done_by_arrival']
-task_locations = config['tasks']['locations']
+task_locations1 = config['tasks']['locations1']
+task_locations2 = config['tasks']['locations2']
 sampling_freq = config['simulation']['sampling_freq']
 sampling_time = 1.0 / sampling_freq  # in seconds
 agent_max_random_movement_duration = config.get('agents', {}).get('random_exploration_duration', None)
@@ -88,8 +89,22 @@ class GoToShip(SyncAction):
         super().__init__(name, self._move)
         self.waypoint_follower = WaypointFollower(agent, target_arrive_threshold)
         self.path_planner = PathPlanner(agent)
-        self.position_to_pickup = (300, 570)
+        self.agent_id = agent.agent_id
+        task_locations1 = config['tasks']['locations1']
+        task_locations2 = config['tasks']['locations2']
 
+        # 에이전트 ID에 따라 pickup 위치 결정
+        if self.agent_id % 2 == 1:  # 홀수 에이전트
+            self.position_to_pickup = (
+                (task_locations1['x_min'] + task_locations1['x_max']) / 2,
+                (task_locations1['y_min'] + task_locations1['y_max']) / 2,
+            )
+        else:  # 짝수 에이전트
+            self.position_to_pickup = (
+                (task_locations2['x_min'] + task_locations2['x_max']) / 2,
+                (task_locations2['y_min'] + task_locations2['y_max']) / 2,
+            )
+            
     def _move(self, agent, blackboard):
         waypoints = blackboard.get('waypoints', None)
 
