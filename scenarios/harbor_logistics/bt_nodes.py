@@ -333,7 +333,7 @@ class WaypointFollower():
                 self.reset()
                 return Status.SUCCESS  # Return SUCCESS when all waypoints are visited
         
-        self.agent.update_battery(distance) # 배터리 감소
+        self.agent.update_battery() # 배터리 감소
         self.agent.follow(next_waypoint)  # Command the agent to follow the current waypoint
 
         return Status.RUNNING  # Keep RUNNING if not all waypoints have been visited

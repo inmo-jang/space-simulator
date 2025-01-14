@@ -101,4 +101,10 @@ charging_station_position:
   x: 1220
   y: 630
   offset_x: 10
+
+battery:
+  default_spending_rate: 0.001  
+  task_spending_rate: 0.01    
+
+
   
