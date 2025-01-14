@@ -9,9 +9,24 @@ from modules.base_task import BaseTask
 
 # TODO: 아래 Refactoring 필요
 screen_width = config['simulation']['screen_width']
-container_colors = ['red', 'blue', 'yellow']
-container_width = 80
-container_height = 150
+task_colors = [
+    'red', 
+    'blue', 
+    'yellow', 
+    'green', 
+    'lime', 
+    'teal', 
+    'purple', 
+    'pink', 
+    'coral', 
+    'skyblue', 
+    'black', 
+    'white', 
+    'gray', 
+    'brown'
+]
+task_width = 80
+task_height = 150
 
 # 목적지 좌표를 생성 (1열에 2개씩 배치)
 start_x = 300  # 첫 번째 열의 x 좌표 시작점
@@ -24,10 +39,21 @@ for i in range(7):  # 7행 (14개 컨테이너)
     destination_positions.append((start_x + i * x_spacing, start_y))          # 왼쪽 열
     destination_positions.append((start_x + i * x_spacing, start_y + y_spacing))  # 오른쪽 열
 
-container_images = {
+task_images = {
     'red': pygame.image.load('scenarios/harbor_logistics/assets/tasks/red.png'),
     'blue': pygame.image.load('scenarios/harbor_logistics/assets/tasks/blue.png'),
     'yellow': pygame.image.load('scenarios/harbor_logistics/assets/tasks/yellow.png'),
+    'green': pygame.image.load('scenarios/harbor_logistics/assets/tasks/green.png'),
+    'lime': pygame.image.load('scenarios/harbor_logistics/assets/tasks/lime.png'),
+    'teal': pygame.image.load('scenarios/harbor_logistics/assets/tasks/teal.png'),
+    'purple': pygame.image.load('scenarios/harbor_logistics/assets/tasks/purple.png'),
+    'pink': pygame.image.load('scenarios/harbor_logistics/assets/tasks/pink.png'),
+    'coral': pygame.image.load('scenarios/harbor_logistics/assets/tasks/coral.png'),
+    'skyblue': pygame.image.load('scenarios/harbor_logistics/assets/tasks/skyblue.png'),
+    'black': pygame.image.load('scenarios/harbor_logistics/assets/tasks/black.png'),
+    'white': pygame.image.load('scenarios/harbor_logistics/assets/tasks/white.png'),
+    'gray': pygame.image.load('scenarios/harbor_logistics/assets/tasks/gray.png'),
+    'brown': pygame.image.load('scenarios/harbor_logistics/assets/tasks/brown.png')
 }
 
 sampling_freq = config['simulation']['sampling_freq']
@@ -37,14 +63,14 @@ class Task(BaseTask):
         super().__init__(task_id, position)
         # self.radius = self.amount / config['simulation']['task_visualisation_factor']
         self.assigned_to = None
-        random_index = random.randrange(len(container_colors))
-        self.color = container_colors[random_index]
+        random_index = random.randrange(len(task_colors))
+        self.color = task_colors[random_index]
         self.position_to_deliver = destination_positions[random_index]
         
         # container 크기로 이미지를 조정
         container_width = 35
         container_height = 50        
-        self.image = pygame.transform.scale(container_images[self.color], (container_width, container_height))
+        self.image = pygame.transform.scale(task_images[self.color], (container_width, container_height))
 
     def set_assigned_to(self, agent_id):
         self.assigned_to = agent_id
@@ -57,7 +83,7 @@ class Task(BaseTask):
 
     def draw(self, screen):
         if self.assigned_to is None:
-            screen.blit(self.image, (self.position[0] - container_width // 2, self.position[1] - container_height // 2))            
+            screen.blit(self.image, (self.position[0] - task_width // 2, self.position[1] - task_height // 2))            
 
 
 def generate_tasks(task_quantity=None, task_id_start = 0):

@@ -28,6 +28,28 @@ class Agent(BaseAgent):
             self.image = pygame.image.load('scenarios/harbor_logistics/assets/agents/agent_with_blue_container.png')
         elif self.task_color == 'yellow':
             self.image = pygame.image.load('scenarios/harbor_logistics/assets/agents/agent_with_yellow_container.png')
+        elif self.task_color == 'green':
+            self.image = pygame.image.load('scenarios/harbor_logistics/assets/agents/agent_with_green_container.png')
+        elif self.task_color == 'lime':
+            self.image = pygame.image.load('scenarios/harbor_logistics/assets/agents/agent_with_lime_container.png')
+        elif self.task_color == 'teal':
+            self.image = pygame.image.load('scenarios/harbor_logistics/assets/agents/agent_with_teal_container.png')
+        elif self.task_color == 'purple':
+            self.image = pygame.image.load('scenarios/harbor_logistics/assets/agents/agent_with_purple_container.png')
+        elif self.task_color == 'pink':
+            self.image = pygame.image.load('scenarios/harbor_logistics/assets/agents/agent_with_pink_container.png')
+        elif self.task_color == 'coral':
+            self.image = pygame.image.load('scenarios/harbor_logistics/assets/agents/agent_with_coral_container.png')
+        elif self.task_color == 'skyblue':
+            self.image = pygame.image.load('scenarios/harbor_logistics/assets/agents/agent_with_skyblue_container.png')
+        elif self.task_color == 'black':
+            self.image = pygame.image.load('scenarios/harbor_logistics/assets/agents/agent_with_black_container.png')
+        elif self.task_color == 'white':
+            self.image = pygame.image.load('scenarios/harbor_logistics/assets/agents/agent_with_white_container.png')
+        elif self.task_color == 'gray':
+            self.image = pygame.image.load('scenarios/harbor_logistics/assets/agents/agent_with_gray_container.png')
+        elif self.task_color == 'brown':
+            self.image = pygame.image.load('scenarios/harbor_logistics/assets/agents/agent_with_brown_container.png')
         else:
             self.image = pygame.image.load('scenarios/harbor_logistics/assets/agents/agent.png')  # 기본 이미지
 
