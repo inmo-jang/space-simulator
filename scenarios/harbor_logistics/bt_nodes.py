@@ -106,7 +106,7 @@ class IsBatteryLow(SyncAction):
 
     def _check(self, agent, blackboard):
         is_charging = blackboard.get('is_charging', False)  # 충전 상태 확인
-        if agent.battery <= self.battery_threshold and not is_charging :
+        if agent.battery <= self.battery_threshold or blackboard.get('is_charging', False) :
             print(f"Agent {agent.agent_id}: Battery is low ({agent.battery}%). Moving to the charging station.")
             return Status.SUCCESS
         return Status.FAILURE
@@ -149,7 +149,7 @@ class GoToShip(SyncAction):
             waypoints = self.path_planner.generate('xy')
             self.waypoint_follower.set_waypoints(waypoints)
             blackboard['waypoints'] = waypoints
-
+        
         # Waypoint Following
         result = self.waypoint_follower.move()
         if result == Status.SUCCESS:
@@ -383,6 +383,9 @@ class PlaceItem(SyncAction):
         super().__init__(name, self._action)
 
     def _action(self, agent, blackboard):
+        if blackboard.get('is_charging', False):
+            return Status.FAILURE
+        
         agent.tasks_info[agent.assigned_task_id].set_done()
         agent.set_assigned_task_id(None)
         blackboard['assigned_task_id'] = None
@@ -395,7 +398,7 @@ class PlaceItem(SyncAction):
 class ChargeBattery(SyncAction):
     def __init__(self, name, agent):
         super().__init__(name, self._charge)
-        self.charge_rate = 10  # 충전 속도 (% per step)
+        self.charge_rate = 1  # 충전 속도 (% per step)
 
     def _charge(self, agent, blackboard):
         # 충전 상태 확인
@@ -404,12 +407,12 @@ class ChargeBattery(SyncAction):
             return Status.FAILURE
 
         # 충전 진행
-        while agent.battery < 100:
+        if agent.battery < 100:
             blackboard['is_charging'] = True
             agent.battery += self.charge_rate
             agent.battery = min(agent.battery, 100)  # 배터리 100% 제한
             print(f"Agent {agent.agent_id}: Charging... Battery at {agent.battery}%.")
-            #return Status.RUNNING
+            return Status.RUNNING
 
         # 충전 완료 처리
         print(f"Agent {agent.agent_id}: Fully charged (100%).")
