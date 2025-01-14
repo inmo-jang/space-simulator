@@ -33,25 +33,37 @@ class Env(BaseEnv):
         # Ship
         self.ship1 = ObjectToRender(image_path=assets_path + '/background/ship.png', position=(70, 200), width=230, height=100, rotation=90)
         self.ship2 = ObjectToRender(image_path=assets_path + '/background/ship.png', position=(70, 500), width=230, height=100, rotation=90)
+ 
+        # Define colors for destinations
+        destination_colors = [
+            'red', 'blue', 'yellow', 'green', 'lime', 
+            'teal', 'purple', 'pink', 'coral', 'skyblue', 
+            'black', 'white', 'gray', 'brown'
+        ]
 
-        # Load container images
-        self.container_images = {
-            'red': pygame.image.load(assets_path + '/tasks/red.png'),
-            'blue': pygame.image.load(assets_path + '/tasks/blue.png'),
-            'yellow': pygame.image.load(assets_path + '/tasks/yellow.png')
-        }     
+        # Load images for each destination color
+        self.destination_images = {
+            color: pygame.image.load(f'{assets_path}/tasks/{color}.png') for color in destination_colors
+        }
 
         # Resize container images
-        container_width = 80
-        container_height = 150
-        for color in self.container_images:
-            self.container_images[color] = pygame.transform.scale(self.container_images[color], (container_width, container_height))
-        # Define spacing between containers
-        container_spacing = 150  # 간격 값을 150으로 설정
+        destination_width = 80
+        destination_height = 300
+        for color in self.destination_images:
+            self.destination_images[color] = pygame.transform.scale(
+                self.destination_images[color], (destination_width, destination_height)
+            )
+        # Define destination positions (1열에 7개씩 2행)
+            start_x = 300  # 첫 번째 열의 x 좌표 시작점
+            start_y = 300  # 첫 번째 행의 y 좌표 시작점
+            x_spacing = 130  # 열 간격
+            y_spacing = 350  # 행 간격
 
-        # Define container positions with updated spacing
-        self.container_positions = [(self.screen_width - 100, 110 + i * (container_height + container_spacing)) for i in range(len(self.container_images))]
-
+        self.destination_positions = []
+        for i in range(7):  # 7개 열
+            self.destination_positions.append((start_x + i * x_spacing, start_y))       # 첫 번째 행
+            self.destination_positions.append((start_x + i * x_spacing, start_y + y_spacing))  # 두 번째 행
+            
     async def step(self):
         await super().step() # Execution of `step()` in `BaseEnv`        
 
@@ -74,9 +86,13 @@ class Env(BaseEnv):
         self.ship2.draw(self.screen)             
 
         # Draw containers
-        for i, (color, position) in enumerate(zip(self.container_images, self.container_positions)):
-            self.screen.blit(self.container_images[color], position)
-        
+        for color, position in zip(self.destination_images, self.destination_positions):
+            if not isinstance(position, tuple) or len(position) != 2:
+                print(f"Invalid position: {position}")  # 디버깅 출력
+                continue
+            image = self.destination_images[color]
+            self.screen.blit(image, (position[0] - image.get_width() // 2, position[1] - image.get_height() // 2))
+            
     def draw_agents_info(self):
         super().draw_agents_info()
         # Draw agents

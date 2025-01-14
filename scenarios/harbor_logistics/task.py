@@ -12,15 +12,23 @@ screen_width = config['simulation']['screen_width']
 container_colors = ['red', 'blue', 'yellow']
 container_width = 80
 container_height = 150
-container_spacing = 150  # 간격 값을 150으로 설정
-# Define container positions with updated spacing
-container_positions = [(screen_width - 100, 110 + i * (container_height + container_spacing)) for i in range(len(container_colors))]
+
+# 목적지 좌표를 생성 (1열에 2개씩 배치)
+start_x = 300  # 첫 번째 열의 x 좌표 시작점
+start_y = 300  # 첫 번째 행의 y 좌표 시작점
+x_spacing = 130  # 열 간격
+y_spacing = 350  # 행 간격
+
+destination_positions = []
+for i in range(7):  # 7행 (14개 컨테이너)
+    destination_positions.append((start_x + i * x_spacing, start_y))          # 왼쪽 열
+    destination_positions.append((start_x + i * x_spacing, start_y + y_spacing))  # 오른쪽 열
+
 container_images = {
     'red': pygame.image.load('scenarios/harbor_logistics/assets/tasks/red.png'),
     'blue': pygame.image.load('scenarios/harbor_logistics/assets/tasks/blue.png'),
-    'yellow': pygame.image.load('scenarios/harbor_logistics/assets/tasks/yellow.png')
+    'yellow': pygame.image.load('scenarios/harbor_logistics/assets/tasks/yellow.png'),
 }
-
 
 sampling_freq = config['simulation']['sampling_freq']
 sampling_time = 1.0 / sampling_freq  # in seconds
@@ -31,7 +39,8 @@ class Task(BaseTask):
         self.assigned_to = None
         random_index = random.randrange(len(container_colors))
         self.color = container_colors[random_index]
-        self.position_to_deliver = container_positions[random_index]
+        self.position_to_deliver = destination_positions[random_index]
+        
         # container 크기로 이미지를 조정
         container_width = 35
         container_height = 50        
