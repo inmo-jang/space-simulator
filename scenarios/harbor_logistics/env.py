@@ -28,10 +28,11 @@ class Env(BaseEnv):
 
         # Load sea background image for ship area
         sea_background = pygame.image.load(assets_path + '/background/sea.png')
-        self.background_sea = pygame.transform.scale(sea_background, (250, 1200))  # Resize
+        self.background_sea = pygame.transform.scale(sea_background, (170, 1200))  # Resize
 
         # Ship
-        self.ship = ObjectToRender(image_path=assets_path + '/background/ship.png', position=(60, 250), width=550, height=200, rotation=90)
+        self.ship1 = ObjectToRender(image_path=assets_path + '/background/ship.png', position=(70, 200), width=230, height=100, rotation=90)
+        self.ship2 = ObjectToRender(image_path=assets_path + '/background/ship.png', position=(70, 500), width=230, height=100, rotation=90)
 
         # Load container images
         self.container_images = {
@@ -66,10 +67,11 @@ class Env(BaseEnv):
         # Draw Port background
         self.screen.blit(self.background_port, (0, 0))  
         # Draw Sea background under the ship
-        self.screen.blit(self.background_sea, (00, self.screen_height - 1200))  # 배경 위치 조정            
+        self.screen.blit(self.background_sea, (0, self.screen_height - 1200))  # 배경 위치 조정            
         
         # Draw ship
-        self.ship.draw(self.screen)            
+        self.ship1.draw(self.screen)
+        self.ship2.draw(self.screen)             
 
         # Draw containers
         for i, (color, position) in enumerate(zip(self.container_images, self.container_positions)):
