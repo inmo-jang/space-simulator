@@ -20,6 +20,21 @@ class Agent(BaseAgent):
         self.image = pygame.transform.scale(self.image, (50, 50))  # 크기 조정
         self.task_color = None  # 현재 운반 중인 task 색상 (없으면 None)
 
+        # 배터리 관련 속성
+        self.battery = 100.0  # 초기 배터리 상태 (100%)
+        self.default_spending_rate = config['battery']['default_spending_rate']
+        self.task_spending_rate = config['battery']['task_spending_rate']
+
+    def update_battery(self):
+        """배터리 상태를 업데이트, 작업 여부에 따라 소모량 변경"""
+        # 작업 여부에 따른 소모 속도 설정
+        if self.blackboard.get('assigned_task_id'):
+            battery_spending_rate = self.task_spending_rate
+        else:
+            battery_spending_rate = self.default_spending_rate
+        self.battery = max(0, self.battery - battery_spending_rate)
+        #print(f"Agent {self.agent_id}: Battery decreased by {battery_spending_rate:.2f}%")
+
     def update_image(self):
         """현재 상태에 따라 이미지를 업데이트"""
         if self.task_color == 'red':
@@ -60,7 +75,16 @@ class Agent(BaseAgent):
         rotated_image = pygame.transform.rotate(self.image, -math.degrees(self.rotation))
         new_rect = rotated_image.get_rect(center=(self.position.x, self.position.y))
         screen.blit(rotated_image, new_rect.topleft)
-    
+
+        # 렌더링 옵션에서 배터리 상태 표시 활성화 확인
+        if config['simulation']['rendering_options'].get('agent_battery_status', True):
+            # 배터리 상태를 항상 100으로 표시
+            font = pygame.font.SysFont(None, 15)  # 폰트 설정
+            battery_text = f"{int(self.battery)}%"
+            text_surface = font.render(battery_text, True, (0, 0, 0))  # 흰색 텍스트
+            text_rect = text_surface.get_rect()
+            text_rect.topleft = (self.position.x + 30, self.position.y - 20)  # 에이전트 옆에 표시
+            screen.blit(text_surface, text_rect)
 
 def generate_agents(tasks_info):
     agent_quantity = config['agents']['quantity']

@@ -95,3 +95,7 @@ simulation:
     save_timewise_result_csv: True    
     save_agentwise_result_csv: True
     save_config_yaml: True
+
+battery:
+  default_spending_rate: 0.001  
+  task_spending_rate: 0.01  
