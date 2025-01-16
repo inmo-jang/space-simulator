@@ -8,7 +8,8 @@ CUSTOM_ACTION_NODES = [
     'GoToShip',
     'PickItem',
     'GoToDestination',
-    'PlaceItem'
+    'PlaceItem',
+    'DecideShip'
 ]
 
 CUSTOM_CONDITION_NODES = [
@@ -84,33 +85,56 @@ class IsArrivedAtDestination(SyncAction):
 
 
 # Action nodes
+class DecideShip(SyncAction):
+    def __init__(self, name, agent):
+        super().__init__(name, self._decide)
+
+    def _decide(self, agent, blackboard):
+        import random
+        
+         # Ship을 한번만 선택
+        if blackboard.get('ship_selected', False):
+            return Status.SUCCESS
+        
+        # Ship 선택: Ship1 또는 Ship2
+        chosen_ship = random.choice(['Ship1', 'Ship2'])
+        blackboard['chosen_ship'] = chosen_ship
+        blackboard['ship_selected'] = True
+        print(f"Agent {agent.agent_id}: Decided to go to {chosen_ship}")
+        return Status.SUCCESS
+
 class GoToShip(SyncAction):
     def __init__(self, name, agent):
         super().__init__(name, self._move)
         self.waypoint_follower = WaypointFollower(agent, target_arrive_threshold)
         self.path_planner = PathPlanner(agent)
-        self.agent_id = agent.agent_id
-        task_locations1 = config['tasks']['locations1']
-        task_locations2 = config['tasks']['locations2']
-
-        # 에이전트 ID에 따라 pickup 위치 결정
-        if self.agent_id % 2 == 1:  # 홀수 에이전트
-            self.position_to_pickup = (
-                (task_locations1['x_min'] + task_locations1['x_max']) / 2,
-                (task_locations1['y_min'] + task_locations1['y_max']) / 2,
-            )
-        else:  # 짝수 에이전트
-            self.position_to_pickup = (
-                (task_locations2['x_min'] + task_locations2['x_max']) / 2,
-                (task_locations2['y_min'] + task_locations2['y_max']) / 2,
-            )
             
     def _move(self, agent, blackboard):
         waypoints = blackboard.get('waypoints', None)
 
-        # Path Generation
+        # 선택된 Ship 위치 가져오기
+        chosen_ship = blackboard.get('chosen_ship', None)
+        if chosen_ship is None:
+            print(f"Agent {agent.agent_id}: No ship selected!")
+            return Status.FAILURE
+        
+        # Ship 위치 설정
         if waypoints is None:
-            self.path_planner.set_target_position(self.position_to_pickup)
+            if chosen_ship == 'Ship1':
+                position_to_pickup = (
+                    (task_locations1['x_min'] + task_locations1['x_max']) / 2,
+                    (task_locations1['y_min'] + task_locations1['y_max']) / 2,
+                )
+            elif chosen_ship == 'Ship2':
+                position_to_pickup = (
+                    (task_locations2['x_min'] + task_locations2['x_max']) / 2,
+                    (task_locations2['y_min'] + task_locations2['y_max']) / 2,
+                )
+            else:
+                print(f"Agent {agent.agent_id}: Unknown ship {chosen_ship}")
+                return Status.FAILURE
+            
+            self.path_planner.set_target_position(position_to_pickup)
             waypoints = self.path_planner.generate('xy')
             self.waypoint_follower.set_waypoints(waypoints)
             blackboard['waypoints'] = waypoints
@@ -221,7 +245,7 @@ class WaypointFollower():
 
         self.agent.follow(next_waypoint)  # Command the agent to follow the current waypoint
 
-        return Status.RUNNING  # Keep RUNNING if not all waypoints have been visited
+        return Status.FAILURE  # Keep RUNNING if not all waypoints have been visited
 
 
 
@@ -234,12 +258,20 @@ class PickItem(SyncAction):
         super().__init__(name, self._action)
 
     def _action(self, agent, blackboard):
-        unassigned_tasks = agent.get_unassigned_tasks()
-        if len(unassigned_tasks) == 0: # TODO: 모든 job 끝나면 일단 Pick-up position에서 대기
+        # 선택된 Ship 가져오기
+        chosen_ship = blackboard.get('chosen_ship', None)
+        if chosen_ship is None:
+            print(f"Agent {agent.agent_id}: No ship selected!")
+            return Status.FAILURE
+
+        # 선택된 Ship에서 할당되지 않은 작업 가져오기
+        unassigned_tasks = [
+            task for task in agent.get_unassigned_tasks() if task.ship_id == chosen_ship
+        ]
+        if len(unassigned_tasks) == 0:  # 선택된 Ship에 할당 가능한 작업이 없을 때
             return Status.FAILURE
         
-        # assigned_task = random.choice(unassigned_tasks)
-        assigned_task = unassigned_tasks[-1] # Pick the last (화면 렌더링과 연관)
+        assigned_task = unassigned_tasks[-1]
         assigned_task.set_assigned_to(agent.agent_id)
         agent.set_assigned_task_id(assigned_task.task_id)
         blackboard['assigned_task_id'] = agent.assigned_task_id
@@ -258,6 +290,7 @@ class PlaceItem(SyncAction):
         agent.tasks_info[agent.assigned_task_id].set_done()
         agent.set_assigned_task_id(None)
         blackboard['assigned_task_id'] = None
+        blackboard['ship_selected'] = False
 
         agent.task_color = None
         agent.update_image()

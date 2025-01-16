@@ -11,7 +11,10 @@
             <Sequence>
               <Fallback>
                 <IsArrivedAtShip/>
-                <GoToShip/>
+                <Sequence>
+                  <DecideShip/>
+                  <GoToShip/>
+                </Sequence>
               </Fallback>
               <PickItem/>
             </Sequence>
@@ -45,6 +48,8 @@
     <Action ID="PickItem"
             editable="true"/>
     <Action ID="PlaceItem"
+            editable="true"/>
+    <Action ID="DecideShip"
             editable="true"/>
   </TreeNodesModel>
 

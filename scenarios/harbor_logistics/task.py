@@ -26,11 +26,9 @@ task_colors = [
     'brown'
 ]
 
-# # container 크기로 이미지를 조정
+# container 크기로 이미지를 조정
 task_width = 35
 task_height = 50   
-# task_x = 50
-# task_y = 150
 
 # 목적지 좌표를 생성 (1열에 2개씩 배치)
 start_x = 300  # 첫 번째 열의 x 좌표 시작점
@@ -64,7 +62,7 @@ task_images = {
 sampling_freq = config['simulation']['sampling_freq']
 sampling_time = 1.0 / sampling_freq  # in seconds
 class Task(BaseTask):
-    def __init__(self, task_id, position):
+    def __init__(self, task_id, position, ship_id):
         super().__init__(task_id, position)
         # self.radius = self.amount / config['simulation']['task_visualisation_factor']
         self.assigned_to = None
@@ -73,6 +71,7 @@ class Task(BaseTask):
         self.position_to_deliver = destination_positions[random_index]
              
         self.image = pygame.transform.scale(task_images[self.color], (task_width, task_height))
+        self.ship_id = ship_id  # Ship ID 추가
 
     def set_assigned_to(self, agent_id):
         self.assigned_to = agent_id
@@ -109,7 +108,10 @@ def generate_tasks(task_quantity=None, task_id_start = 0):
                                         task_locations2['y_max'],
                                         radius=task_locations2['non_overlap_radius'])
     
-    all_positions = tasks_positions1 + tasks_positions2
-    # Initialize tasks
-    tasks = [Task(idx + task_id_start, pos) for idx, pos in enumerate(all_positions)]
+    # Task 생성 시 Ship ID를 포함
+    tasks = []
+    for idx, pos in enumerate(tasks_positions1):
+        tasks.append(Task(task_id=idx + task_id_start, position=pos, ship_id='Ship1'))
+    for idx, pos in enumerate(tasks_positions2):
+        tasks.append(Task(task_id=idx + task_id_start + len(tasks_positions1), position=pos, ship_id='Ship2'))
     return tasks
