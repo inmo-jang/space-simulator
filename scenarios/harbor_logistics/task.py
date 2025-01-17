@@ -114,4 +114,5 @@ def generate_tasks(task_quantity=None, task_id_start = 0):
         tasks.append(Task(task_id=idx + task_id_start, position=pos, ship_id='Ship1'))
     for idx, pos in enumerate(tasks_positions2):
         tasks.append(Task(task_id=idx + task_id_start + len(tasks_positions1), position=pos, ship_id='Ship2'))
+    
     return tasks

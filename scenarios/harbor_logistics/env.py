@@ -33,7 +33,13 @@ class Env(BaseEnv):
         # Ship
         self.ship1 = ObjectToRender(image_path=assets_path + '/background/ship.png', position=(70, 200), width=230, height=100, rotation=90)
         self.ship2 = ObjectToRender(image_path=assets_path + '/background/ship.png', position=(70, 500), width=230, height=100, rotation=90)
- 
+
+        # Charging Station
+        charging_station = pygame.image.load(assets_path + '/background/charging_station_6.png')
+        self.charging_station = pygame.transform.scale(charging_station, (200, 200))  # Resize
+        self.charging_station = pygame.transform.rotate(charging_station, -90)  # Rotate 90 degrees
+        self.charging_station_position = (1280, 700)
+
         # Define colors for destinations
         destination_colors = [
             'red', 'blue', 'yellow', 'green', 'lime', 
@@ -85,6 +91,11 @@ class Env(BaseEnv):
         self.ship1.draw(self.screen)
         self.ship2.draw(self.screen)             
 
+        # Draw charging station
+        self.screen.blit(self.charging_station, 
+                        (self.charging_station_position[0] - self.charging_station.get_width() // 2,
+                        self.charging_station_position[1] - self.charging_station.get_height() // 2))    
+        
         # Draw containers
         for color, position in zip(self.destination_images, self.destination_positions):
             if not isinstance(position, tuple) or len(position) != 2:
@@ -92,7 +103,12 @@ class Env(BaseEnv):
                 continue
             image = self.destination_images[color]
             self.screen.blit(image, (position[0] - image.get_width() // 2, position[1] - image.get_height() // 2))
-            
+        
+        # Draw charging station
+        self.screen.blit(self.charging_station, 
+                        (self.charging_station_position[0] - self.charging_station.get_width() // 2,
+                        self.charging_station_position[1] - self.charging_station.get_height() // 2))    
+        
     def draw_agents_info(self):
         super().draw_agents_info()
         # Draw agents

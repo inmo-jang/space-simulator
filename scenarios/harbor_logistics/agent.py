@@ -26,12 +26,24 @@ class Agent(BaseAgent):
         self.task_spending_rate = config['battery']['task_spending_rate']
 
     def update_battery(self):
+
+        if self.blackboard.get('is_charging', False):
+        # 충전 중일 경우 배터리 감소 없음
+            return
+    
         """배터리 상태를 업데이트, 작업 여부에 따라 소모량 변경"""
         # 작업 여부에 따른 소모 속도 설정
         if self.blackboard.get('assigned_task_id'):
             battery_spending_rate = self.task_spending_rate
         else:
             battery_spending_rate = self.default_spending_rate
+        
+        # FULLED 상태 처리
+        if self.blackboard.get('is_charging', False):
+            self.battery = max(0, self.battery - battery_spending_rate)
+            #print(f"Agent {self.agent_id}: FULLED status active. Battery decreased by {battery_spending_rate:.2f}%. Current battery: {self.battery:.2f}%.")
+            return  # FULLED 상태에서도 정상적으로 배터리 감소 후 종료
+        
         self.battery = max(0, self.battery - battery_spending_rate)
         #print(f"Agent {self.agent_id}: Battery decreased by {battery_spending_rate:.2f}%")
 

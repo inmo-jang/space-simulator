@@ -1,6 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <root BTCPP_format="4">
   <BehaviorTree ID="space-simulator">
+    <Fallback>
+      <Sequence>
+        <IsBatteryLow/>
+        <Sequence>
+        <Fallback>
+          <IsArrivedAtChargingStation/>
+          <GoToChargingStation/>
+        </Fallback>
+        <ChargeBattery/>
+      </Sequence>
+    </Sequence>
     <Sequence>
       <LocalSensingNode/>
       <Fallback>
@@ -27,7 +38,8 @@
         </Sequence>
       </Fallback>
     </Sequence>
-  </BehaviorTree>
+  </Fallback>
+</BehaviorTree>
 
   <!-- Description of Node Models (used by Groot) -->
   <TreeNodesModel>
@@ -39,9 +51,13 @@
                editable="true"/>
     <Condition ID="IsArrivedAtShip"
                editable="true"/>
+    <Condition ID="IsArrivedAtChargingStation"
+               editable="true"/>           
     <Condition ID="IsFinishedTask"
                editable="true"/>
     <Condition ID="IsHoldingItem"
+               editable="true"/>
+    <Condition ID="IsBatteryLow"
                editable="true"/>
     <Action ID="LocalSensingNode"
             editable="true"/>
@@ -50,6 +66,10 @@
     <Action ID="PlaceItem"
             editable="true"/>
     <Action ID="DecideShip"
+            editable="true"/>
+    <Action ID="GoToChargingStation"
+            editable="true"/>
+    <Action ID="ChargeBattery"
             editable="true"/>
   </TreeNodesModel>
 
