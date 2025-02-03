@@ -22,7 +22,7 @@ class SpaceRLEnv(AECEnv, metaclass=ABCMeta):
     :param generate_rl_agent: Function/class to generate RL agents.
     """
     def __init__(self,
-                 env: BaseEnv = None, 
+                 env: BaseEnv, 
                  nearby_task_max_num: int,
                  nearby_agent_max_num: int,
                  generate_rl_agent: type[T]):
