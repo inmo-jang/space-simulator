@@ -39,6 +39,11 @@ class MAPPOPolicy:
         self.num_mini_batch = mappo_config['num_mini_batch']
         self.data_chunk_length = mappo_config['data_chunk_length']
         self.episode_length = mappo_config['episode_length']
+        self.save_path = mappo_config['save_path']
+        if 'load_path' in mappo_config.keys():
+            self.load_path = mappo_config['load_path']
+        else:
+            self.load_path = None
 
         self.inited = False
        
@@ -51,8 +56,7 @@ class MAPPOPolicy:
 
         self.actor = Actor(self.hidden_size, self.layer_N, self.recurrent_N, self.local_observation_space, self.action_space, self.device)
         self.critic = Critic(self.hidden_size, self.layer_N, self.recurrent_N, self.global_observation_space, self.device)
-
-
+        
         self.actor = DDP(self.actor)
         self.critic = DDP(self.critic)
 
@@ -63,6 +67,15 @@ class MAPPOPolicy:
                                                  lr=self.critic_lr,
                                                  eps=self.epsilon,
                                                  weight_decay=self.weight_decay)
+
+        # load parameters
+        if self.load_path is not None:
+            checkpoint = torch.load(self.load_path)
+            self.actor.load_state_dict(checkpoint['actor_state_dict'])
+            self.critic.load_state_dict(checkpoint['critic_state_dict'])
+            self.actor_optimizer.load_state_dict(checkpoint['optimizer_actor_state_dict'])
+            self.critic_optimizer.load_state_dict(checkpoint['optimizer_critic_state_dict'])
+
         self.inited = True
 
         self.step = 0
@@ -220,6 +233,15 @@ class MAPPOPolicy:
 
         return action, action_log_prob, rnn_state, value, rnn_state_critic
 
+    """Save models' parameters."""
+    def save_model(self):
+        torch.save({
+            'actor_state_dict': self.actor.state_dict(),
+            'critic_state_dict': self.critic.state_dict(),
+            'optimizer_actor_state_dict': self.actor_optimizer.state_dict(),
+            'optimizer_critic_state_dict': self.critic_optimizer.state_dict()
+            }, self.save_path)
+
     """Decide on an action based on the current state."""
     def decide(self, blackboard) -> int:
         if self.inited == False:
@@ -246,6 +268,7 @@ class MAPPOPolicy:
             self.train()
             self.prep_rollout()
             self.step = 0
+            self.save_model()
         
         return selected_task_id
 

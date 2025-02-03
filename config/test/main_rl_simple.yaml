@@ -22,6 +22,8 @@ decision_making:
     num_mini_batch: 2
     data_chunk_length: 16
     episode_length: 256
+    save_path: scenarios/simple/rl.pt
+    load_path: scenarios/simple/rl.pt
 
 agents:
   behavior_tree_xml: default_bt.xml 
