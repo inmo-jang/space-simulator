@@ -59,8 +59,13 @@ class SpaceRLEnv(AECEnv, metaclass=ABCMeta):
     """Pre-processing before an environment step (e.g., updating rewards and observations)."""
     def prev_env_step(self):
         for agent in self.agents:
-            self.get_reward(agent)
+            # Get recent local observation
+            agent.blackboard['local_tasks_info'] = agent.get_tasks_nearby(with_completed_task = False)
+            agent.blackboard['local_agents_info'] = agent.local_message_receive()
+            # Get observation for RL
             self.observe(agent)
+            # Get reward
+            self.get_reward(agent)
 
     """Check if the environment is still running."""
     def is_running(self) -> bool:
