@@ -7,12 +7,17 @@ import numpy as np
 from plugins.marl.mappo.actor_critic import Actor, Critic
 from modules.separated_buffer import SeparateReplayBuffer
 from modules.utils import config
+import matplotlib.pyplot as plt
+import wandb
 import math
 
 # MAPPOPolicy class encapsulates the MAPPO algorithm for training an agent with a shared policy
 # The code is based on the MAPPO implementation from the repository: https://github.com/marlbenchmark/on-policy/
 
 mappo_config = config['decision_making']['MAPPO']
+
+if mappo_config['wandb'] is True:
+    wandb.init(project="Space_MAPPO", name="Space_MAPPO_run")
 
 class MAPPOPolicy:
 
@@ -202,6 +207,15 @@ class MAPPOPolicy:
         critic_grad_norm = self.get_grad_norm(self.critic.parameters())
         self.critic_optimizer.step()
 
+        if mappo_config['wandb'] is True:
+            wandb.log({
+                "Policy Loss": policy_loss.item(),
+                "Value Loss": value_loss.item(),
+                "Entropy": dist_entropy.mean().item(),
+                "Actor Gradient Norm": actor_grad_norm,
+                "Critic Gradient Norm": critic_grad_norm
+            })
+
         return value_loss, critic_grad_norm, policy_loss, dist_entropy, actor_grad_norm, imp_weights
 
     """Train the agent using the PPO update."""
@@ -212,17 +226,51 @@ class MAPPOPolicy:
         std_advantages = np.nanstd(advantages_copy)
         advantages = (advantages - mean_advantages) / (std_advantages + 1e-5)
 
+        policy_losses, value_losses, entropies = [], [], []
+
         for _ in range(self.ppo_epoch):
             data_generator = self.buffer.recurrent_generator(advantages, self.num_mini_batch, self.data_chunk_length)
 
             for sample in data_generator:
                 value_loss, critic_grad_norm, policy_loss, dist_entropy, actor_grad_norm, imp_weights \
                     = self.ppo_update(sample)
+
+                policy_losses.append(policy_loss.item())
+                value_losses.append(value_loss.item())
+                entropies.append(dist_entropy.mean().item())
                 
                 if self.agent.agent_id == 0:
-                    print(policy_loss)
+                    print(f"Policy Loss: {policy_loss.item()}, Value Loss: {value_loss.item()}, Entropy: {dist_entropy.mean().item()}")
 
         self.buffer.after_update()
+
+        if self.agent.agent_id == 0 and mappo_config['plot'] is True:
+            self.plot_training_stats(policy_losses, value_losses, entropies)
+
+    """Plot training statistics"""
+    def plot_training_stats(self, policy_losses, value_losses, entropies):
+        fig, axs = plt.subplots(3, 1, figsize=(10, 12))
+
+        axs[0].plot(policy_losses, label="Policy Loss", color='red')
+        axs[0].set_title("Policy Loss")
+        axs[0].set_xlabel("Iteration")
+        axs[0].set_ylabel("Loss")
+        axs[0].legend()
+
+        axs[1].plot(value_losses, label="Value Loss", color='blue')
+        axs[1].set_title("Value Loss")
+        axs[1].set_xlabel("Iteration")
+        axs[1].set_ylabel("Loss")
+        axs[1].legend()
+
+        axs[2].plot(entropies, label="Entropy", color='green')
+        axs[2].set_title("Entropy")
+        axs[2].set_xlabel("Iteration")
+        axs[2].set_ylabel("Entropy")
+        axs[2].legend()
+
+        plt.tight_layout()
+        plt.show()
 
     """Collect actions and values for the agent."""
     @torch.no_grad()

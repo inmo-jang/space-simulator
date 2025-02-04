@@ -23,6 +23,8 @@ decision_making:
     episode_length: 256  # Episode length, depends on the environment
     save_path: scenarios/simple/rl.pt  # Path to save the trained model
     #load_path: scenarios/simple/rl.pt  # Path to load the trained model
+    plot: True
+    wandb: False
 
 agents:
   behavior_tree_xml: default_bt.xml 
