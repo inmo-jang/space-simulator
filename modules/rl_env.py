@@ -65,7 +65,7 @@ class SpaceRLEnv(AECEnv, metaclass=ABCMeta):
             # Get observation for RL
             self.observe(agent)
             # Get reward
-            self.get_reward(agent)
+        self.get_reward()
 
     """Check if the environment is still running."""
     def is_running(self) -> bool:
