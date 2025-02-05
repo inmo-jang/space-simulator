@@ -11,6 +11,12 @@ class Env(BaseEnv):
         # Initialize the background and environment
         self.set_background()
 
+        # Set grid size
+        self.grid_size = config['grid']['size']
+
+        # 이동 가능한 노드 생성
+        self.grid_nodes = self.generate_grid_nodes()
+
         # Initialize agents and tasks
         self.tasks = generate_tasks()
         self.agents = generate_agents(self.tasks)
@@ -62,13 +68,71 @@ class Env(BaseEnv):
         # Define destination positions (1열에 7개씩 2행)
             start_x = 300  # 첫 번째 열의 x 좌표 시작점
             start_y = 300  # 첫 번째 행의 y 좌표 시작점
-            x_spacing = 130  # 열 간격
-            y_spacing = 350  # 행 간격
+            x_spacing = 120  # 열 간격
+            y_spacing = 360  # 행 간격
 
         self.destination_positions = []
         for i in range(7):  # 7개 열
             self.destination_positions.append((start_x + i * x_spacing, start_y))       # 첫 번째 행
             self.destination_positions.append((start_x + i * x_spacing, start_y + y_spacing))  # 두 번째 행
+
+    def disable_obstacle_nodes(self, grid_nodes):
+        """
+        장애물 위치와 크기를 기반으로 노드 비활성화
+        """
+        obstacles = set()
+
+        # Ship 장애물
+        ship1_rect = pygame.Rect(
+            self.ship1.position[0] - self.ship1.width // 2, 
+            self.ship1.position[1] - self.ship1.height // 2, 
+            self.ship1.width, 
+            self.ship1.height
+        )
+        ship2_rect = pygame.Rect(
+            self.ship2.position[0] - self.ship2.width // 2, 
+            self.ship2.position[1] - self.ship2.height // 2, 
+            self.ship2.width, 
+            self.ship2.height
+        )
+
+        # Destination 장애물
+        for pos in self.destination_positions:
+            dest_rect = pygame.Rect(
+                pos[0] - 40,  # 중심으로 보정
+                pos[1] - 150, 
+                80,  # Destination 너비
+                300  # Destination 높이
+            )
+            obstacles.update(node for node in grid_nodes if dest_rect.collidepoint(node))
+
+        # Ship 장애물 영역에 포함된 노드 비활성화
+        obstacles.update(node for node in grid_nodes if ship1_rect.collidepoint(node) or ship2_rect.collidepoint(node))
+
+        # Sea 장애물
+        sea_rect = pygame.Rect(
+            0,  # Sea의 x 시작점
+            self.screen_height - 1200,  # Sea의 y 시작점 (기준)
+            170,  # Sea의 너비
+            1200  # Sea의 높이
+        )
+        obstacles.update(node for node in grid_nodes if sea_rect.collidepoint(node))
+
+        # 장애물 제거
+        return grid_nodes - obstacles
+
+    
+    def generate_grid_nodes(self):
+        """
+        기본 그리드를 생성
+        전체 화면 크기를 기반으로 바둑판 격자 생성
+        """
+        grid_nodes = set()
+        for y in range(0, self.screen_height, self.grid_size):
+            for x in range(0, self.screen_width, self.grid_size):
+                grid_nodes.add((x, y))  # 좌표는 픽셀 단위로 저장
+        grid_nodes = self.disable_obstacle_nodes(grid_nodes)
+        return grid_nodes
             
     async def step(self):
         await super().step() # Execution of `step()` in `BaseEnv`        
@@ -80,6 +144,26 @@ class Env(BaseEnv):
         #     print(f"New Task {new_task.task_id_start} generated at {new_task.position}")
         # elif len(tasks) == max_task_count and tasks_left == 0:
         #     mission_completed = True  # 모든 작업이 완료되면 미션 종료
+
+    def draw_grid(self):
+        """
+        이동 가능한 노드를 화면에 시각화
+        """
+        for node in self.grid_nodes:
+            x, y = node
+            pygame.draw.rect(
+                self.screen,
+                (0, 255, 0),  # 초록색 노드
+                pygame.Rect(
+                    x - self.grid_size // 2,  # X 좌표 보정
+                    y - self.grid_size // 2,  # Y 좌표 보정
+                    self.grid_size, 
+                    self.grid_size
+                ),
+                1  # 테두리 두께
+            )
+
+
 
     def draw_background(self):
         # Draw Port background
@@ -108,7 +192,8 @@ class Env(BaseEnv):
         self.screen.blit(self.charging_station, 
                         (self.charging_station_position[0] - self.charging_station.get_width() // 2,
                         self.charging_station_position[1] - self.charging_station.get_height() // 2))    
-        
+        self.draw_grid()
+
     def draw_agents_info(self):
         super().draw_agents_info()
         # Draw agents

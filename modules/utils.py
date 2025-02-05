@@ -85,6 +85,8 @@ class ObjectToRender:
         self.image = image_temp
         self.position = pygame.math.Vector2(position)  
         self.rotation = rotation
+        self.width = width
+        self.height = height
 
     def draw(self, screen):        
         image_current = pygame.transform.rotate(self.image, self.rotation)          

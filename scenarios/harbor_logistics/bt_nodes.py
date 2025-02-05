@@ -188,7 +188,7 @@ class GoToShip(SyncAction):
 
         # Waypoint Following
         result = self.waypoint_follower.move()
-        print("goingtoship")
+        #print("goingtoship")
         if result == Status.SUCCESS:
             blackboard['status'] = "AtShip"
             blackboard['waypoints'] = None # Reset

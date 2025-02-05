@@ -104,3 +104,6 @@ charging_station_position:
 battery:
   default_spending_rate: 0.001  
   task_spending_rate: 0.01  
+
+grid:
+  size : 40
