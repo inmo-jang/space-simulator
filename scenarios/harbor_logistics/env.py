@@ -3,6 +3,7 @@ from modules.base_env import BaseEnv
 from modules.utils import ResultSaver, ObjectToRender
 from scenarios.harbor_logistics.task import generate_tasks
 from scenarios.harbor_logistics.agent import generate_agents
+from scenarios.harbor_logistics.grid_graph import GridGraph
 
 class Env(BaseEnv):
     def __init__(self, config):
@@ -16,6 +17,9 @@ class Env(BaseEnv):
 
         # 이동 가능한 노드 생성
         self.grid_nodes = self.generate_grid_nodes()
+
+        # 그래프 생성
+        self.grid_graph = GridGraph(self.grid_nodes, self.grid_size)
 
         # Initialize agents and tasks
         self.tasks = generate_tasks()
@@ -171,6 +175,8 @@ class Env(BaseEnv):
         # Draw Sea background under the ship
         self.screen.blit(self.background_sea, (0, self.screen_height - 1200))  # 배경 위치 조정            
         
+        self.draw_graph_on_pygame() 
+        
         # Draw ship
         self.ship1.draw(self.screen)
         self.ship2.draw(self.screen)             
@@ -193,6 +199,19 @@ class Env(BaseEnv):
                         (self.charging_station_position[0] - self.charging_station.get_width() // 2,
                         self.charging_station_position[1] - self.charging_station.get_height() // 2))    
         self.draw_grid()
+
+    def draw_graph_on_pygame(self):
+        """
+        Pygame 창에 그리드 기반 그래프를 시각화
+        """
+        # 노드 시각화
+        for node in self.grid_graph.graph.nodes:
+            pygame.draw.circle(self.screen, (0, 0, 255), node, 3)  # 파란 점
+
+        # 엣지 시각화
+        for edge in self.grid_graph.graph.edges:
+            pygame.draw.line(self.screen, (100, 100, 100), edge[0], edge[1], 1)  # 회색 선
+
 
     def draw_agents_info(self):
         super().draw_agents_info()
