@@ -1,7 +1,7 @@
 from enum import Enum
 import math
 from modules.base_bt_nodes import BTNodeList, Status, Node, Sequence, Fallback, SyncAction, LocalSensingNode, DecisionMakingNode
-
+from plugins.path_planner.plugin_manager import planner_manager
 
 # BT Node List
 CUSTOM_ACTION_NODES = [
@@ -139,10 +139,10 @@ class DecideShip(SyncAction):
         return Status.SUCCESS
 
 class GoToShip(SyncAction):
-    def __init__(self, name, agent):
+    def __init__(self, name, agent, planner_name='xy'):
         super().__init__(name, self._move)
         self.waypoint_follower = WaypointFollower(agent, target_arrive_threshold)
-        self.path_planner = PathPlanner(agent)
+        self.path_planner = planner_manager.get_planner(planner_name, agent)
             
     def _move(self, agent, blackboard):
 
@@ -196,10 +196,10 @@ class GoToShip(SyncAction):
         return result
 
 class GoToDestination(SyncAction):
-    def __init__(self, name, agent):
+    def __init__(self, name, agent, planner_name="xy"):
         super().__init__(name, self._move)
         self.waypoint_follower = WaypointFollower(agent, target_arrive_threshold)
-        self.path_planner = PathPlanner(agent)
+        self.path_planner = planner_manager.get_planner(planner_name, agent)
 
     def _move(self, agent, blackboard):
 
@@ -302,43 +302,43 @@ class GoToChargingStation(SyncAction):
 
         return Status.FAILURE
 
-class PathPlanner():
-    def __init__(self, agent):
-        self.agent = agent
-        self.target_position = None
+# class PathPlanner():
+#     def __init__(self, agent):
+#         self.agent = agent
+#         self.target_position = None
 
-    def set_target_position(self, target_position):
-        self.target_position = target_position
+#     def set_target_position(self, target_position):
+#         self.target_position = target_position
 
-    def generate(self, option='xy'):
-        """
-        Generates waypoints following the Manhattan grid, adding waypoints only at turns.
-        The `option` parameter controls the order of movement:
-        - 'xy' (default): Move in x-direction first, then y-direction.
-        - 'yx': Move in y-direction first, then x-direction.
-        """
-        waypoints = []
-        agent_position = self.agent.position
+#     def generate(self, option='xy'):
+#         """
+#         Generates waypoints following the Manhattan grid, adding waypoints only at turns.
+#         The `option` parameter controls the order of movement:
+#         - 'xy' (default): Move in x-direction first, then y-direction.
+#         - 'yx': Move in y-direction first, then x-direction.
+#         """
+#         waypoints = []
+#         agent_position = self.agent.position
 
-        # Current agent coordinates
-        current_x, current_y = agent_position
-        # Target coordinates
-        target_x, target_y = self.target_position
+#         # Current agent coordinates
+#         current_x, current_y = agent_position
+#         # Target coordinates
+#         target_x, target_y = self.target_position
 
-        if option == 'xy':
-            # Move in x-direction first, then y-direction
-            if current_x != target_x:
-                waypoints.append((target_x, current_y))
-            if current_y != target_y:
-                waypoints.append((target_x, target_y))
-        elif option == 'yx':
-            # Move in y-direction first, then x-direction
-            if current_y != target_y:
-                waypoints.append((current_x, target_y))
-            if current_x != target_x:
-                waypoints.append((target_x, target_y))
+#         if option == 'xy':
+#             # Move in x-direction first, then y-direction
+#             if current_x != target_x:
+#                 waypoints.append((target_x, current_y))
+#             if current_y != target_y:
+#                 waypoints.append((target_x, target_y))
+#         elif option == 'yx':
+#             # Move in y-direction first, then x-direction
+#             if current_y != target_y:
+#                 waypoints.append((current_x, target_y))
+#             if current_x != target_x:
+#                 waypoints.append((target_x, target_y))
 
-        return waypoints
+#         return waypoints
     
 
 
