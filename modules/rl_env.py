@@ -33,6 +33,7 @@ class SpaceRLEnv(AECEnv, metaclass=ABCMeta):
         # Assign RL agents to base agents
         for agent in self.agents:
             agent.rl_agent = generate_rl_agent() 
+            agent.blackboard['reward'] = 0
 
         self.nearby_task_max_num = nearby_task_max_num
         self.nearby_agent_max_num = nearby_agent_max_num
@@ -41,6 +42,8 @@ class SpaceRLEnv(AECEnv, metaclass=ABCMeta):
     """Reset the environment and reinitialize the agent list."""
     def reset(self):
         self.agents = self.possible_agents[:]
+        for agent in self.agents:
+            agent.blackboard['reward'] = 0
         self.env.reset()
 
     """

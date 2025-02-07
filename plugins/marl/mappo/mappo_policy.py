@@ -98,8 +98,8 @@ class MAPPOPolicy:
     def insert(self, data):
         obs, share_obs, rewards, available_actions, \
         values, actions, action_log_probs, rnn_states, rnn_states_critic = data
-        rnn_states = np.array(rnn_states)
-        rnn_states_critic = np.array(rnn_states_critic)
+        #rnn_states = np.array(rnn_states)
+        #rnn_states_critic = np.array(rnn_states_critic)
         actions = np.array(actions)
         action_log_probs = np.array(action_log_probs)
         values = np.array(values)
@@ -174,36 +174,48 @@ class MAPPOPolicy:
                                                                        available_actions_batch)
 
         # actor update
-        old_action_log_probs_batch = torch.tensor(old_action_log_probs_batch,dtype=torch.float32)
-        imp_weights = torch.exp(action_log_probs - old_action_log_probs_batch)
+        # Convert tensors (ensure they are detached and on correct device)
+        old_action_log_probs_batch = torch.tensor(old_action_log_probs_batch, dtype=torch.float32, device=self.device).detach()
+        adv_targ = torch.tensor(adv_targ, dtype=torch.float32, device=self.device).detach()
         
-        adv_targ = torch.tensor(adv_targ,dtype=torch.float32)
+        # Compute importance weights
+        imp_weights = torch.exp(torch.clamp(action_log_probs - old_action_log_probs_batch, min=-10, max=10))
+        
+        # PPO Clipped Surrogate Objective
         surr1 = imp_weights * adv_targ
         surr2 = torch.clamp(imp_weights, 1.0 - self.clip_param, 1.0 + self.clip_param) * adv_targ
-
-        policy_action_loss = (-torch.sum(torch.min(surr1, surr2),
-                                         dim=-1,
-                                         keepdim=True)).sum()
-
-        policy_loss = policy_action_loss
-
+        policy_action_loss = -torch.min(surr1, surr2).mean()
+        
+        # Compute final policy loss
+        policy_loss = policy_action_loss - dist_entropy * self.entropy_coef  # Entropy regularization
+        
+        # Backpropagation
         self.actor_optimizer.zero_grad()
-
-        (policy_loss - dist_entropy * self.entropy_coef).backward()
-
+        policy_loss.backward()
+        
+        # Gradient Clipping
+        torch.nn.utils.clip_grad_norm_(self.actor.parameters(), max_norm=0.5)
+        
+        # Update step
         actor_grad_norm = self.get_grad_norm(self.actor.parameters())
-
         self.actor_optimizer.step()
 
         # critic update
-        value_preds_batch = torch.tensor(value_preds_batch, dtype=torch.float32)
-        return_batch = torch.tensor(return_batch, dtype=torch.float32)
+        # Convert tensors (ensure they are detached and on correct device)
+        value_preds_batch = torch.tensor(value_preds_batch, dtype=torch.float32, device=self.device).detach()
+        return_batch = torch.tensor(return_batch, dtype=torch.float32, device=self.device).detach()
+        
+        # Compute value loss
         value_loss = self.cal_value_loss(values, value_preds_batch, return_batch)
-
+        
+        # Backpropagation
         self.critic_optimizer.zero_grad()
-
         (value_loss * self.value_loss_coef).backward()
-
+        
+        # Gradient Clipping
+        torch.nn.utils.clip_grad_norm_(self.critic.parameters(), max_norm=0.5)
+        
+        # Update step
         critic_grad_norm = self.get_grad_norm(self.critic.parameters())
         self.critic_optimizer.step()
 
@@ -294,23 +306,23 @@ class MAPPOPolicy:
     def decide(self, blackboard) -> int:
         if self.inited == False:
             self.init()
-        available_actions = blackboard['closest_tasks']
         action, action_log_prob, rnn_state, value, rnn_state_critic = self.collect(blackboard)
-        if len(blackboard['closest_tasks']) > action - 1 and action != 0:
-            selected_task = blackboard['closest_tasks'][action-1]
+        available_actions = blackboard['closest_tasks']
+        if 1 <= action <= len(available_actions):
+            selected_task = available_actions[action - 1]
             selected_task_id = selected_task.task_id
         else:
             selected_task_id = None
-
 
         data = blackboard['local_observation'], blackboard['global_observation'],\
                blackboard['reward'], available_actions, \
                value, action, action_log_prob, rnn_state, rnn_state_critic
 
         self.insert(data)
+        blackboard['reward'] = 0
         self.step = self.step + 1
 
-        if self.step is self.episode_length:
+        if self.step == self.episode_length:
             self.compute()
             self.prep_training()
             self.train()

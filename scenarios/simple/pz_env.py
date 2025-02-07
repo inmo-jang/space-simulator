@@ -13,6 +13,7 @@ class PZEnv(SpaceRLEnv):
         # Initialize previous states
         self.prev_distance_moved = {agent: 0.0 for agent in self.agents}
         self.prev_task_amount_done = {agent: 0.0 for agent in self.agents}
+        self.prev_simulation_time = 0
         self.reward = 0.0
         # Initialize distributed training process
         if dist.is_available() and not dist.is_initialized():
@@ -31,7 +32,8 @@ class PZEnv(SpaceRLEnv):
     Get the local observation for an agent.
     """
     def local_observe(self, agent):
-        closest_agents = self.get_closest_items(agent.position, agent.blackboard['local_agents_info'], top_k=agent.rl_agent.nearby_agent_max_num) if 'local_agent_info' in agent.blackboard.keys() else list()
+        closest_agents = self.get_closest_items(agent.position, agent.blackboard['local_agents_info'], top_k=agent.rl_agent.nearby_agent_max_num - 1 ) if 'local_agent_info' in agent.blackboard.keys() else list()
+        closest_agents.insert(0,agent)
         closest_tasks = self.get_closest_items(agent.position, agent.blackboard['local_tasks_info'], top_k=agent.rl_agent.nearby_task_max_num) if 'local_tasks_info' in agent.blackboard.keys() else list()
 
         # Process agent positions
@@ -87,15 +89,17 @@ class PZEnv(SpaceRLEnv):
     """
     Compute the reward for the given agent.
     """
-    def get_reward(self, agent) -> float:
+    def get_reward(self) -> float:
+        reward = 0
         for agent in self.agents:
-            self.reward += self.prev_distance_moved[agent] - agent.distance_moved
-            self.prev_distance_moved[agent] = agent.distance_moved
-            self.reward += agent.task_amount_done - self.prev_task_amount_done[agent]
+            #reward += self.prev_distance_moved[agent] - agent.distance_moved
+            #self.prev_distance_moved[agent] = agent.distance_moved
+            reward += (agent.task_amount_done - self.prev_task_amount_done[agent])*10
             self.prev_task_amount_done[agent] = agent.task_amount_done
 
-        if self.env.mission_completed is True:
-            self.reward -= self.env.simuilation_time
+        reward += self.prev_simulation_time - self.env.simulation_time
+
+        self.prev_simulation_time = self.env.simulation_time
 
         for agent in self.agents:
-            agent.blackboard['reward'] = self.reward
+            agent.blackboard['reward'] += reward

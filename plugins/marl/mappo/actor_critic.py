@@ -126,7 +126,7 @@ class MLPBase(nn.Module):
     def forward(self, x):
         x = np.array(x, dtype=np.float32)
         x = torch.tensor(x, dtype=torch.float32)
-        x = self.feature_norm(torch.tensor(x))
+        x = self.feature_norm(x.clone().detach())
         x = self.mlp(x)
 
         return x
@@ -178,9 +178,9 @@ class Actor(nn.Module):
 
         actor_features, rnn_states = self.rnn(actor_features, rnn_states)#, masks)
 
-        action = torch.tensor(action,dtype=torch.float32)
+        action = torch.tensor(action,dtype=torch.float32).detach()
        
-        action_log_probs, dist_entropy = self.act.evaluate_actions(actor_features,action)
+        action_log_probs, dist_entropy = self.act.evaluate_actions(actor_features, action)
 
         return action_log_probs, dist_entropy
 
