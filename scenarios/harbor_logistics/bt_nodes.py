@@ -139,9 +139,10 @@ class DecideShip(SyncAction):
         return Status.SUCCESS
 
 class GoToShip(SyncAction):
-    def __init__(self, name, agent, planner_name='xy'):
+    def __init__(self, name, agent):
         super().__init__(name, self._move)
         self.waypoint_follower = WaypointFollower(agent, target_arrive_threshold)
+        planner_name = config['planner']['algorithm']  
         self.path_planner = planner_manager.get_planner(planner_name, agent)
             
     def _move(self, agent, blackboard):
@@ -181,8 +182,10 @@ class GoToShip(SyncAction):
                 print(f"Agent {agent.agent_id}: Unknown ship {chosen_ship}")
                 return Status.FAILURE
             
-            self.path_planner.set_target_position(position_to_pickup)
-            waypoints = self.path_planner.generate('xy')
+            start = agent.position  # 에이전트 현재 위치
+            goal = position_to_pickup  # 목표 위치 (Ship)
+            
+            waypoints = self.path_planner.generate(start, goal)
             self.waypoint_follower.set_waypoints(waypoints)
             blackboard['waypoints'] = waypoints
 
@@ -196,9 +199,10 @@ class GoToShip(SyncAction):
         return result
 
 class GoToDestination(SyncAction):
-    def __init__(self, name, agent, planner_name="xy"):
+    def __init__(self, name, agent):
         super().__init__(name, self._move)
         self.waypoint_follower = WaypointFollower(agent, target_arrive_threshold)
+        planner_name = config['planner']['algorithm']  
         self.path_planner = planner_manager.get_planner(planner_name, agent)
 
     def _move(self, agent, blackboard):
@@ -214,8 +218,13 @@ class GoToDestination(SyncAction):
         if waypoints is None:
             assigned_task_id = blackboard.get('assigned_task_id')  
             position_to_deliver = agent.tasks_info[assigned_task_id].position_to_deliver        
-            self.path_planner.set_target_position(position_to_deliver)
-            waypoints = self.path_planner.generate('xy')
+            #self.path_planner.set_target_position(position_to_deliver)
+            # start와 goal을 사용해 경로 생성
+            start = agent.position
+            goal = position_to_deliver
+            waypoints = self.path_planner.generate(start, goal)  # 변경된 방식
+
+            #waypoints = self.path_planner.generate()
             blackboard['waypoints'] = waypoints
             self.waypoint_follower.set_waypoints(waypoints)
 

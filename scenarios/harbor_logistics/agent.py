@@ -12,8 +12,11 @@ work_rate = config['agents']['work_rate']
 behavior_tree_xml = f"{os.path.dirname(os.path.abspath(__file__))}/{config['agents']['behavior_tree_xml']}"
 
 class Agent(BaseAgent):
-    def __init__(self, agent_id, position, tasks_info):
+    def __init__(self, agent_id, position, tasks_info, env):
         super().__init__(agent_id, position, tasks_info)
+        self.env = env
+        self.grid_graph = env.grid_graph
+
         self.work_rate = work_rate
 
         self.image = pygame.image.load('scenarios/harbor_logistics/assets/agents/agent.png')  # 기본 이미지
@@ -98,7 +101,7 @@ class Agent(BaseAgent):
             text_rect.topleft = (self.position.x + 30, self.position.y - 20)  # 에이전트 옆에 표시
             screen.blit(text_surface, text_rect)
 
-def generate_agents(tasks_info):
+def generate_agents(tasks_info,env):
     agent_quantity = config['agents']['quantity']
     agent_locations = config['agents']['locations']
 
@@ -110,7 +113,7 @@ def generate_agents(tasks_info):
                                       radius=agent_locations['non_overlap_radius'])
 
     # Initialize agents
-    agents = [Agent(idx, pos, tasks_info) for idx, pos in enumerate(agents_positions)]
+    agents = [Agent(idx, pos, tasks_info, env) for idx, pos in enumerate(agents_positions)]
 
     # Provide the global info and create behavior tree
     for agent in agents:

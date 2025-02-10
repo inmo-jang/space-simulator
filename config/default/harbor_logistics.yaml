@@ -2,6 +2,9 @@ scenario:
   # environment: scenarios.simple
   environment: scenarios.harbor_logistics
 
+planner:
+  algorithm: "a_star" # xy, yx, a_star
+
 # decision_making: # Case 1
 #   plugin: plugins.grape.grape.GRAPE
 #   GRAPE:

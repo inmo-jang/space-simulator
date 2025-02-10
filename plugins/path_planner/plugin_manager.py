@@ -6,7 +6,7 @@ class PathPlannerPluginManager:
     def register_planner(self, name, planner_class):
         """
         경로 계획 플러그인을 등록
-        :param name: 플러그인 이름 (e.g., "xy", "yx")
+        :param name: 플러그인 이름 (e.g., "xy", "yx" , "a_star")
         :param planner_class: 경로 계획 알고리즘 클래스
         """
         self.planners[name] = planner_class
@@ -25,7 +25,10 @@ class PathPlannerPluginManager:
 # 플러그인 매니저 생성 및 플러그인 등록
 from plugins.path_planner.xy_planner import XYPlanner
 from plugins.path_planner.yx_planner import YXPlanner
+from plugins.path_planner.a_star_planner import AStarPlanner
+
 
 planner_manager = PathPlannerPluginManager()
 planner_manager.register_planner("xy", XYPlanner)
 planner_manager.register_planner("yx", YXPlanner)
+planner_manager.register_planner("a_star", AStarPlanner)

@@ -23,7 +23,7 @@ class Env(BaseEnv):
 
         # Initialize agents and tasks
         self.tasks = generate_tasks()
-        self.agents = generate_agents(self.tasks)
+        self.agents = generate_agents(self.tasks, self)
         self.generate_tasks = generate_tasks
 
         # Initialize data recording
@@ -176,7 +176,7 @@ class Env(BaseEnv):
         self.screen.blit(self.background_sea, (0, self.screen_height - 1200))  # 배경 위치 조정            
         
         self.draw_graph_on_pygame() 
-        
+
         # Draw ship
         self.ship1.draw(self.screen)
         self.ship2.draw(self.screen)             
