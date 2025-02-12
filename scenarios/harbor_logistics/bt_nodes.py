@@ -368,9 +368,26 @@ class WaypointFollower():
         self.waypoints = waypoints
 
     def move(self):
+        
+        # 1. waypoints가 비어있는지 확인
+        if not self.waypoints:
+            print("[ERROR] No waypoints found! Agent cannot move.")
+            return "FAILURE"
+
+        # 2. next_waypoint_index가 유효한지 확인
+        if self.next_waypoint_index >= len(self.waypoints):
+            print(f"[ERROR] Invalid waypoint index: {self.next_waypoint_index}. Max index: {len(self.waypoints)-1}")
+            return "FAILURE"
 
         agent_position = self.agent.position
         next_waypoint = self.waypoints[self.next_waypoint_index]
+       
+        if agent_position == next_waypoint:
+            self.next_waypoint_index += 1
+            if self.next_waypoint_index >= len(self.waypoints):
+                self.reset()
+                return Status.SUCCESS
+            next_waypoint = self.waypoints[self.next_waypoint_index]
         # Calculate the Euclidean distance to the next waypoint
         distance = math.sqrt((next_waypoint[0] - agent_position[0])**2 + 
                              (next_waypoint[1] - agent_position[1])**2)

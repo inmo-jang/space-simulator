@@ -101,19 +101,18 @@ class Agent(BaseAgent):
             text_rect.topleft = (self.position.x + 30, self.position.y - 20)  # 에이전트 옆에 표시
             screen.blit(text_surface, text_rect)
 
-def generate_agents(tasks_info,env):
+def generate_agents(tasks_info, env):
     agent_quantity = config['agents']['quantity']
-    agent_locations = config['agents']['locations']
-
-    agents_positions = generate_positions(agent_quantity,
-                                      agent_locations['x_min'],
-                                      agent_locations['x_max'],
-                                      agent_locations['y_min'],
-                                      agent_locations['y_max'],
-                                      radius=agent_locations['non_overlap_radius'])
-
+    
+    # 그리드 노드 리스트 가져오기
+    grid_nodes = list(env.grid_graph.graph.nodes)
+    
+    # 에이전트 수만큼 랜덤하게 그리드 노드 선택 (중복 방지)
+    import random
+    selected_positions = random.sample(grid_nodes, agent_quantity)
+    
     # Initialize agents
-    agents = [Agent(idx, pos, tasks_info, env) for idx, pos in enumerate(agents_positions)]
+    agents = [Agent(idx, pos, tasks_info, env) for idx, pos in enumerate(selected_positions)]
 
     # Provide the global info and create behavior tree
     for agent in agents:
