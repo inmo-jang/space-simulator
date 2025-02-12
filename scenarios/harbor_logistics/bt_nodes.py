@@ -131,8 +131,34 @@ class DecideShip(SyncAction):
         if blackboard.get('ship_selected', False):
             return Status.SUCCESS
         
-        # Ship 선택: Ship1 또는 Ship2
-        chosen_ship = random.choice(['Ship1', 'Ship2'])
+        # 각 Ship의 남은 Task 개수 확인
+        ships_with_tasks = []
+        all_ships = ["Ship1", "Ship2"]
+        # Ship별 Task 수 확인
+        ship_tasks = {
+            "Ship1": [task for task in agent.get_unassigned_tasks() if task.ship_id == "Ship1"],
+            "Ship2": [task for task in agent.get_unassigned_tasks() if task.ship_id == "Ship2"]
+        }
+        # 현재 Ship에 가고 있는 Agent 수를 확인 (ship별 agent count)
+        ship_agent_count = {
+            "Ship1": sum(1 for a in agent.env.agents if a.blackboard.get('chosen_ship') == "Ship1"),
+            "Ship2": sum(1 for a in agent.env.agents if a.blackboard.get('chosen_ship') == "Ship2")
+        }
+
+        for ship, tasks in ship_tasks.items():
+            task_count = len(tasks)
+            agent_count = ship_agent_count[ship]
+            # Task 개수를 초과하는 Ship은 선택하지 않음
+            if agent_count < task_count:
+                ships_with_tasks.append(ship)
+
+        # Task가 남아있는 ship이 있을 경우, 그중 랜덤 선택
+        if ships_with_tasks:
+            chosen_ship = random.choice(ships_with_tasks)
+        else:
+            # 모든 Task가 완료되었을 경우, 아무 Ship이나 랜덤 이동
+            chosen_ship = random.choice(all_ships)
+
         blackboard['chosen_ship'] = chosen_ship
         blackboard['ship_selected'] = True
         print(f"Agent {agent.agent_id}: Decided to go to {chosen_ship}")
