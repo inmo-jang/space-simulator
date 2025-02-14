@@ -1,10 +1,8 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import torch.distributed as dist
-from torch.nn.parallel import DistributedDataParallel as DDP
 import numpy as np
-from plugins.marl.mappo.actor_critic import Actor, Critic
+from plugins.marl.mappo.actor_critic import get_models
 from modules.separated_buffer import SeparateReplayBuffer
 from modules.utils import config
 import matplotlib.pyplot as plt
@@ -59,19 +57,11 @@ class MAPPOPolicy:
         self.action_space = self.agent.rl_agent.action_space
         self.buffer = SeparateReplayBuffer(self.episode_length, self.local_observation_space, self.global_observation_space, self.action_space, self.hidden_size, self.recurrent_N, self.gamma)
 
-        self.actor = Actor(self.hidden_size, self.layer_N, self.recurrent_N, self.local_observation_space, self.action_space, self.device)
-        self.critic = Critic(self.hidden_size, self.layer_N, self.recurrent_N, self.global_observation_space, self.device)
-        
-        self.actor = DDP(self.actor)
-        self.critic = DDP(self.critic)
+        self.actor, self.critic, self.actor_optimizer, self.critic_optimizer = get_models(self.hidden_size, self.layer_N, self.recurrent_N, self.local_observation_space, self.global_observation_space, self.action_space, self.device, self.learning_rate, self.critic_lr, self.epsilon, self.weight_decay)
 
-        self.actor_optimizer = torch.optim.Adam(self.actor.parameters(),
-                                                lr=self.learning_rate, eps=self.epsilon,
-                                                weight_decay=self.weight_decay)
-        self.critic_optimizer = torch.optim.Adam(self.critic.parameters(),
-                                                 lr=self.critic_lr,
-                                                 eps=self.epsilon,
-                                                 weight_decay=self.weight_decay)
+        self.prev_obs = self.buffer.obs[0]
+        self.prev_global_obs = self.buffer.share_obs[0]
+        self.prev_reward = 0
 
         # load parameters
         if self.load_path is not None:
@@ -90,8 +80,7 @@ class MAPPOPolicy:
     @torch.no_grad()
     def compute(self):
         self.prep_rollout()
-        next_values = self.get_value(self.buffer.share_obs[-1],
-                                      self.buffer.available_actions[-1])
+        next_values = self.get_value(self.buffer.share_obs[-1])
         self.buffer.compute_returns(next_values[0])
        
     """Insert data into the replay buffer."""
@@ -122,7 +111,7 @@ class MAPPOPolicy:
     """Evaluate actions taken by the agent, calculate log probabilities and value."""
     def evaluate_actions(self, cent_obs, obs, rnn_states_actor, rnn_states_critic, action, 
                          available_actions=None):
-        action_log_probs, dist_entropy = self.actor.module.evaluate_actions(obs,
+        action_log_probs, dist_entropy = self.actor.evaluate_actions(obs,
                                                                      rnn_states_actor,
                                                                      action,
                                                                      available_actions)
@@ -145,8 +134,7 @@ class MAPPOPolicy:
 
     """Calculate the value loss for critic update."""
     def cal_value_loss(self, values, value_preds_batch, return_batch):
-        value_pred_clipped = value_preds_batch + (values - value_preds_batch).clamp(-self.clip_param,
-                                                                                        self.clip_param)
+        value_pred_clipped = value_preds_batch + (values - value_preds_batch).clamp(-self.clip_param, self.clip_param)
         error_clipped = return_batch - value_pred_clipped
         error_original = return_batch - values
 
@@ -163,7 +151,7 @@ class MAPPOPolicy:
     def ppo_update(self, sample):
         share_obs_batch, obs_batch, rnn_states_batch, rnn_states_critic_batch, actions_batch, \
         value_preds_batch, return_batch, old_action_log_probs_batch, \
-        adv_targ, available_actions_batch = sample
+        adv_targ, action_masks_batch = sample
 
         # Reshape to do in a single forward pass for all steps
         values, action_log_probs, dist_entropy = self.evaluate_actions(share_obs_batch,
@@ -171,7 +159,7 @@ class MAPPOPolicy:
                                                                        rnn_states_batch,
                                                                        rnn_states_critic_batch,
                                                                        actions_batch,
-                                                                       available_actions_batch)
+                                                                       action_masks_batch)
 
         # actor update
         # Convert tensors (ensure they are detached and on correct device)
@@ -202,56 +190,53 @@ class MAPPOPolicy:
 
         # critic update
         # Convert tensors (ensure they are detached and on correct device)
-        value_preds_batch = torch.tensor(value_preds_batch, dtype=torch.float32, device=self.device).detach()
-        return_batch = torch.tensor(return_batch, dtype=torch.float32, device=self.device).detach()
-        
-        # Compute value loss
-        value_loss = self.cal_value_loss(values, value_preds_batch, return_batch)
-        
-        # Backpropagation
-        self.critic_optimizer.zero_grad()
-        (value_loss * self.value_loss_coef).backward()
-        
-        # Gradient Clipping
-        torch.nn.utils.clip_grad_norm_(self.critic.parameters(), max_norm=0.5)
-        
-        # Update step
-        critic_grad_norm = self.get_grad_norm(self.critic.parameters())
-        self.critic_optimizer.step()
+        if self.agent.agent_id == 0:
+            value_preds_batch = torch.tensor(value_preds_batch, dtype=torch.float32, device=self.device).detach()
+            return_batch = torch.tensor(return_batch, dtype=torch.float32, device=self.device).detach()
+            
+            # Compute value loss
+            value_loss = self.cal_value_loss(values, value_preds_batch, return_batch)
+            
+            # Backpropagation
+            self.critic_optimizer.zero_grad()
+            (value_loss * self.value_loss_coef).backward()
+            
+            # Gradient Clipping
+            torch.nn.utils.clip_grad_norm_(self.critic.parameters(), max_norm=0.5)
+            
+            # Update step
+            critic_grad_norm = self.get_grad_norm(self.critic.parameters())
+            self.critic_optimizer.step()
 
-        if mappo_config['wandb'] is True:
-            wandb.log({
-                "Policy Loss": policy_loss.item(),
-                "Value Loss": value_loss.item(),
-                "Entropy": dist_entropy.mean().item(),
-                "Actor Gradient Norm": actor_grad_norm,
-                "Critic Gradient Norm": critic_grad_norm
-            })
+            if mappo_config['wandb'] is True:
+                wandb.log({
+                    "Policy Loss": policy_loss.item(),
+                    "Value Loss": value_loss.item(),
+                    "Entropy": dist_entropy.mean().item(),
+                    "Actor Gradient Norm": actor_grad_norm,
+                    "Critic Gradient Norm": critic_grad_norm
+                })
+        else:
+            value_loss = None
+            critic_grad_norm = None
 
         return value_loss, critic_grad_norm, policy_loss, dist_entropy, actor_grad_norm, imp_weights
 
     """Train the agent using the PPO update."""
     def train(self):
-        advantages = self.buffer.returns[:-1] - self.buffer.value_preds[:-1]
-        advantages_copy = advantages.copy()
-        mean_advantages = np.nanmean(advantages_copy)
-        std_advantages = np.nanstd(advantages_copy)
-        advantages = (advantages - mean_advantages) / (std_advantages + 1e-5)
-
         policy_losses, value_losses, entropies = [], [], []
 
         for _ in range(self.ppo_epoch):
-            data_generator = self.buffer.recurrent_generator(advantages, self.num_mini_batch, self.data_chunk_length)
+            data_generator = self.buffer.recurrent_generator(self.num_mini_batch, self.data_chunk_length)
 
             for sample in data_generator:
                 value_loss, critic_grad_norm, policy_loss, dist_entropy, actor_grad_norm, imp_weights \
                     = self.ppo_update(sample)
-
-                policy_losses.append(policy_loss.item())
-                value_losses.append(value_loss.item())
-                entropies.append(dist_entropy.mean().item())
                 
                 if self.agent.agent_id == 0:
+                    policy_losses.append(policy_loss.item())
+                    value_losses.append(value_loss.item())
+                    entropies.append(dist_entropy.mean().item())
                     print(f"Policy Loss: {policy_loss.item()}, Value Loss: {value_loss.item()}, Entropy: {dist_entropy.mean().item()}")
 
         self.buffer.after_update()
@@ -289,7 +274,7 @@ class MAPPOPolicy:
     def collect(self, blackboard):
         available_actions = blackboard['closest_tasks']
         action, action_log_prob, rnn_state = self.get_action(blackboard, available_actions)
-        value, rnn_state_critic = self.get_value(blackboard['global_observation'], available_actions)
+        value, rnn_state_critic = self.get_value(blackboard['global_observation'])
 
         return action, action_log_prob, rnn_state, value, rnn_state_critic
 
@@ -314,10 +299,12 @@ class MAPPOPolicy:
         else:
             selected_task_id = None
 
-        data = blackboard['local_observation'], blackboard['global_observation'],\
-               blackboard['reward'], available_actions, \
+        data = self.prev_obs, self.prev_global_obs,\
+               self.prev_reward, available_actions, \
                value, action, action_log_prob, rnn_state, rnn_state_critic
-
+        self.prev_obs = blackboard['local_observation']
+        self.prev_global_obs = blackboard['global_observation']
+        self.prev_reward = blackboard['reward']
         self.insert(data)
         blackboard['reward'] = 0
         self.step = self.step + 1
@@ -328,7 +315,8 @@ class MAPPOPolicy:
             self.train()
             self.prep_rollout()
             self.step = 0
-            self.save_model()
+            if self.agent.agent_id is 0:
+                self.save_model()
         
         return selected_task_id
 
@@ -343,7 +331,7 @@ class MAPPOPolicy:
         return action, action_log_prob, rnn_state
         
 
-    def get_value(self, cent_obs, available_actions):
+    def get_value(self, cent_obs):
         prev_rnn_state = self.buffer.rnn_states_critic[-1]
         value, rnn_state = self.critic(cent_obs = cent_obs, 
                                 rnn_states = prev_rnn_state)

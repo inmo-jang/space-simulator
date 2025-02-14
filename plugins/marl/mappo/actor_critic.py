@@ -4,6 +4,25 @@ import numpy as np
 
 # The code is based on the MAPPO implementation from the repository: https://github.com/marlbenchmark/on-policy/
 
+actor = None
+critic = None
+actor_optimizer = None
+critic_optimizer = None
+
+def get_models(hidden_size, layer_N, recurrent_N, local_obs_space, global_obs_space, action_space, device, lr, critic_lr, eps, weight_decay):
+    global actor, critic, actor_optimizer, critic_optimizer
+    if actor is None:
+        actor = Actor(hidden_size, layer_N, recurrent_N, local_obs_space, action_space, device)
+        critic = Critic(hidden_size, layer_N, recurrent_N, global_obs_space, device)
+        actor_optimizer = torch.optim.Adam(actor.parameters(),
+                                                lr=lr, eps=eps,
+                                                weight_decay=weight_decay)
+        critic_optimizer = torch.optim.Adam(critic.parameters(),
+                                                 lr=critic_lr,
+                                                 eps=eps,
+                                                 weight_decay=weight_decay)
+    return actor, critic, actor_optimizer, critic_optimizer
+
 def get_shape_from_obs_space(obs_space):
     if obs_space.__class__.__name__ == 'Box':
         obs_shape = obs_space.shape
@@ -34,8 +53,8 @@ class RNNLayer(nn.Module):
         self.norm = nn.LayerNorm(outputs_dim)
 
     def forward(self, x, hxs):#, masks):
-        hxs = torch.tensor(hxs, dtype=torch.float32)
-        #masks = torch.tensor(masks, dtype=torch.float32)
+        if not isinstance(hxs, torch.Tensor):
+            hxs = torch.tensor(hxs, dtype=torch.float32, device=x.device)
         if x.dim() == 1:
             x = x.unsqueeze(0)
         if x.size(0) == hxs.size(0):
@@ -77,15 +96,13 @@ class Categorical(nn.Module):
     def __init__(self, num_inputs, num_outputs, gain=0.01):
         super(Categorical, self).__init__()
         init_method = nn.init.orthogonal_
-        def init_(m):
-            return init(m, init_method, lambda x: nn.init.constant_(x, 0), gain)
-
-        self.linear = init_(nn.Linear(num_inputs, num_outputs))
+        self.linear = init(nn.Linear(num_inputs, num_outputs), init_method, lambda x: nn.init.constant_(x, 0), gain)
 
     def forward(self, x, action_masks = None):
         x = self.linear(x)
         if action_masks is not None:
-            x[action_masks == 0] = -1e10
+            action_masks = torch.as_tensor(action_masks, dtype=torch.bool, device=x.device)
+            x = x.masked_fill(action_masks == 0, -1e10)
         return FixedCategorical(logits=x)
 
 class ACTLayer(nn.Module):
@@ -105,12 +122,12 @@ class ACTLayer(nn.Module):
 
     def get_probs(self, x, available_actions=None):
         action_logits = self.action_out(x, available_actions)
-        action_probs = action_logits.probs
+        action_probs = torch.softmax(action_logits.logits, dim=-1)
 
         return action_probs
 
-    def evaluate_actions(self, x, action, available_actions=None):
-        action_logits = self.action_out(x, available_actions)
+    def evaluate_actions(self, x, action, action_masks=None):
+        action_logits = self.action_out(x, action_masks)
         action_log_probs = action_logits.log_probs(action)
         dist_entropy = action_logits.entropy().mean()
 
@@ -178,9 +195,7 @@ class Actor(nn.Module):
 
         actor_features, rnn_states = self.rnn(actor_features, rnn_states)#, masks)
 
-        action = torch.tensor(action,dtype=torch.float32).detach()
-       
-        action_log_probs, dist_entropy = self.act.evaluate_actions(actor_features, action)
+        action_log_probs, dist_entropy = self.act.evaluate_actions(actor_features, action, action_masks)
 
         return action_log_probs, dist_entropy
 
@@ -195,10 +210,7 @@ class Critic(nn.Module):
 
         self.rnn = RNNLayer(hidden_size, hidden_size, recurrent_N)
 
-        def init_(m):
-            return init(m, init_method, lambda x: nn.init.constant_(x, 0))
-
-        self.v_out = init_(nn.Linear(hidden_size, 1))
+        self.v_out = init(nn.Linear(hidden_size, 1), init_method, lambda x: nn.init.constant_(x, 0))
 
         self.to(device)
 

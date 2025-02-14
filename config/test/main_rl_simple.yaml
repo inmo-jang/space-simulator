@@ -9,22 +9,22 @@ decision_making:
     ppo_epoch: 5  # Number of epochs per batch update, usually 3–10
     num_mini_batch: 4  # Number of mini-batches for advantage normalization and batch update, recommended 4–8
     value_loss_coef: 0.5  # Weight of critic loss, generally set between 0.5 and 1.0
-    entropy_coef: 0.01  # Coefficient for exploration encouragement, recommended 0.01–0.02
+    entropy_coef: 0.015  # Coefficient for exploration encouragement, recommended 0.01–0.02
     max_grad_norm: 0.5  # Gradient clipping threshold, typically set between 0.5 and 1.0
     lr: 0.0003  # Learning rate, typically between 0.0001 and 0.0007 (for Adam optimizer)
-    critic_lr: 0.0003  # Learning rate for critic, usually the same as lr
+    critic_lr: 0.00025  # Learning rate for critic, usually the same as lr
     epsilon: 0.2  # PPO clipping range, commonly set between 0.1 and 0.2
     weight_decay: 0  # L2 regularization weight, generally 0 (if used, set between 1e-5 and 1e-4)
     hidden_size: 64  # Number of hidden units in the neural network, recommended 64–128
-    layer_N: 2  # Number of MLP layers, usually 2–3
+    layer_N: 3  # Number of MLP layers, usually 2–3
     recurrent_N: 1  # Number of recurrent layers in RNN, typically 1–2
     gamma: 0.99  # Discount factor, commonly set between 0.95 and 0.99
     data_chunk_length: 10  # Sequence length for RNN, usually between 10 and 20
-    episode_length: 256  # Episode length, depends on the environment
+    episode_length: 1000  # Episode length, depends on the environment
     save_path: scenarios/simple/rl.pt  # Path to save the trained model
     #load_path: scenarios/simple/rl.pt  # Path to load the trained model
-    plot: True
-    wandb: False
+    plot: False
+    wandb: True
 
 agents:
   behavior_tree_xml: default_bt.xml 
@@ -60,7 +60,7 @@ tasks:
     min: 6.0
     max: 60.0      
   dynamic_task_generation:
-    enabled: True
+    enabled: False
     interval_seconds: 2000
     max_generations: 3
     tasks_per_generation: 25

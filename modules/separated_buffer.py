@@ -67,31 +67,31 @@ class SeparateReplayBuffer(object):
         self.rnn_states_critic = np.zeros_like(self.rnn_states)
 
         self.value_preds = np.zeros((self.episode_length + 1, 1), dtype=np.float32)
-        self.returns = np.zeros_like(self.value_preds)
 
-        self.available_actions = np.ones((self.episode_length + 1, act_space.n),dtype=np.float32)
 
         act_shape = get_shape_from_act_space(act_space)
 
         self.actions = np.zeros((self.episode_length, act_shape), dtype=np.float32)
+        self.action_masks = np.zeros((self.episode_length, act_space.n),dtype=np.float32)
         self.action_log_probs = np.zeros((self.episode_length, act_shape), dtype=np.float32)
         self.rewards = np.zeros((self.episode_length, 1), dtype=np.float32)
+        self.advantages = np.zeros_like(self.rewards)
+        self.returns = np.zeros_like(self.rewards)
 
         self.buffer_index = 0
 
     """Inserts a new transition into the replay buffer."""
     def insert(self, share_obs, obs, rnn_states_actor, rnn_states_critic, actions, action_log_probs,
-               value_preds, rewards, available_actions=None):
-
+               value_preds, rewards, action_masks=None):
         self.share_obs[self.buffer_index + 1] = share_obs.copy()
         self.obs[self.buffer_index + 1] = obs.copy()
         self.rnn_states[self.buffer_index + 1] = rnn_states_actor.clone()
         self.rnn_states_critic[self.buffer_index + 1] = rnn_states_critic.clone()
+        self.value_preds[self.buffer_index] = value_preds.copy()
         self.actions[self.buffer_index] = actions.copy()
         self.action_log_probs[self.buffer_index] = action_log_probs.copy()
-        self.value_preds[self.buffer_index] = value_preds.copy()
         self.rewards[self.buffer_index] = rewards
-        self.available_actions[self.buffer_index] = available_actions.copy()
+        self.action_masks[self.buffer_index] = action_masks.copy()
         self.buffer_index = (self.buffer_index + 1) % self.episode_length
 
     """Updates the buffer after policy optimization to maintain continuity."""
@@ -100,16 +100,29 @@ class SeparateReplayBuffer(object):
         self.obs[0] = self.obs[-1].copy()
         self.rnn_states[0] = self.rnn_states[-1].copy()
         self.rnn_states_critic[0] = self.rnn_states_critic[-1].copy()
-        self.available_actions[0] = self.available_actions[-1].copy()
 
     """Computes the discounted returns using the given next value."""
     def compute_returns(self, next_value):
-        self.returns[-1] = next_value
-        for step in reversed(range(self.rewards.shape[0])):
-            self.returns[step] = self.returns[step + 1] * self.gamma + self.rewards[step]
+        last_advantage = 0
 
+        for step in reversed(range(self.rewards.shape[0])):
+            delta = (
+                self.rewards[step]
+                + self.gamma * self.value_preds[step + 1]
+                - self.value_preds[step]
+            )
+            self.advantages[step] = last_advantage = (
+                delta + self.gamma * 0.95 * last_advantage
+            )
+
+        mean_adv = np.mean(self.advantages)
+        std_adv = np.std(self.advantages) + 1e-5 
+        self.advantages = (self.advantages - mean_adv) / std_adv
+        
+        self.returns = self.advantages + self.value_preds[:-1]
+        
     """Generates mini-batches for training using recurrent states."""
-    def recurrent_generator(self, advantages, num_mini_batch, data_chunk_length):
+    def recurrent_generator(self, num_mini_batch, data_chunk_length):
         episode_length = self.rewards.shape[0]
         assert episode_length % data_chunk_length == 0, "episode_length should be a multiple of data_chunk_length"
         
@@ -124,18 +137,18 @@ class SeparateReplayBuffer(object):
         obs = torch.tensor(self.obs[:-1], dtype=torch.float32)
         actions = torch.tensor(self.actions, dtype=torch.float32)
         action_log_probs = torch.tensor(self.action_log_probs, dtype=torch.float32)
-        advantages = torch.tensor(advantages, dtype=torch.float32)
+        advantages = torch.tensor(self.advantages, dtype=torch.float32)
         value_preds = torch.tensor(self.value_preds[:-1], dtype=torch.float32)
-        returns = torch.tensor(self.returns[:-1], dtype=torch.float32)
+        returns = torch.tensor(self.returns, dtype=torch.float32)
         rnn_states = torch.tensor(self.rnn_states[:-1], dtype=torch.float32)
         rnn_states_critic = torch.tensor(self.rnn_states_critic[:-1], dtype=torch.float32)
         rnn_states = rnn_states[:-1].reshape(-1, *rnn_states.shape[1:]).detach()
         rnn_states_critic = rnn_states_critic[:-1].reshape(-1, *rnn_states_critic.shape[1:]).detach()
-        available_actions = torch.tensor(self.available_actions[:-1], dtype=torch.float32)
+        action_masks = torch.tensor(self.action_masks, dtype=torch.float32)
 
         for indices in sampler:
             share_obs_batch, obs_batch, rnn_states_batch, rnn_states_critic_batch = [], [], [], []
-            actions_batch, available_actions_batch, value_preds_batch, return_batch = [], [], [], []
+            actions_batch, action_masks_batch, value_preds_batch, return_batch = [], [], [], []
             old_action_log_probs_batch, adv_targ = [], []
 
             for index in indices:
@@ -144,7 +157,7 @@ class SeparateReplayBuffer(object):
                 share_obs_batch.append(share_obs[ind:ind + data_chunk_length])
                 obs_batch.append(obs[ind:ind + data_chunk_length])
                 actions_batch.append(actions[ind:ind + data_chunk_length])
-                available_actions_batch.append(available_actions[ind:ind + data_chunk_length])
+                action_masks_batch.append(action_masks[ind:ind + data_chunk_length])
                 value_preds_batch.append(value_preds[ind:ind + data_chunk_length])
                 return_batch.append(returns[ind:ind + data_chunk_length])
                 old_action_log_probs_batch.append(action_log_probs[ind:ind + data_chunk_length])
@@ -158,7 +171,7 @@ class SeparateReplayBuffer(object):
             share_obs_batch = torch.stack(share_obs_batch, dim=1).reshape(L * N, -1)
             obs_batch = torch.stack(obs_batch, dim=1).reshape(L * N, -1)
             actions_batch = torch.stack(actions_batch, dim=1).reshape(L * N, -1)
-            available_actions_batch = torch.stack(available_actions_batch, dim=1).reshape(L * N, -1)
+            action_masks_batch = torch.stack(action_masks_batch, dim=1).reshape(L * N, -1)
             value_preds_batch = torch.stack(value_preds_batch, dim=1).reshape(L * N, -1)
             return_batch = torch.stack(return_batch, dim=1).reshape(L * N, -1)
             old_action_log_probs_batch = torch.stack(old_action_log_probs_batch, dim=1).reshape(L * N, -1)
@@ -168,4 +181,4 @@ class SeparateReplayBuffer(object):
 
             yield share_obs_batch, obs_batch, rnn_states_batch, rnn_states_critic_batch, \
                   actions_batch, value_preds_batch, return_batch, \
-                  old_action_log_probs_batch, adv_targ, available_actions_batch
+                  old_action_log_probs_batch, adv_targ, action_masks_batch
