@@ -10,6 +10,11 @@ class PZEnv(SpaceRLEnv):
     """
     def __init__(self, **kwarg):
         super(PZEnv, self).__init__(**kwarg)
+        self.reset()
+        
+
+    def reset(self):
+        super().reset()
         # Initialize previous states
         self.prev_distance_moved = {agent: 0.0 for agent in self.agents}
         self.prev_task_amount_done = {agent: 0.0 for agent in self.agents}

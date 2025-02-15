@@ -1,3 +1,4 @@
+import pygame
 from abc import *
 from pettingzoo import AECEnv
 import gym.spaces
@@ -22,29 +23,25 @@ class SpaceRLEnv(AECEnv, metaclass=ABCMeta):
     :param generate_rl_agent: Function/class to generate RL agents.
     """
     def __init__(self,
-                 env: BaseEnv, 
+                 env: BaseEnv,
                  nearby_task_max_num: int,
                  nearby_agent_max_num: int,
                  generate_rl_agent: type[T]):
         self.env = env
-        self.agents = env.agents
-        self.tasks = env.tasks
-
-        # Assign RL agents to base agents
-        for agent in self.agents:
-            agent.rl_agent = generate_rl_agent() 
-            agent.blackboard['reward'] = 0
+        self.rl_agent_generator = generate_rl_agent
+        self.reset()
 
         self.nearby_task_max_num = nearby_task_max_num
         self.nearby_agent_max_num = nearby_agent_max_num
-        self.possible_agents = self.agents[:]
 
     """Reset the environment and reinitialize the agent list."""
     def reset(self):
-        self.agents = self.possible_agents[:]
-        for agent in self.agents:
-            agent.blackboard['reward'] = 0
         self.env.reset()
+        self.agents = self.env.agents
+        self.tasks = self.env.tasks
+        for agent in self.agents:
+            agent.rl_agent = self.rl_agent_generator() 
+            agent.blackboard['reward'] = 0
 
     """
     Execute one step in the environment.
@@ -76,7 +73,27 @@ class SpaceRLEnv(AECEnv, metaclass=ABCMeta):
 
     """Pass keyboard events to the underlying environment."""
     def handle_keyboard_events(self):
-        self.env.handle_keyboard_events()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                self.env.running = False
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE or event.key == pygame.K_q:
+                    self.env.running = False
+                elif event.key == pygame.K_p:
+                    self.env.game_paused = not self.env.game_paused
+                elif event.key == pygame.K_s:
+                    if not self.env.recording:
+                        self.env.recording = True
+                        self.env.frames = [] # Clear any existing frames
+                        self.env.last_frame_time = self.env.simulation_time
+                        print("Recording started...") 
+                    else:
+                        self.env.recording = False
+                        print("Recording stopped.")
+                        self.env.result_saver.save_gif(self.frames) 
+                elif event.key == pygame.K_r:
+                    print("Scenario reset!")
+                    self.reset()           
 
     """Render the environment."""
     def render(self):
