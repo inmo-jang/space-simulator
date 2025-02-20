@@ -9,7 +9,10 @@ CUSTOM_ACTION_NODES = [
     'PickItem',
     'GoToDestination',
     'PlaceItem',
+<<<<<<< HEAD
     'DecideShip',
+=======
+>>>>>>> dev
     'GoToChargingStation',
     'ChargeBattery'
 ]
@@ -86,6 +89,31 @@ class IsArrivedAtDestination(SyncAction):
             return Status.SUCCESS       
         else:            
             return Status.FAILURE
+        
+class IsArrivedAtChargingStation(SyncAction):
+    def __init__(self, name, agent):
+        super().__init__(name, self._check)
+
+    def _check(self, agent, blackboard):
+        status = blackboard.get('status', None)
+        if status == "AtChargingStation":  # 충전소에 도착했는지 확인
+            blackboard['waypoints'] = None  # 경로 초기화
+            print(f"Agent {agent.agent_id}: Arrived at charging station.")
+            return Status.SUCCESS
+        return Status.FAILURE
+
+
+class IsBatteryLow(SyncAction):
+    def __init__(self, name, agent):
+        super().__init__(name, self._check)
+        self.battery_threshold = 20  # 배터리 임계값 (%)
+
+    def _check(self, agent, blackboard):
+        is_charging = blackboard.get('is_charging', False)  # 충전 상태 확인
+        if agent.battery <= self.battery_threshold or blackboard.get('is_charging', False) :
+            print(f"Agent {agent.agent_id}: Battery is low ({agent.battery}%). Moving to the charging station.")
+            return Status.SUCCESS
+        return Status.FAILURE
 
         
 class IsArrivedAtChargingStation(SyncAction):
@@ -168,6 +196,7 @@ class GoToShip(SyncAction):
     def __init__(self, name, agent):
         super().__init__(name, self._move)
         self.waypoint_follower = WaypointFollower(agent, target_arrive_threshold)
+
         planner_name = config['planner']['algorithm']  
         self.path_planner = planner_manager.get_planner(planner_name, agent)
             
@@ -215,7 +244,7 @@ class GoToShip(SyncAction):
             waypoints = self.path_planner.generate(start, goal)
             self.waypoint_follower.set_waypoints(waypoints)
             blackboard['waypoints'] = waypoints
-
+        
         # Waypoint Following
         result = self.waypoint_follower.move()
         #print("goingtoship")
@@ -234,6 +263,7 @@ class GoToDestination(SyncAction):
 
     def _move(self, agent, blackboard):
         agent.check_collision(agent.env.agents)
+
 
         if blackboard.get('is_going_to_charging_station', False):
             return Status.FAILURE
@@ -261,8 +291,82 @@ class GoToDestination(SyncAction):
         if result == Status.SUCCESS:
             blackboard['status'] = "AtDestination"
             blackboard['waypoints'] = None # Reset
-
         return result
+    
+class GoToChargingStation(SyncAction):
+    def __init__(self, name, agent):
+        super().__init__(name, self._move)
+        self.agent = agent
+        self.target_arrive_threshold = target_arrive_threshold
+
+        # 에이전트 ID에 따라 충전소 위치 계산
+        x = config['charging_station_position']['x']
+        y = config['charging_station_position']['y']
+        offset_x = config['charging_station_position']['offset_x']
+
+        self.charging_station_position = (
+            x + agent.agent_id * offset_x,
+            y
+        )
+        #print(f"Agent {self.agent.agent_id}: Target charging station position: {self.charging_station_position}")
+
+    def calculate_waypoints(self, start_position, end_position):
+        """현재 위치에서 목표 위치(충전소)까지 경로를 생성, Waypoints를 최소화하여 효율적으로 설정"""
+        path = []
+
+        current_x, current_y = start_position
+        target_x, target_y = end_position
+
+        # x축 Waypoint 추가 (x좌표만 맞추기)
+        if current_x != target_x:
+            path.append((target_x, current_y))  # x좌표만 변경된 지점
+
+        # y축 Waypoint 추가 (y좌표 맞추기)
+        if current_y != target_y:
+            path.append((target_x, target_y))  # 최종 충전소 위치
+
+        return path
+
+    def _move(self, agent, blackboard):
+
+        if blackboard.get('is_charging', False):  # 충전 중일 때는 이동 금지
+            return Status.FAILURE
+        
+        # 충전소로 가는 중 상태 설정
+        blackboard['is_going_to_charging_station'] = True
+
+        # 충전소 경로 확인 및 초기화
+        charging_station_waypoints = blackboard.get('charging_station_waypoints', None)
+        
+        if charging_station_waypoints is None or not charging_station_waypoints:  # 기존 경로가 없거나 비어있을 때만 새 경로 생성
+            current_position = agent.position
+            charging_station_waypoints = self.calculate_waypoints(current_position, self.charging_station_position)
+            blackboard['charging_station_waypoints'] = charging_station_waypoints
+                    
+        # Waypoints 따라 이동
+        if charging_station_waypoints:
+            next_waypoint2 = charging_station_waypoints[0]
+            distance = math.sqrt(
+                (next_waypoint2[0] - agent.position[0])**2 +
+                (next_waypoint2[1] - agent.position[1])**2
+            )
+            
+            if distance < self.target_arrive_threshold:
+                charging_station_waypoints.pop(0)
+                blackboard['charging_station_waypoints'] = charging_station_waypoints
+
+                # waypoints2가 비어있으면 충전소 도착 처리
+                if not charging_station_waypoints:  
+                    print(f"Agent {agent.agent_id}: Arrived at charging station.")
+                    blackboard['status'] = "AtChargingStation"
+                    blackboard['charging_station_waypoints'] = None  # 초기화
+                    blackboard['is_going_to_charging_station'] = False
+                    return Status.SUCCESS  # 성공 상태 반환
+        
+            agent.follow(next_waypoint2)
+            return Status.RUNNING
+
+        return Status.FAILURE
 
 class GoToChargingStation(SyncAction):
     def __init__(self, name, agent):
@@ -285,7 +389,6 @@ class GoToChargingStation(SyncAction):
     # def calculate_waypoints(self, start_position, end_position):
     #     """현재 위치에서 목표 위치(충전소)까지 경로를 생성, Waypoints를 최소화하여 효율적으로 설정"""
     #     path = []
-
     #     current_x, current_y = start_position
     #     target_x, target_y = end_position
 
@@ -369,7 +472,7 @@ class GoToChargingStation(SyncAction):
 #                 waypoints.append((target_x, target_y))
 
 #         return waypoints
-    
+
 
 
 
@@ -380,7 +483,7 @@ class WaypointFollower():
         self.waypoints = None
         self.agent = agent
         self.target_arrive_threshold = target_arrive_threshold
-
+        
     def reset(self):
         self.next_waypoint_index = 0
         self.waypoints = None
@@ -429,16 +532,12 @@ class WaypointFollower():
         return Status.FAILURE  # Keep RUNNING if not all waypoints have been visited
 
 
-
-
-
-
-
 class PickItem(SyncAction):
     def __init__(self, name, agent):
         super().__init__(name, self._action)
 
     def _action(self, agent, blackboard):
+
         # 선택된 Ship 가져오기
         chosen_ship = blackboard.get('chosen_ship', None)
         if chosen_ship is None:
@@ -457,17 +556,20 @@ class PickItem(SyncAction):
         agent.set_assigned_task_id(assigned_task.task_id)
         blackboard['assigned_task_id'] = agent.assigned_task_id
 
+        # 작업 색상을 에이전트 이미지에 반영
         agent.task_color = assigned_task.color
         agent.update_image()
 
         return Status.SUCCESS
-
 
 class PlaceItem(SyncAction):
     def __init__(self, name, agent):
         super().__init__(name, self._action)
 
     def _action(self, agent, blackboard):
+        if blackboard.get('is_charging', False):
+            return Status.FAILURE
+        
         agent.tasks_info[agent.assigned_task_id].set_done()
         agent.set_assigned_task_id(None)
         blackboard['assigned_task_id'] = None
@@ -505,3 +607,4 @@ class ChargeBattery(SyncAction):
             blackboard['is_going_to_charging_station'] = False
             blackboard['status'] = None  # 충전소 상태 초기화
             return Status.SUCCESS
+

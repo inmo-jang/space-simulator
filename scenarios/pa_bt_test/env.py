@@ -1,12 +1,19 @@
 from modules.base_env import BaseEnv
 from modules.utils import ResultSaver
-from scenarios.simple.task import generate_tasks
-from scenarios.simple.agent import generate_agents
-import pygame
+from scenarios.pa_bt_test.task import generate_tasks
+from scenarios.pa_bt_test.agent import generate_agents
+
+from modules.base_bt_nodes import Status
+from modules.ppa_bt_constructor import load_library, expand_behavior_tree
+
 
 class Env(BaseEnv):
     def __init__(self, config):
         super().__init__(config)
+
+        # Load PPA library from the CSV file
+        ppa_library_path = config['simulation'].get('ppa_library_path', 'ppa_library.csv')
+        self.ppa_library = load_library(ppa_library_path)
 
         # Set `generate_tasks` function for dynamic task generation
         self.generate_tasks = generate_tasks
@@ -65,4 +72,21 @@ class Env(BaseEnv):
             remaining_tasks,
             tasks_total_amount_left
         ])        
-                  
+
+    # base_env에서 override           
+    async def step(self):
+        # Main simulation loop logic
+        for agent in self.agents:
+            result = await agent.run_tree()
+            
+            if result == Status.FAILURE:  # Check if the result is FAILURE
+                failed_conditions = agent.find_failed_conditions()  # Identify failed conditions
+                
+                for failed_condition in failed_conditions:
+                    # Expand the behavior tree based on the failed condition
+                    agent.tree = expand_behavior_tree(agent.tree, failed_condition, self.ppa_library)
+
+            agent.update()
+        # 필요 시, 디버그 추가, agent.blackboard 활용. (대신 last agent인 경우만)
+
+        self.update_simulation()

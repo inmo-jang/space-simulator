@@ -1,9 +1,5 @@
 scenario: 
-  # environment: scenarios.simple
-  environment: scenarios.harbor_logistics
-
-planner:
-  algorithm: "a_star" # xy, yx, a_star
+  environment: scenarios.simple
 
 # decision_making: # Case 1
 #   plugin: plugins.grape.grape.GRAPE
@@ -13,33 +9,33 @@ planner:
 #     initialize_partition: Distance # Options: None; Distance      
 #     reinitialize_partition_on_completion: Distance # Options: None; Distance; 
 
-# decision_making: # Case 2
-#   plugin: plugins.cbba.cbba.CBBA
-#   CBBA:  
-#     max_tasks_per_agent: 5 
-#     task_reward_discount_factor: 0.999 
-#     winning_bid_cancel: True
-#     acceptable_empty_bundle_duration: 500 # sec
+decision_making: # Case 2
+  plugin: plugins.cbba.cbba.CBBA
+  CBBA:  
+    max_tasks_per_agent: 5 
+    task_reward_discount_factor: 0.999 
+    winning_bid_cancel: True
+    acceptable_empty_bundle_duration: 500 # sec
 
-decision_making: # Case 3
-  plugin: plugins.greedy.greedy.FirstClaimGreedy
-  FirstClaimGreedy:  
-    mode: MinDist  # Options: Random; MinDist; MaxUtil
-    weight_factor_cost: 10000.0 # Only used for `MaxUtil` mode
-    enforced_collaboration: False  
+# decision_making: # Case 3
+#   plugin: plugins.greedy.greedy.FirstClaimGreedy
+#   FirstClaimGreedy:  
+#     mode: MinDist  # Options: Random; MinDist; MaxUtil
+#     weight_factor_cost: 10000.0 # Only used for `MaxUtil` mode
+#     enforced_collaboration: False  
 
 
 agents:
-  behavior_tree_xml: default_bt.xml 
-  quantity: 3
+  behavior_tree_xml: no_reactive_bt.xml 
+  quantity: 10
   locations:
-    x_min: 300 #500
-    x_max: 1300 #1100
+    x_min: 0
+    x_max: 1400
     y_min: 0
-    y_max: 900 #1000
+    y_max: 1000
     non_overlap_radius: 0 
-  max_speed: 0.8  
-  max_accel: 0.8
+  max_speed: 0.25  
+  max_accel: 0.05
   max_angular_speed: 0.25
   target_approaching_radius: 50
   work_rate: 1  # work rate for each agent (per 1.0/simulation.sampling_freq)
@@ -48,25 +44,19 @@ agents:
   random_exploration_duration: 1000.0 # sec
 
 tasks:
-  quantity: 8
-  locations1:
-    x_min: 187
-    x_max: 187
-    y_min: 310
-    y_max: 310
+  quantity: 100
+  locations:
+    x_min: 0
+    x_max: 1400
+    y_min: 0
+    y_max: 1000
     non_overlap_radius: 0
-  locations2:
-    x_min: 187
-    x_max: 187
-    y_min: 610
-    y_max: 610
-    non_overlap_radius: 0
-  threshold_done_by_arrival: 1.0
+  threshold_done_by_arrival: 10.0
   amounts:  # Added amounts range for tasks
     min: 6.0
     max: 60.0      
   dynamic_task_generation:
-    enabled: False
+    enabled: True
     interval_seconds: 2000
     max_generations: 3
     tasks_per_generation: 25
@@ -83,16 +73,14 @@ simulation:
   profiling_mode: False
   rendering_mode: Screen  # Options: Screen; Terminal; None
   rendering_options: # Only works if `rendering_mode` is `Screen`
-    agent_tail: False
+    agent_tail: True
     agent_communication_topology: True
     agent_situation_awareness_circle: False
     agent_id: True
     agent_work_done: True
     agent_assigned_task_id: True
     agent_path_to_assigned_tasks: True
-    agent_battery_status: True  # Add battery status
     task_id: False
-    agent_path_visualization: True
   saving_options:
     output_folder: output
     with_date_subfolder: True
@@ -100,15 +88,3 @@ simulation:
     save_timewise_result_csv: True    
     save_agentwise_result_csv: True
     save_config_yaml: True
-
-charging_station_position: 
-  x: 1220
-  y: 630
-  offset_x: 10
-
-battery:
-  default_spending_rate: 0.001
-  task_spending_rate: 0.01  
-
-grid:
-  size : 40

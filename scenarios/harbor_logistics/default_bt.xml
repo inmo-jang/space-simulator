@@ -4,6 +4,7 @@
     <Fallback>
       <Sequence>
         <IsBatteryLow/>
+<<<<<<< HEAD
         <Sequence>
         <Fallback>
           <IsArrivedAtChargingStation/>
@@ -29,17 +30,48 @@
               </Fallback>
               <PickItem/>
             </Sequence>
-          </Fallback>
+=======
+        <Sequence>
           <Fallback>
-            <IsArrivedAtDestination/>
-            <GoToDestination/>
+            <IsArrivedAtChargingStation/>
+            <GoToChargingStation/>
+>>>>>>> dev
           </Fallback>
-          <PlaceItem/>
+          <ChargeBattery/>
         </Sequence>
+<<<<<<< HEAD
       </Fallback>
     </Sequence>
   </Fallback>
 </BehaviorTree>
+=======
+      </Sequence>
+      <Sequence>
+        <LocalSensingNode/>
+        <Fallback>
+          <IsFinishedTask/>
+          <Sequence>
+            <Fallback>
+              <IsHoldingItem/>
+              <Sequence>
+                <Fallback>
+                  <IsArrivedAtShip/>
+                  <GoToShip/>
+                </Fallback>
+                <PickItem/>
+              </Sequence>
+            </Fallback>
+            <Fallback>
+              <IsArrivedAtDestination/>
+              <GoToDestination/>
+            </Fallback>
+            <PlaceItem/>
+          </Sequence>
+        </Fallback>
+      </Sequence>
+    </Fallback>
+  </BehaviorTree>
+>>>>>>> dev
 
   <!-- Description of Node Models (used by Groot) -->
   <TreeNodesModel>
@@ -52,7 +84,11 @@
     <Condition ID="IsArrivedAtShip"
                editable="true"/>
     <Condition ID="IsArrivedAtChargingStation"
+<<<<<<< HEAD
                editable="true"/>           
+=======
+               editable="true"/>
+>>>>>>> dev
     <Condition ID="IsFinishedTask"
                editable="true"/>
     <Condition ID="IsHoldingItem"
@@ -65,8 +101,13 @@
             editable="true"/>
     <Action ID="PlaceItem"
             editable="true"/>
+<<<<<<< HEAD
     <Action ID="DecideShip"
             editable="true"/>
+=======
+    <Condition ID="IsBatteryLow"
+               editable="true"/>
+>>>>>>> dev
     <Action ID="GoToChargingStation"
             editable="true"/>
     <Action ID="ChargeBattery"

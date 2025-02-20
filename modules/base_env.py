@@ -21,8 +21,6 @@ class BaseEnv:
         self.save_agentwise_result_csv = config.get('simulation').get('saving_options').get('save_agentwise_result_csv', False)
         self.save_config_yaml = config.get('simulation').get('saving_options').get('save_config_yaml', False)
 
-        self.tasks = None
-        self.agents = None
         self.generate_tasks = None 
         # Dynamically import the decision-making module
         # self.decision_making_module_path = config['decision_making']['plugin']
@@ -57,12 +55,19 @@ class BaseEnv:
         self.tasks_per_generation = dynamic_task_generation.get('tasks_per_generation', 5)
         
         
+        # self.reset()
 
+        self.clock = pygame.time.Clock()
+
+
+    def reset(self):
         # Initialization        
         self.running = True
-        self.clock = pygame.time.Clock()
         self.game_paused = False
-        self.mission_completed = False        
+        self.mission_completed = False      
+
+        self.tasks = None
+        self.agents = None
 
         # Initialize simulation time           
         self.simulation_time = 0.0
@@ -89,6 +94,9 @@ class BaseEnv:
             await agent.run_tree()
             agent.update()
 
+        self.update_simulation()
+
+    def update_simulation(self):
         # Status retrieval
         self.simulation_time += self.sampling_time
         self.tasks_left = sum(1 for task in self.tasks if not task.completed)
@@ -102,7 +110,7 @@ class BaseEnv:
 
         # Stop if maximum simulation time reached
         if self.max_simulation_time > 0 and self.simulation_time > self.max_simulation_time:
-            self.running = False
+            self.running = False        
 
     def draw_background(self):
         self.screen.fill(self.background_color)
@@ -221,7 +229,7 @@ class BaseEnv:
                     self.running = False
                 elif event.key == pygame.K_p:
                     self.game_paused = not self.game_paused
-                elif event.key == pygame.K_r:
+                elif event.key == pygame.K_s:
                     if not self.recording:
                         self.recording = True
                         self.frames = [] # Clear any existing frames
@@ -231,7 +239,9 @@ class BaseEnv:
                         self.recording = False
                         print("Recording stopped.")
                         self.result_saver.save_gif(self.frames) 
-           
+                elif event.key == pygame.K_r:
+                    print("Scenario reset!")
+                    self.reset()           
 
     def record_screen_frame(self):
         # Capture frame for recording

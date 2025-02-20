@@ -12,6 +12,7 @@ class Env(BaseEnv):
         # Initialize the background and environment
         self.set_background()
 
+<<<<<<< HEAD
         # Set grid size
         self.grid_size = config['grid']['size']
 
@@ -26,9 +27,26 @@ class Env(BaseEnv):
         self.agents = generate_agents(self.tasks, self)
         self.generate_tasks = generate_tasks
 
+=======
+        # Set `generate_tasks` function for dynamic task generation
+        self.generate_tasks = generate_tasks
+        
+        # Set data recording
+        self.result_saver = ResultSaver(config)
+
+        # Initialise
+        self.reset()
+
+    def reset(self):
+        super().reset()
+
+        # Initialize agents and tasks
+        self.tasks = generate_tasks()
+        self.agents = generate_agents(self.tasks)
+        
+>>>>>>> dev
         # Initialize data recording
         self.data_records = []
-        self.result_saver = ResultSaver(config)
 
     def set_background(self):
         assets_path = 'scenarios/harbor_logistics/assets'                
@@ -49,6 +67,7 @@ class Env(BaseEnv):
         self.charging_station = pygame.transform.scale(charging_station, (200, 200))  # Resize
         self.charging_station = pygame.transform.rotate(charging_station, -90)  # Rotate 90 degrees
         self.charging_station_position = (1280, 700)
+<<<<<<< HEAD
 
         # Define colors for destinations
         destination_colors = [
@@ -140,6 +159,42 @@ class Env(BaseEnv):
             
     async def step(self):
         await super().step() # Execution of `step()` in `BaseEnv`        
+=======
+
+        # Define colors for destinations
+        destination_colors = [
+            'red', 'blue', 'yellow', 'green', 'lime', 
+            'teal', 'purple', 'pink', 'coral', 'skyblue', 
+            'black', 'white', 'gray', 'brown'
+        ]
+
+        # Load images for each destination color
+        self.destination_images = {
+            color: pygame.image.load(f'{assets_path}/tasks/{color}.png') for color in destination_colors
+        }
+
+        # Resize all destination images
+        destination_width = 80
+        destination_height = 300
+        for color in self.destination_images:
+            self.destination_images[color] = pygame.transform.scale(
+                self.destination_images[color], (destination_width, destination_height)
+            )
+        
+        # Define destination positions (1열에 7개씩 2행)
+            start_x = 300  # 첫 번째 열의 x 좌표 시작점
+            start_y = 300  # 첫 번째 행의 y 좌표 시작점
+            x_spacing = 130  # 열 간격
+            y_spacing = 350  # 행 간격
+
+            self.destination_positions = []
+            for i in range(7):  # 7개 열
+                self.destination_positions.append((start_x + i * x_spacing, start_y))       # 첫 번째 행
+                self.destination_positions.append((start_x + i * x_spacing, start_y + y_spacing))  # 두 번째 행
+        
+        async def step(self):
+            await super().step() # Execution of `step()` in `BaseEnv`        
+>>>>>>> dev
 
         # NOTE: 아래는 민지님 구현 한 부분. 이해 필요. 
         # if tasks_left == 0 and len(tasks) < max_task_count:
@@ -174,6 +229,7 @@ class Env(BaseEnv):
         self.screen.blit(self.background_port, (0, 0))  
         # Draw Sea background under the ship
         self.screen.blit(self.background_sea, (0, self.screen_height - 1200))  # 배경 위치 조정            
+<<<<<<< HEAD
 
         # Draw ship
         self.ship1.draw(self.screen)
@@ -184,6 +240,18 @@ class Env(BaseEnv):
                         (self.charging_station_position[0] - self.charging_station.get_width() // 2,
                         self.charging_station_position[1] - self.charging_station.get_height() // 2))    
         
+=======
+        
+        # Draw ship
+        self.ship1.draw(self.screen)
+        self.ship2.draw(self.screen)       
+
+        # Draw charging station
+        self.screen.blit(self.charging_station, 
+                        (self.charging_station_position[0] - self.charging_station.get_width() // 2,
+                        self.charging_station_position[1] - self.charging_station.get_height() // 2))    
+
+>>>>>>> dev
         # Draw containers
         for color, position in zip(self.destination_images, self.destination_positions):
             if not isinstance(position, tuple) or len(position) != 2:
@@ -191,6 +259,7 @@ class Env(BaseEnv):
                 continue
             image = self.destination_images[color]
             self.screen.blit(image, (position[0] - image.get_width() // 2, position[1] - image.get_height() // 2))
+<<<<<<< HEAD
         
         # Draw charging station
         self.screen.blit(self.charging_station, 
@@ -212,6 +281,9 @@ class Env(BaseEnv):
             pygame.draw.line(self.screen, (100, 100, 100), edge[0], edge[1], 1)  # 회색 선
 
 
+=======
+            
+>>>>>>> dev
     def draw_agents_info(self):
         super().draw_agents_info()
         # Draw agents
