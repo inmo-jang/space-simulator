@@ -174,8 +174,6 @@ class Env(BaseEnv):
         self.screen.blit(self.background_port, (0, 0))  
         # Draw Sea background under the ship
         self.screen.blit(self.background_sea, (0, self.screen_height - 1200))  # 배경 위치 조정            
-        
-        self.draw_graph_on_pygame() 
 
         # Draw ship
         self.ship1.draw(self.screen)
@@ -199,6 +197,7 @@ class Env(BaseEnv):
                         (self.charging_station_position[0] - self.charging_station.get_width() // 2,
                         self.charging_station_position[1] - self.charging_station.get_height() // 2))    
         self.draw_grid()
+        self.draw_graph_on_pygame() 
 
     def draw_graph_on_pygame(self):
         """
