@@ -265,8 +265,9 @@ class GoToDestination(SyncAction):
 class GoToChargingStation(SyncAction):
     def __init__(self, name, agent):
         super().__init__(name, self._move)
-        self.agent = agent
-        self.target_arrive_threshold = target_arrive_threshold
+        self.waypoint_follower = WaypointFollower(agent, target_arrive_threshold)
+        planner_name = config['planner']['algorithm']  
+        self.path_planner = planner_manager.get_planner(planner_name, agent)
 
         # 에이전트 ID에 따라 충전소 위치 계산
         x = config['charging_station_position']['x']
@@ -279,22 +280,22 @@ class GoToChargingStation(SyncAction):
         )
         #print(f"Agent {self.agent.agent_id}: Target charging station position: {self.charging_station_position}")
 
-    def calculate_waypoints(self, start_position, end_position):
-        """현재 위치에서 목표 위치(충전소)까지 경로를 생성, Waypoints를 최소화하여 효율적으로 설정"""
-        path = []
+    # def calculate_waypoints(self, start_position, end_position):
+    #     """현재 위치에서 목표 위치(충전소)까지 경로를 생성, Waypoints를 최소화하여 효율적으로 설정"""
+    #     path = []
 
-        current_x, current_y = start_position
-        target_x, target_y = end_position
+    #     current_x, current_y = start_position
+    #     target_x, target_y = end_position
 
-        # x축 Waypoint 추가 (x좌표만 맞추기)
-        if current_x != target_x:
-            path.append((target_x, current_y))  # x좌표만 변경된 지점
+    #     # x축 Waypoint 추가 (x좌표만 맞추기)
+    #     if current_x != target_x:
+    #         path.append((target_x, current_y))  # x좌표만 변경된 지점
 
-        # y축 Waypoint 추가 (y좌표 맞추기)
-        if current_y != target_y:
-            path.append((target_x, target_y))  # 최종 충전소 위치
+    #     # y축 Waypoint 추가 (y좌표 맞추기)
+    #     if current_y != target_y:
+    #         path.append((target_x, target_y))  # 최종 충전소 위치
 
-        return path
+    #     return path
 
     def _move(self, agent, blackboard):
 
@@ -304,38 +305,29 @@ class GoToChargingStation(SyncAction):
         # 충전소로 가는 중 상태 설정
         blackboard['is_going_to_charging_station'] = True
 
-        # 충전소 경로 확인 및 초기화
-        charging_station_waypoints = blackboard.get('charging_station_waypoints', None)
+        # 기존 경로 확인
+        waypoints = blackboard.get('charging_station_waypoints', None)
         
-        if charging_station_waypoints is None or not charging_station_waypoints:  # 기존 경로가 없거나 비어있을 때만 새 경로 생성
-            current_position = agent.position
-            charging_station_waypoints = self.calculate_waypoints(current_position, self.charging_station_position)
-            blackboard['charging_station_waypoints'] = charging_station_waypoints
-                    
-        # Waypoints 따라 이동
-        if charging_station_waypoints:
-            next_waypoint2 = charging_station_waypoints[0]
-            distance = math.sqrt(
-                (next_waypoint2[0] - agent.position[0])**2 +
-                (next_waypoint2[1] - agent.position[1])**2
-            )
-            
-            if distance < self.target_arrive_threshold:
-                charging_station_waypoints.pop(0)
-                blackboard['charging_station_waypoints'] = charging_station_waypoints
+        if waypoints is None:
+            start = agent.position  # 현재 위치
+            goal = self.charging_station_position  # 목표 위치
 
-                # waypoints2가 비어있으면 충전소 도착 처리
-                if not charging_station_waypoints:  
-                    print(f"Agent {agent.agent_id}: Arrived at charging station.")
-                    blackboard['status'] = "AtChargingStation"
-                    blackboard['charging_station_waypoints'] = None  # 초기화
-                    blackboard['is_going_to_charging_station'] = False
-                    return Status.SUCCESS  # 성공 상태 반환
-        
-            agent.follow(next_waypoint2)
-            return Status.RUNNING
+            # 경로 생성 (A* 등 활용)
+            waypoints = self.path_planner.generate(start, goal)
+            self.waypoint_follower.set_waypoints(waypoints)
+            blackboard['charging_station_waypoints'] = waypoints
 
-        return Status.FAILURE
+        # Waypoint Following
+        result = self.waypoint_follower.move()
+
+        if result == Status.SUCCESS:
+            print(f"Agent {agent.agent_id}: Arrived at charging station.")
+            blackboard['status'] = "AtChargingStation"
+            blackboard['charging_station_waypoints'] = None
+            blackboard['is_going_to_charging_station'] = False
+            return Status.SUCCESS  # 충전소 도착
+
+        return result
 
 # class PathPlanner():
 #     def __init__(self, agent):
