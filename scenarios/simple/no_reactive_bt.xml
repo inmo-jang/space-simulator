@@ -1,25 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <root BTCPP_format="4">
   <BehaviorTree ID="space-simulator">
-    <ReactiveSequence>
+    <Sequence>
       <GatherLocalInfo/>
-      <ReactiveSequence>
+      <Sequence>
         <ReactiveFallback>
           <AssignTask/>
           <Explore/>
         </ReactiveFallback>
         <ReactiveFallback>
           <IsTaskCompleted/>
-          <ReactiveSequence>
+          <Sequence>
             <ReactiveFallback>
               <IsArrivedAtTarget/>
               <MoveToTarget/>
             </ReactiveFallback>
             <ExecuteTask/>
-          </ReactiveSequence>
+          </Sequence>
         </ReactiveFallback>
-      </ReactiveSequence>
-    </ReactiveSequence>
+      </Sequence>
+    </Sequence>
   </BehaviorTree>
 
   <!-- Description of Node Models (used by Groot) -->

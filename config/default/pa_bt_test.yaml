@@ -1,0 +1,93 @@
+scenario: 
+  environment: scenarios.pa_bt_test
+  # environment: scenarios.harbor_logistics
+  # environment: scenarios.drone_delivery
+
+# decision_making: # Case 1
+#   plugin: plugins.grape.grape.GRAPE
+#   GRAPE:
+#     cost_weight_factor: 1.0
+#     social_inhibition_factor: 100
+#     initialize_partition: Distance # Options: None; Distance      
+#     reinitialize_partition_on_completion: Distance # Options: None; Distance; 
+
+decision_making: # Case 2
+  plugin: plugins.cbba.cbba.CBBA
+  CBBA:  
+    max_tasks_per_agent: 5 
+    task_reward_discount_factor: 0.999 
+    winning_bid_cancel: True
+    acceptable_empty_bundle_duration: 500 # sec
+
+# decision_making: # Case 3
+#   plugin: plugins.greedy.greedy.FirstClaimGreedy
+#   FirstClaimGreedy:  
+#     mode: MinDist  # Options: Random; MinDist; MaxUtil
+#     weight_factor_cost: 10000.0 # Only used for `MaxUtil` mode
+#     enforced_collaboration: False  
+
+
+agents:
+  behavior_tree_xml: default_bt.xml 
+  quantity: 1 #10
+  locations:
+    x_min: 0
+    x_max: 1400
+    y_min: 0
+    y_max: 1000
+    non_overlap_radius: 0 
+  max_speed: 0.25  
+  max_accel: 0.05
+  max_angular_speed: 0.25
+  target_approaching_radius: 50
+  work_rate: 1  
+  communication_radius: 500 
+  situation_awareness_radius: 250  # was 500
+  random_exploration_duration: 1000.0 
+
+tasks:
+  quantity: 2 #100
+  locations:
+    x_min: 0
+    x_max: 1400
+    y_min: 0
+    y_max: 1000
+    non_overlap_radius: 0
+  threshold_done_by_arrival: 10.0
+  amounts:  # Added amounts range for tasks
+    min: 6.0
+    max: 60.0      
+  # dynamic_task_generation:
+  #   enabled: True
+  #   interval_seconds: 2000
+  #   max_generations: 0 #3
+  #   tasks_per_generation: 25
+
+simulation:
+  ppa_library_path: "scenarios/pa_bt_test/ppa_library.csv"
+  sampling_freq: 1.0 
+  speed_up_factor: 0 
+  max_simulation_time: 0
+  agent_track_size: 400  
+  screen_width: 1400 
+  screen_height: 1000 
+  gif_recording_fps: 0.05  
+  task_visualisation_factor: 3  
+  profiling_mode: False
+  rendering_mode: Screen  
+  rendering_options: 
+    agent_tail: True
+    agent_communication_topology: True
+    agent_situation_awareness_circle: True #False
+    agent_id: True
+    agent_work_done: True
+    agent_assigned_task_id: True
+    agent_path_to_assigned_tasks: True
+    task_id: False
+  saving_options:
+    output_folder: scenarios/pa_bt_test/output
+    with_date_subfolder: True
+    save_gif: False
+    save_timewise_result_csv: False #True    
+    save_agentwise_result_csv: False #True
+    save_config_yaml: False #True

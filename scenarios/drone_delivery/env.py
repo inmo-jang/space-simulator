@@ -12,15 +12,24 @@ class Env(BaseEnv):
         # Initialize the background and environment
         self.set_background()
 
+        # Set `generate_tasks` function for dynamic task generation
+        self.generate_tasks = generate_tasks
+        
+        # Set data recording
+        self.result_saver = ResultSaver(config)
+
+        # Initialise
+        self.reset()
+
+    def reset(self):
+        super().reset()
+
         # Initialize agents and tasks
         self.tasks = generate_tasks()
-        max_task_count = config['tasks']['quantity']  # config.yaml에 정의된 task 수
         self.agents = generate_agents(self.tasks)
-        self.generate_tasks = generate_tasks
-
+        
         # Initialize data recording
-        self.data_records = []
-        self.result_saver = ResultSaver(config)
+        self.data_records = []        
 
     def set_background(self):
         CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))

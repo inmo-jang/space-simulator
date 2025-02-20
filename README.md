@@ -66,7 +66,8 @@ Refer to the configuration guide [CONFIG_GUIDE.md](/docs/CONFIG_GUIDE.md)
 ### Controls
 - `ESC` or `Q`: Quit the simulation
 - `P`: Pause/unpause the simulation
-- `R`: Start/stop recording the simulation as a GIF file
+- `S`: Start/stop recording the simulation as a GIF file
+- `R`: Reset the simulation
 
 ### Monte Carlo Analysis
 

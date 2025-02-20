@@ -11,14 +11,24 @@ class Env(BaseEnv):
         # Initialize the background and environment
         self.set_background()
 
+        # Set `generate_tasks` function for dynamic task generation
+        self.generate_tasks = generate_tasks
+        
+        # Set data recording
+        self.result_saver = ResultSaver(config)
+
+        # Initialise
+        self.reset()
+
+    def reset(self):
+        super().reset()
+
         # Initialize agents and tasks
         self.tasks = generate_tasks()
         self.agents = generate_agents(self.tasks)
-        self.generate_tasks = generate_tasks
-
+        
         # Initialize data recording
         self.data_records = []
-        self.result_saver = ResultSaver(config)
 
     def set_background(self):
         assets_path = 'scenarios/harbor_logistics/assets'                

@@ -1,5 +1,36 @@
 # CHANGELOG.md
 
+## [Unreleased]
+
+### Added
+- **Planning-and-Acting Behavior Tree (`pa_bt_constructor.py`)**
+  - Added the PA-BT functionality
+
+- **Behavior Tree (`base_bt_nodes.py`)**
+  - Implemented `ReactiveSequence` and `ReactiveFallback`, which restart from the first child at every tick.
+  - Added `halt` functionality to `Sequence`, `ReactiveSequence`, `Fallback`, and `ReactiveFallback` to stop all children when necessary.
+
+### Changed
+- **Behavior Tree (`base_bt_nodes.py`)**
+  - Updated `Sequence` and `Fallback`:
+    - Now, when a child returns `RUNNING`, the node returns `RUNNING` without proceeding to the next child.
+    - If the `Sequence` or `Fallback` node is ticked again, it resumes execution from the child that was previously `RUNNING`.
+  - Renamed `LocalSensingNode` to `GatherLocalInfo` and `DecisionMakingNode` to `AssignTask` following the new naming convention (using verb forms).
+    - `LocalSensingNode` and `DecisionMakingNode` are still available for now but will be removed soon.
+
+- **Scenario: Simple**
+  - Added `IsTaskCompleted`, `IsArrivedAtTarget`, `MoveToTarget`, and `ExecuteTask` to the simple scenario. These replace the functionality of `TaskExecutingNode`, which has been removed.   
+  - Renamed `ExplorationNode` to `Explore()` following the new naming convention (using verb forms).     
+
+- **Environment**
+  - Modified `env.reset()` to restart with a new random scenario.  
+  - Changed GIF saving trigger to the `S` key. Updated the `R` key to manually execute `env.reset()`.  
+
+### Fixed  
+- **CBBA (`cbba.py`)**
+  - Even if an agent has no local task information, it follows the task bundle (if it is available) information instead.  
+
+
 ## Version 1.2.15 (25-01-02)
 ### New Scenario
 - **Drone Delivery**:

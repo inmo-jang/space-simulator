@@ -1,0 +1,5 @@
+Post_condition,Action,Pre_conditions
+IsMissionCompleted,CompleteTask,IsTaskNearby
+IsTaskNearby,MoveToTask,IsTaskAssigned
+IsTaskAssigned,AssignTask,IsTaskSensored
+IsTaskSensored,ExploreTask

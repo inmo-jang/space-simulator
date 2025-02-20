@@ -63,7 +63,7 @@ class CBBA:
             self.phase = Phase.BUILD_BUNDLE
 
         # Give up the decision-making process if there is no task nearby 
-        if len(local_tasks_info) == 0: 
+        if len(local_tasks_info) == 0 and len(self.bundle) == 0: 
             return None
         
         # Neutralize all the winning bid information if there are local tasks nearby but the agent cannot choose any of them for a certain period
