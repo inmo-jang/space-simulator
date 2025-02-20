@@ -113,6 +113,32 @@ class Agent(BaseAgent):
             # Draw the final destination as a white circle
             pygame.draw.circle(screen, (255, 255, 255), waypoints[-1], 5)
 
+    def check_collision(self, agents):
+        """
+        Detects if another agent is in front.
+        - If distance is between 50 and 70, reduce speed smoothly.
+        - If distance is less than 50, stop completely.
+        """
+        for other_agent in agents:
+            if other_agent.agent_id == self.agent_id:
+                continue  # Skip self
+
+            distance = (self.position - other_agent.position).length()
+
+            if distance < 50:  # 너무 가까우면 즉시 정지
+                self.velocity = pygame.Vector2(0, 0)
+                self.acceleration = pygame.Vector2(0, 0)
+                self.rotation = self.rotation
+                return True  # Collision detected
+
+            elif 50 <= distance < 70:  # 감속 (속도를 줄임)
+                self.velocity *= 0.1  # 속도줄이기
+                return False  # 감속만 하고 정지는 아님
+        
+        return False  # No collision risk
+
+
+
     def draw(self, screen):
         if config['simulation']['rendering_options'].get('agent_path_visualization', True):
             self.draw_waypoints(screen)
