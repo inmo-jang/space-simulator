@@ -157,7 +157,7 @@ class Env(BaseEnv):
             x, y = node
             pygame.draw.rect(
                 self.screen,
-                (0, 255, 0),  # 초록색 노드
+                (200, 200, 200),
                 pygame.Rect(
                     x - self.grid_size // 2,  # X 좌표 보정
                     y - self.grid_size // 2,  # Y 좌표 보정
