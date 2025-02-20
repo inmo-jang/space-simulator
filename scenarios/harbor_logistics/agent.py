@@ -86,7 +86,35 @@ class Agent(BaseAgent):
         # 이미지 크기 조정
         self.image = pygame.transform.scale(self.image, (50, 50))
 
+    def draw_waypoints(self, screen):
+        """
+        Visualize the agent's waypoints on the screen.
+        """
+        if 'waypoints' in self.blackboard and self.blackboard['waypoints']:
+            waypoints = self.blackboard['waypoints']
+
+            # Define unique colors for each agent based on agent_id
+            color_list = [
+                (255, 0, 0),   # Red
+                (0, 0, 255),   # Blue
+                (0, 255, 0),   # Green
+                (255, 165, 0), # Orange
+                (128, 0, 128), # Purple
+                (255, 192, 203), # Pink
+                (0, 255, 255), # Cyan
+                (255, 255, 0)  # Yellow
+            ]
+            agent_color = color_list[self.agent_id % len(color_list)]  # Assign a unique color to each agent
+
+            # Draw lines connecting waypoints
+            for i in range(len(waypoints) - 1):
+                pygame.draw.line(screen, agent_color, waypoints[i], waypoints[i + 1], 2)
+
+            # Draw the final destination as a white circle
+            pygame.draw.circle(screen, (255, 255, 255), waypoints[-1], 5)
+
     def draw(self, screen):
+        self.draw_waypoints(screen)
         rotated_image = pygame.transform.rotate(self.image, -math.degrees(self.rotation))
         new_rect = rotated_image.get_rect(center=(self.position.x, self.position.y))
         screen.blit(rotated_image, new_rect.topleft)
