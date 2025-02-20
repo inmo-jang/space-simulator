@@ -48,7 +48,7 @@ agents:
   random_exploration_duration: 1000.0 # sec
 
 tasks:
-  quantity: 5
+  quantity: 8
   locations1:
     x_min: 187
     x_max: 187
@@ -83,7 +83,7 @@ simulation:
   profiling_mode: False
   rendering_mode: Screen  # Options: Screen; Terminal; None
   rendering_options: # Only works if `rendering_mode` is `Screen`
-    agent_tail: True
+    agent_tail: False
     agent_communication_topology: True
     agent_situation_awareness_circle: False
     agent_id: True
@@ -91,6 +91,7 @@ simulation:
     agent_assigned_task_id: True
     agent_path_to_assigned_tasks: True
     task_id: False
+    agent_path_visualization: True
   saving_options:
     output_folder: output
     with_date_subfolder: True
