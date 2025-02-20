@@ -9,10 +9,7 @@ CUSTOM_ACTION_NODES = [
     'PickItem',
     'GoToDestination',
     'PlaceItem',
-<<<<<<< HEAD
     'DecideShip',
-=======
->>>>>>> dev
     'GoToChargingStation',
     'ChargeBattery'
 ]
