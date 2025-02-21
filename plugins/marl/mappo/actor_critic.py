@@ -4,25 +4,6 @@ import numpy as np
 
 # The code is based on the MAPPO implementation from the repository: https://github.com/marlbenchmark/on-policy/
 
-actor = None
-critic = None
-actor_optimizer = None
-critic_optimizer = None
-
-def get_models(hidden_size, layer_N, recurrent_N, local_obs_space, global_obs_space, action_space, device, lr, critic_lr, eps, weight_decay):
-    global actor, critic, actor_optimizer, critic_optimizer
-    if actor is None:
-        actor = Actor(hidden_size, layer_N, recurrent_N, local_obs_space, action_space, device)
-        critic = Critic(hidden_size, layer_N, recurrent_N, global_obs_space, device)
-        actor_optimizer = torch.optim.Adam(actor.parameters(),
-                                                lr=lr, eps=eps,
-                                                weight_decay=weight_decay)
-        critic_optimizer = torch.optim.Adam(critic.parameters(),
-                                                 lr=critic_lr,
-                                                 eps=eps,
-                                                 weight_decay=weight_decay)
-    return actor, critic, actor_optimizer, critic_optimizer
-
 def get_shape_from_obs_space(obs_space):
     if obs_space.__class__.__name__ == 'Box':
         obs_shape = obs_space.shape
@@ -53,11 +34,7 @@ class RNNLayer(nn.Module):
         self.norm = nn.LayerNorm(outputs_dim)
 
     def forward(self, x, hxs):#, masks):
-        if not isinstance(hxs, torch.Tensor):
-            hxs = torch.tensor(hxs, dtype=torch.float32, device=x.device)
-        if x.dim() == 1:
-            x = x.unsqueeze(0)
-        if x.size(0) == hxs.size(0):
+        if x.size(1) == hxs.size(1):
             x, hxs = self.rnn(x, hxs)
             x = x.squeeze(0)
         else:
@@ -190,10 +167,10 @@ class Actor(nn.Module):
         actions, action_log_probs = self.act(actor_features, action_masks)
         return actions, action_log_probs, rnn_states
 
-    def evaluate_actions(self, obs, rnn_states, action, action_masks):#masks, action_masks):
+    def evaluate_actions(self, obs, rnn_states, action, action_masks):
         actor_features = self.base(obs)
-
-        actor_features, rnn_states = self.rnn(actor_features, rnn_states)#, masks)
+        
+        actor_features, rnn_states = self.rnn(actor_features, rnn_states)
 
         action_log_probs, dist_entropy = self.act.evaluate_actions(actor_features, action, action_masks)
 
@@ -214,9 +191,9 @@ class Critic(nn.Module):
 
         self.to(device)
 
-    def forward(self, cent_obs, rnn_states):#, masks):
+    def forward(self, cent_obs, rnn_states):
         critic_features = self.base(cent_obs)
-        critic_features, rnn_states = self.rnn(critic_features, rnn_states)#, masks)
+        critic_features, rnn_states = self.rnn(critic_features, rnn_states)
         values = self.v_out(critic_features)
 
         return values, rnn_states
