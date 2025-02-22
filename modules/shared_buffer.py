@@ -2,9 +2,12 @@ import torch
 import numpy as np
 import torch.nn.functional as F
 from modules.utils import config
+from threading import Lock
 
 # The following code is modified from https://github.com/marlbenchmark/on-policy/
 # It implements a replay buffer for multi-agent reinforcement learning (MARL).
+
+lock = Lock()
 
 """Flattens the input tensor x over the first two dimensions."""
 def _flatten(T, N, x):
@@ -19,7 +22,7 @@ def _cast(x, last_index):
     if isinstance(x[0], torch.Tensor):
         x = torch.stack(x).squeeze()
     else:
-        x = torch.tensor(np.array(x), dtype=torch.float32).detach()
+        x = torch.tensor(np.array(x), dtype=torch.float32)
     if len(x.shape) < 2:
         x = x.reshape(-1,1)
     return x
@@ -60,17 +63,16 @@ class SharedReplayBuffer(object):
 
         # Initialize the buffer as list not numpy for supporting various length btw agents
         self.buffer_reset()
-        self.advantages = [list() for _ in range(num_agents)]
-        self.returns = [list() for _ in range(num_agents)]
 
         self.rnn_states = [[torch.zeros((recurrent_N, hidden_size), dtype=torch.float32)] for _ in range(num_agents)]
          
         self.rnn_states_critic = [[torch.zeros((recurrent_N, hidden_size), dtype=torch.float32)] for _ in range(num_agents)]
 
-        self.buffer_index = [-1 for _ in range(self.num_agents)]
 
     def buffer_reset(self):
         # Initialize the buffer as list not numpy for supporting various length btw agents
+        lock.acquire()
+        self.buffer_index = [-1 for _ in range(self.num_agents)]
         self.share_obs = [list() for _ in range(self.num_agents)]
         self.obs = [list() for _ in range(self.num_agents)]
         self.value_preds = [list() for _ in range(self.num_agents)]
@@ -79,14 +81,18 @@ class SharedReplayBuffer(object):
         self.action_masks = [list() for _ in range(self.num_agents)]
         self.action_log_probs = [list() for _ in range(self.num_agents)]
         self.rewards = [list() for _ in range(self.num_agents)]
+        self.advantages = [list() for _ in range(self.num_agents)]
+        self.returns = [list() for _ in range(self.num_agents)]
+        lock.release()
 
     def check_train_ready(self):
-        total_data_num = sum(self.buffer_index)
+        total_data_num = sum(self.buffer_index) + sum([1 if index < 0 else 0 for index in self.buffer_index])
         return total_data_num >= self.train_threshold
 
     """Inserts a new transition into the replay buffer."""
     def insert(self, agent_id, share_obs, obs, rnn_states_actor, rnn_states_critic, actions, action_log_probs,
                value_preds, rewards, action_masks=None):
+        lock.acquire()
         self.share_obs[agent_id].append(share_obs.copy())
         self.obs[agent_id].append(obs.copy())
         self.rnn_states[agent_id].append(rnn_states_actor.clone().detach())
@@ -98,17 +104,19 @@ class SharedReplayBuffer(object):
         if self.buffer_index[agent_id] >= 0:
             self.rewards[agent_id].append(rewards)
         self.buffer_index[agent_id] = self.buffer_index[agent_id] + 1
+        lock.release()
 
     """Updates the buffer after policy optimization to maintain continuity."""
     def after_update(self):
         self.buffer_reset()
         self.rnn_states = [[self.rnn_states[i][-1].clone()] for i in range(self.num_agents)]
         self.rnn_states_critic = [[self.rnn_states_critic[i][-1].clone()] for i in range(self.num_agents)]
-        self.buffer_index = [-1 for _ in range(self.num_agents)]
 
     """Computes the discounted returns using the given next value."""
     def compute_returns(self, next_value):
         for agent_id in range(self.num_agents):
+            if self.buffer_index[agent_id] < 0:
+                continue
             last_advantage = 0
             self.value_preds[agent_id][-1] = next_value[agent_id]
             self.advantages[agent_id] = np.array([0.0 for _ in range(len(self.rewards[agent_id]))])

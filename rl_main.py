@@ -43,15 +43,20 @@ except AttributeError as e:
 Main simulation loop
 """
 async def game_loop():
-    while pzenv.is_running():
-        pzenv.handle_keyboard_events()
+    max_train_step = 2
+    step = 0
+    while max_train_step > step:
+        while pzenv.is_running() and not pzenv.is_mission_completed():
+            pzenv.handle_keyboard_events()
 
-        if not env.game_paused and not env.mission_completed:
-            await pzenv.step()
+            if not env.game_paused and not env.mission_completed:
+                await pzenv.step()
 
-        pzenv.render()
-        if pzenv.is_recording():
-            pzenv.record_screen_frame()
+            pzenv.render()
+            if pzenv.is_recording():
+                pzenv.record_screen_frame()
+        pzenv.reset()
+        step += 1
 
     pzenv.close()
 
