@@ -177,7 +177,7 @@ class GoToShip(SyncAction):
         self.path_planner = planner_manager.get_planner(planner_name, agent)
             
     def _move(self, agent, blackboard):
-        agent.check_collision(agent.env.agents)
+        #agent.check_collision(agent.env.agents)
 
         if blackboard.get('is_going_to_charging_station', False):
             #print(f"Agent {agent.agent_id}: Currently heading to charging station.")
@@ -239,7 +239,7 @@ class GoToDestination(SyncAction):
         self.path_planner = planner_manager.get_planner(planner_name, agent)
 
     def _move(self, agent, blackboard):
-        agent.check_collision(agent.env.agents)
+        #agent.check_collision(agent.env.agents)
 
 
         if blackboard.get('is_going_to_charging_station', False):
@@ -288,7 +288,7 @@ class GoToChargingStation(SyncAction):
         #print(f"Agent {self.agent.agent_id}: Target charging station position: {self.charging_station_position}")
 
     def _move(self, agent, blackboard):
-        agent.check_collision(agent.env.agents)
+        #agent.check_collision(agent.env.agents)
 
         if blackboard.get('is_charging', False):  # 충전 중일 때는 이동 금지
             return Status.FAILURE
@@ -370,8 +370,8 @@ class WaypointFollower():
                 return Status.SUCCESS  # Return SUCCESS when all waypoints are visited
 
         # 충돌 감지 후 속도 조정
-        if self.agent.check_collision(self.agent.env.agents):
-            return Status.FAILURE  # Stop moving
+        #if self.agent.check_collision(self.agent.env.agents):
+        #    return Status.FAILURE  # Stop moving
         
         self.agent.update_battery()
         self.agent.follow(next_waypoint)  # Command the agent to follow the current waypoint
