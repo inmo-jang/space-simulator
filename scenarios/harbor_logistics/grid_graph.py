@@ -28,16 +28,6 @@ class GridGraph:
                 if neighbor in self.grid_nodes:
                     self.graph.add_edge(node, neighbor)
     
-    # def visualize_graph(self):
-    #     """
-    #     네트워크 그래프를 시각적으로 표현 (Matplotlib 사용)
-    #     """
-    #     plt.figure(figsize=(10, 10))
-    #     pos = {node: node for node in self.graph.nodes()}  # 노드의 위치를 해당 좌표로 지정
-    #     nx.draw(self.graph, pos, node_size=30, node_color='blue', edge_color='gray')
-    #     plt.title("Grid Graph Visualization")
-    #     plt.show()
-
     def draw_graph_on_pygame(self, screen):
         """
         Pygame 창에 네트워크 그래프를 시각화
