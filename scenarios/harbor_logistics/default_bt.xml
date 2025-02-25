@@ -1,51 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <root BTCPP_format="4">
   <BehaviorTree ID="space-simulator">
-    <Fallback>
-      <Sequence>
-        <IsBatteryLow/>
-<<<<<<< HEAD
-        <Sequence>
-        <Fallback>
-          <IsArrivedAtChargingStation/>
-          <GoToChargingStation/>
-        </Fallback>
-        <ChargeBattery/>
-      </Sequence>
-    </Sequence>
     <Sequence>
-      <LocalSensingNode/>
       <Fallback>
-        <IsFinishedTask/>
-        <Sequence>
-          <Fallback>
-            <IsHoldingItem/>
-            <Sequence>
-              <Fallback>
-                <IsArrivedAtShip/>
-                <Sequence>
-                  <DecideShip/>
-                  <GoToShip/>
-                </Sequence>
-              </Fallback>
-              <PickItem/>
-            </Sequence>
-=======
+        <IsBatterySufficient/>
         <Sequence>
           <Fallback>
             <IsArrivedAtChargingStation/>
             <GoToChargingStation/>
->>>>>>> dev
           </Fallback>
           <ChargeBattery/>
         </Sequence>
-<<<<<<< HEAD
       </Fallback>
-    </Sequence>
-  </Fallback>
-</BehaviorTree>
-=======
-      </Sequence>
       <Sequence>
         <LocalSensingNode/>
         <Fallback>
@@ -56,7 +22,10 @@
               <Sequence>
                 <Fallback>
                   <IsArrivedAtShip/>
-                  <GoToShip/>
+                  <Sequence>
+                    <DecideShip/>
+                    <GoToShip/>
+                  </Sequence>
                 </Fallback>
                 <PickItem/>
               </Sequence>
@@ -69,13 +38,14 @@
           </Sequence>
         </Fallback>
       </Sequence>
-    </Fallback>
+    </Sequence>
   </BehaviorTree>
->>>>>>> dev
 
   <!-- Description of Node Models (used by Groot) -->
   <TreeNodesModel>
     <Action ID="GoToDestination"
+            editable="true"/>
+    <Action ID="DecideShip"
             editable="true"/>
     <Action ID="GoToShip"
             editable="true"/>
@@ -84,16 +54,10 @@
     <Condition ID="IsArrivedAtShip"
                editable="true"/>
     <Condition ID="IsArrivedAtChargingStation"
-<<<<<<< HEAD
-               editable="true"/>           
-=======
                editable="true"/>
->>>>>>> dev
     <Condition ID="IsFinishedTask"
                editable="true"/>
     <Condition ID="IsHoldingItem"
-               editable="true"/>
-    <Condition ID="IsBatteryLow"
                editable="true"/>
     <Action ID="LocalSensingNode"
             editable="true"/>
@@ -101,13 +65,8 @@
             editable="true"/>
     <Action ID="PlaceItem"
             editable="true"/>
-<<<<<<< HEAD
-    <Action ID="DecideShip"
-            editable="true"/>
-=======
-    <Condition ID="IsBatteryLow"
+    <Condition ID="IsBatterySufficient"
                editable="true"/>
->>>>>>> dev
     <Action ID="GoToChargingStation"
             editable="true"/>
     <Action ID="ChargeBattery"
