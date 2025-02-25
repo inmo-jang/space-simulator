@@ -28,6 +28,10 @@ class Agent(BaseAgent):
         self.default_spending_rate = config['battery']['default_spending_rate']
         self.task_spending_rate = config['battery']['task_spending_rate']
 
+        # TTC 필요값
+        self.safe_distance = 30  # 안전 거리 
+        self.ttc_threshold = 3   # Time-To-Collision(TTC) 임계값
+
     def update_battery(self):
 
         if self.blackboard.get('is_charging', False):
@@ -113,29 +117,44 @@ class Agent(BaseAgent):
             # Draw the final destination as a white circle
             pygame.draw.circle(screen, (255, 255, 255), waypoints[-1], 5)
 
-    # def check_collision(self, agents):
-    #     """
-    #     Detects if another agent is in front.
-    #     - If distance is between 50 and 70, reduce speed smoothly.
-    #     - If distance is less than 50, stop completely.
-    #     """
-    #     for other_agent in agents:
-    #         if other_agent.agent_id == self.agent_id:
-    #             continue  # Skip self
+    def check_collision(self, agents):
+        """
+        개선된 충돌 감지 로직: 
+        1) 주변 에이전트 탐색
+        2) 내 앞쪽에 있는지 내적으로 확인
+        3) Time-To-Collision(TTC) 계산 후 속도 조절
+        """
+        neighbors = self.get_agents_nearby()
 
-    #         distance = (self.position - other_agent.position).length()
+        for neighbor in neighbors:
+            dx = neighbor.position.x - self.position.x
+            dy = neighbor.position.y - self.position.y
+            dvx = self.velocity.x - neighbor.velocity.x
+            dvy = self.velocity.y - neighbor.velocity.y
 
-    #         if distance < 50:  # 너무 가까우면 즉시 정지
-    #             self.velocity = pygame.Vector2(0, 0)
-    #             self.acceleration = pygame.Vector2(0, 0)
-    #             self.rotation = self.rotation
-    #             return True  # Collision detected
+            # 상대 속도가 없으면 충돌 없음
+            rel_speed_sq = dvx**2 + dvy**2
+            if rel_speed_sq == 0:
+                continue
 
-    #         elif 50 <= distance < 70:  # 감속 (속도를 줄임)
-    #             self.velocity *= 0.1  # 속도줄이기
-    #             return False  # 감속만 하고 정지는 아님
-        
-    #     return False  # No collision risk
+            # 내적 계산 (앞쪽인지 확인)
+            dot_product = dx * dvx + dy * dvy
+            if dot_product >= 0:  # 뒤에 있는 경우 무시
+                continue
+
+            # TTC 계산
+            ttc = -dot_product / rel_speed_sq
+            if ttc < 0 or ttc > self.ttc_threshold:  # 3초 이상이면 신경 안 씀
+                continue
+
+            # 충돌 가능성이 높다면 감속
+            print(f" [Agent {self.agent_id}] 충돌 위험 감지! 속도 줄이기 (TTC={ttc:.2f})")
+            self.velocity.x *= 0.3
+            self.velocity.y *= 0.3
+            return True  # 감속 후 충돌 감지됨
+
+        return False  # 충돌 위험 없음
+
 
 
 
