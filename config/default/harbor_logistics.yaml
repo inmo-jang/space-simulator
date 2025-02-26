@@ -31,14 +31,14 @@ decision_making: # Case 3
 
 agents:
   behavior_tree_xml: default_bt.xml 
-  quantity: 3
+  quantity: 15
   locations:
     x_min: 300 #500
     x_max: 1300 #1100
     y_min: 0
     y_max: 900 #1000
     non_overlap_radius: 0 
-  max_speed: 0.8  
+  max_speed: 2.8  
   max_accel: 0.8
   max_angular_speed: 0.25
   target_approaching_radius: 50
@@ -48,7 +48,7 @@ agents:
   random_exploration_duration: 1000.0 # sec
 
 tasks:
-  quantity: 8
+  quantity: 200
   locations1:
     x_min: 187
     x_max: 187
