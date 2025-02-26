@@ -5,6 +5,7 @@ import numpy as np
 from plugins.marl.mappo.actor_critic import Actor, Critic
 from modules.separated_buffer import SeparateReplayBuffer
 from modules.shared_buffer import SharedReplayBuffer
+from modules.rl_env import register_buffer
 from modules.utils import config
 import matplotlib.pyplot as plt
 import wandb
@@ -83,6 +84,7 @@ class MAPPOPolicy:
             self.critic_optimizer.load_state_dict(checkpoint['optimizer_critic_state_dict'])
 
         self.buffer = SharedReplayBuffer(self.num_agent, self.gamma, self.episode_length * self.num_agent, self.recurrent_N, self.hidden_size)
+        register_buffer(self.buffer)
 
        
     """Initialize components of the MAPPO agent. This is for initialization after other instances initialized."""
@@ -95,8 +97,7 @@ class MAPPOPolicy:
     @torch.no_grad()
     def compute(self):
         self.prep_rollout()
-        next_values = [self._get_value(agent_id, self.buffer.share_obs[agent_id][-1])[0] if self.buffer.buffer_index[agent_id] >= 0 else 0.0 for agent_id in range(self.num_agent)]
-        self.buffer.compute_returns(next_values)
+        self.buffer.compute_returns()
     
     """Insert data into the replay buffer."""
     def insert(self, agent_id, data):
@@ -152,7 +153,7 @@ class MAPPOPolicy:
         value_loss_clipped = self.mse_loss(error_clipped)
         value_loss_original = self.mse_loss(error_original)
 
-        value_loss = value_loss_original
+        value_loss = torch.min(value_loss_original, value_loss_clipped)
 
         value_loss = value_loss.mean()
 
@@ -215,7 +216,11 @@ class MAPPOPolicy:
                 "Value Loss": value_loss.item(),
                 "Entropy": dist_entropy.mean().item(),
                 "Actor Gradient Norm": actor_grad_norm,
-                "Critic Gradient Norm": critic_grad_norm
+                "Critic Gradient Norm": critic_grad_norm,
+                "Imp Weights Mean": imp_weights.mean().item(), 
+                "Imp Weights Std": imp_weights.std().item(),
+                "Advantage Mean": adv_targ.mean().item(), 
+                "Advantage Std": adv_targ.std().item()
             })
 
         return value_loss, critic_grad_norm, policy_loss, dist_entropy, actor_grad_norm, imp_weights
