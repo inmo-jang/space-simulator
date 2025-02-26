@@ -2,6 +2,9 @@ scenario:
   # environment: scenarios.simple
   environment: scenarios.harbor_logistics
 
+planner:
+  algorithm: "a_star" # xy, yx, a_star
+
 # decision_making: # Case 1
 #   plugin: plugins.grape.grape.GRAPE
 #   GRAPE:
@@ -28,12 +31,12 @@ decision_making: # Case 3
 
 agents:
   behavior_tree_xml: default_bt.xml 
-  quantity: 4
+  quantity: 3
   locations:
-    x_min: 500
-    x_max: 1100
+    x_min: 300 #500
+    x_max: 1300 #1100
     y_min: 0
-    y_max: 1000
+    y_max: 900 #1000
     non_overlap_radius: 0 
   max_speed: 0.8  
   max_accel: 0.8
@@ -45,12 +48,18 @@ agents:
   random_exploration_duration: 1000.0 # sec
 
 tasks:
-  quantity: 5
-  locations:
-    x_min: 300
-    x_max: 300
-    y_min: 570
-    y_max: 570
+  quantity: 8
+  locations1:
+    x_min: 187
+    x_max: 187
+    y_min: 310
+    y_max: 310
+    non_overlap_radius: 0
+  locations2:
+    x_min: 187
+    x_max: 187
+    y_min: 610
+    y_max: 610
     non_overlap_radius: 0
   threshold_done_by_arrival: 1.0
   amounts:  # Added amounts range for tasks
@@ -74,14 +83,16 @@ simulation:
   profiling_mode: False
   rendering_mode: Screen  # Options: Screen; Terminal; None
   rendering_options: # Only works if `rendering_mode` is `Screen`
-    agent_tail: True
+    agent_tail: False
     agent_communication_topology: True
     agent_situation_awareness_circle: False
     agent_id: True
     agent_work_done: True
     agent_assigned_task_id: True
     agent_path_to_assigned_tasks: True
+    agent_battery_status: True  # Add battery status
     task_id: False
+    agent_path_visualization: True
   saving_options:
     output_folder: output
     with_date_subfolder: True
@@ -89,3 +100,15 @@ simulation:
     save_timewise_result_csv: True    
     save_agentwise_result_csv: True
     save_config_yaml: True
+
+charging_station_position: 
+  x: 1220
+  y: 630
+  offset_x: 10
+
+battery:
+  default_spending_rate: 0.001
+  task_spending_rate: 0.01  
+
+grid:
+  size : 40
