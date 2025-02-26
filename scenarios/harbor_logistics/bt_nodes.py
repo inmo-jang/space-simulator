@@ -1,5 +1,6 @@
 from enum import Enum
 import math
+import pygame
 from modules.base_bt_nodes import BTNodeList, Status, Node, Sequence, Fallback, SyncAction, LocalSensingNode, DecisionMakingNode,  ReactiveSequence
 from plugins.path_planner.plugin_manager import planner_manager
 
@@ -254,15 +255,34 @@ class GoToDestination(SyncAction):
 
         waypoints = blackboard.get('waypoints', None)
 
-        # Path Generation
+        # Path Generation TODO: This must be smarter
         if waypoints is None:
             assigned_task_id = blackboard.get('assigned_task_id')  
             position_to_deliver = agent.tasks_info[assigned_task_id].position_to_deliver        
             
             # start와 goal을 사용해 경로 생성
+            # 비교할 두 점
+            
             start = agent.position
+
+            point1 = pygame.math.Vector2(200, 120)
+            point2 = pygame.math.Vector2(200, 840)            
+
+            # 유클리드 거리 계산
+            distance1 = start.distance_to(point1)
+            distance2 = start.distance_to(point2)
+
+# 더 가까운 점 찾기
+            transit_point = point1 if distance1 < distance2 else point2
+
+
+
             goal = position_to_deliver
-            waypoints = self.path_planner.generate(start, goal) 
+            waypoints_first = self.path_planner.generate(start, transit_point) 
+            waypoints_second = self.path_planner.generate(transit_point, (goal[0], transit_point[1])) 
+            waypoints_third = self.path_planner.generate((goal[0], transit_point[1]), goal) 
+            waypoints = waypoints_first + waypoints_second[:-1] + waypoints_third
+            # waypoints = self.path_planner.generate(start, goal) 
             self.waypoint_follower.set_waypoints(waypoints)
             blackboard['waypoints'] = waypoints
             self.waypoint_follower.next_waypoint_index = 0
