@@ -10,11 +10,11 @@ class PZEnv(SpaceRLEnv):
     """
     def __init__(self, **kwarg):
         super(PZEnv, self).__init__(**kwarg)
-        self.reset()
+        self.reset(False)
         
 
-    def reset(self):
-        super().reset()
+    def reset(self, last_reward_insert = True):
+        super().reset(last_reward_insert)
         # Initialize previous states
         self.prev_distance_moved = {agent: 0.0 for agent in self.agents}
         self.prev_task_amount_done = {agent: 0.0 for agent in self.agents}
@@ -41,9 +41,14 @@ class PZEnv(SpaceRLEnv):
 
         # Process agent positions
         agent_positions = np.array([a.position.xy for a in closest_agents]).flatten()
+        prev_agent_actions = np.array([float(agent.blackboard.get('assigned_task_id', -1)) if agent.blackboard.get('assigned_task_id') is not None else -1 for agent in closest_agents])
+
         if len(closest_agents) < agent.rl_agent.nearby_agent_max_num:
-            pad_size = agent.rl_agent.nearby_agent_max_num * 2 - len(agent_positions)
-            agent_positions = np.pad(agent_positions, (0, pad_size), mode='constant', constant_values=0)
+            position_pad_size = agent.rl_agent.nearby_agent_max_num * 2 - len(agent_positions)
+            agent_positions = np.pad(agent_positions, (0, position_pad_size), mode='constant', constant_values=0)
+            action_pad_size = agent.rl_agent.nearby_agent_max_num - len(prev_agent_actions)
+            prev_agent_actions = np.pad(prev_agent_actions, (0, action_pad_size), mode='constant', constant_values=-1)
+            
 
         # Process task positions and remaining amounts
         task_positions = np.array([t.position.xy for t in closest_tasks]).flatten()
@@ -55,7 +60,7 @@ class PZEnv(SpaceRLEnv):
             task_positions = np.pad(task_positions, (0, position_pad_size), mode='constant', constant_values=0)
             task_remaining = np.pad(task_remaining, (0, task_pad_size), mode='constant', constant_values=0)
 
-        observation = np.concatenate([agent_positions, task_positions, task_remaining])
+        observation = np.concatenate([agent_positions, prev_agent_actions, task_positions, task_remaining])
         return observation
 
     """
@@ -84,18 +89,13 @@ class PZEnv(SpaceRLEnv):
     Compute the reward for the given agent.
     """
     def get_reward(self) -> float:
-        reward = 0
         for agent in self.agents:
+            reward = 0
             #reward += self.prev_distance_moved[agent] - agent.distance_moved
             #self.prev_distance_moved[agent] = agent.distance_moved
             reward += (agent.task_amount_done - self.prev_task_amount_done[agent])*10
             self.prev_task_amount_done[agent] = agent.task_amount_done
-        
-        current_tasks_left = sum(1 for task in self.env.tasks if not task.completed)
-        reward += (self.prev_tasks_left - current_tasks_left) * 100
-        self.prev_tasks_left = current_tasks_left
-        reward += self.prev_simulation_time - self.env.simulation_time
-        self.prev_simulation_time = self.env.simulation_time
+            reward += self.prev_simulation_time - self.env.simulation_time
+            self.prev_simulation_time = self.env.simulation_time
 
-        for agent in self.agents:
             agent.blackboard['reward'] += reward

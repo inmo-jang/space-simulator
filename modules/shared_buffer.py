@@ -9,10 +9,6 @@ from threading import Lock
 
 lock = Lock()
 
-"""Flattens the input tensor x over the first two dimensions."""
-def _flatten(T, N, x):
-    return x.reshape(T * N, *x.shape[2:])
-
 """Reshapes the input tensor x to be one-dimensional over the first axis."""
 def _cast(x, last_index):
     if last_index < 0:
@@ -26,30 +22,6 @@ def _cast(x, last_index):
     if len(x.shape) < 2:
         x = x.reshape(-1,1)
     return x
-
-"""Extracts the observation space shape based on its type."""
-def get_shape_from_obs_space(obs_space):
-    if obs_space.__class__.__name__ == 'Box':
-        obs_shape = obs_space.shape
-    elif obs_space.__class__.__name__ == 'list':
-        obs_shape = obs_space
-    else:
-        raise NotImplementedError
-    return obs_shape
-
-"""Extracts the action space shape based on its type."""
-def get_shape_from_act_space(act_space):
-    if act_space.__class__.__name__ == 'Discrete':
-        act_shape = 1
-    elif act_space.__class__.__name__ == "MultiDiscrete":
-        act_shape = act_space.shape
-    elif act_space.__class__.__name__ == "Box":
-        act_shape = act_space.shape[0]
-    elif act_space.__class__.__name__ == "MultiBinary":
-        act_shape = act_space.shape[0]
-    else:  # agar
-        act_shape = act_space[0].shape[0] + 1
-    return act_shape
 
 class SharedReplayBuffer(object):
 
@@ -71,40 +43,39 @@ class SharedReplayBuffer(object):
 
     def buffer_reset(self):
         # Initialize the buffer as list not numpy for supporting various length btw agents
-        lock.acquire()
-        self.buffer_index = [-1 for _ in range(self.num_agents)]
-        self.share_obs = [list() for _ in range(self.num_agents)]
-        self.obs = [list() for _ in range(self.num_agents)]
-        self.value_preds = [list() for _ in range(self.num_agents)]
-        self.done = [list() for _ in range(self.num_agents)]
-        self.actions = [list() for _ in range(self.num_agents)]
-        self.action_masks = [list() for _ in range(self.num_agents)]
-        self.action_log_probs = [list() for _ in range(self.num_agents)]
-        self.rewards = [list() for _ in range(self.num_agents)]
-        self.advantages = [list() for _ in range(self.num_agents)]
-        self.returns = [list() for _ in range(self.num_agents)]
-        lock.release()
+        with lock:
+            self.done = [True for _ in range(self.num_agents)]
+            self.share_obs = [list() for _ in range(self.num_agents)]
+            self.obs = [list() for _ in range(self.num_agents)]
+            self.value_preds = [list() for _ in range(self.num_agents)]
+            self.done = [list() for _ in range(self.num_agents)]
+            self.actions = [list() for _ in range(self.num_agents)]
+            self.action_masks = [list() for _ in range(self.num_agents)]
+            self.action_log_probs = [list() for _ in range(self.num_agents)]
+            self.rewards = [list() for _ in range(self.num_agents)]
+            self.advantages = [list() for _ in range(self.num_agents)]
+            self.returns = [list() for _ in range(self.num_agents)]
 
     def check_train_ready(self):
-        total_data_num = sum(self.buffer_index) + sum([1 if index < 0 else 0 for index in self.buffer_index])
+        total_data_num = sum(len(self.rewards[agent_id]) for agent_id in range(self.num_agents))
         return total_data_num >= self.train_threshold
 
     """Inserts a new transition into the replay buffer."""
     def insert(self, agent_id, share_obs, obs, rnn_states_actor, rnn_states_critic, actions, action_log_probs,
                value_preds, rewards, action_masks=None):
-        lock.acquire()
-        self.share_obs[agent_id].append(share_obs.copy())
-        self.obs[agent_id].append(obs.copy())
-        self.rnn_states[agent_id].append(rnn_states_actor.clone().detach())
-        self.rnn_states_critic[agent_id].append(rnn_states_critic.clone().detach())
-        self.value_preds[agent_id].append(value_preds.clone().detach())
-        self.actions[agent_id].append(actions.clone().detach())
-        self.action_log_probs[agent_id].append(action_log_probs.clone().detach())
-        self.action_masks[agent_id].append(action_masks.copy())
-        if self.buffer_index[agent_id] >= 0:
-            self.rewards[agent_id].append(rewards)
-        self.buffer_index[agent_id] = self.buffer_index[agent_id] + 1
-        lock.release()
+        with lock:
+            self.share_obs[agent_id].append(share_obs.copy())
+            self.obs[agent_id].append(obs.copy())
+            self.rnn_states[agent_id].append(rnn_states_actor.clone().detach())
+            self.rnn_states_critic[agent_id].append(rnn_states_critic.clone().detach())
+            self.value_preds[agent_id].append(value_preds.clone().detach())
+            self.actions[agent_id].append(actions.clone().detach())
+            self.action_log_probs[agent_id].append(action_log_probs.clone().detach())
+            self.action_masks[agent_id].append(action_masks.copy())
+            if self.done[agent_id] is False:
+                self.rewards[agent_id].append(rewards)
+            else:
+                self.done[agent_id] = False
 
     """Updates the buffer after policy optimization to maintain continuity."""
     def after_update(self):
@@ -113,12 +84,12 @@ class SharedReplayBuffer(object):
         self.rnn_states_critic = [[self.rnn_states_critic[i][-1].clone()] for i in range(self.num_agents)]
 
     """Computes the discounted returns using the given next value."""
-    def compute_returns(self, next_value):
+    def compute_returns(self):
         for agent_id in range(self.num_agents):
-            if self.buffer_index[agent_id] < 0:
+            if len(self.rewards[agent_id]) <= 0:
                 continue
             last_advantage = 0
-            self.value_preds[agent_id][-1] = next_value[agent_id]
+            #self.value_preds[agent_id].append(next_value[agent_id])
             self.advantages[agent_id] = np.array([0.0 for _ in range(len(self.rewards[agent_id]))])
             for step in reversed(range(len(self.rewards[agent_id]))):
                 delta = (
@@ -129,8 +100,11 @@ class SharedReplayBuffer(object):
                 self.advantages[agent_id][step] = last_advantage = (
                     delta + self.gamma * 0.95 * last_advantage
                 )
-            mean_adv = np.mean(self.advantages[agent_id])
-            std_adv = np.std(self.advantages[agent_id]) + 1e-5 
+        all_advantages = np.concatenate([self.advantages[agent_id] for agent_id in range(self.num_agents)])
+        mean_adv = np.mean(all_advantages)
+        std_adv = np.std(all_advantages) + 1e-8
+
+        for agent_id in range(self.num_agents):
             self.advantages[agent_id] = (np.array(self.advantages[agent_id]) - mean_adv) / std_adv
             self.returns[agent_id] = np.reshape(self.advantages[agent_id], (-1,1)) + np.array(self.value_preds[agent_id][:-1])
         

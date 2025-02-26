@@ -6,6 +6,12 @@ import numpy as np
 from modules.base_env import BaseEnv
 from typing import Type, TypeVar
 
+buffer = None
+
+def register_buffer(b):
+    global buffer 
+    buffer = b
+
 T = TypeVar('T')
 
 class SpaceRLEnv(AECEnv, metaclass=ABCMeta):
@@ -29,13 +35,19 @@ class SpaceRLEnv(AECEnv, metaclass=ABCMeta):
                  generate_rl_agent: type[T]):
         self.env = env
         self.rl_agent_generator = generate_rl_agent
-        self.reset()
+        self.reset(False)
 
         self.nearby_task_max_num = nearby_task_max_num
         self.nearby_agent_max_num = nearby_agent_max_num
 
     """Reset the environment and reinitialize the agent list."""
-    def reset(self):
+    def reset(self, last_reward_insert = True):
+        global buffer
+        for agent in self.env.agents:
+            if last_reward_insert is True:
+                buffer.done[agent.agent_id] = True
+                if len(buffer.actions[agent.agent_id]) - 1 == len(buffer.rewards[agent.agent_id]):
+                    buffer.rewards[agent.agent_id].append(agent.blackboard['reward'])
         self.env.reset()
         self.agents = self.env.agents
         self.tasks = self.env.tasks
