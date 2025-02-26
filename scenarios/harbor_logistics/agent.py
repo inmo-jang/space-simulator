@@ -159,8 +159,6 @@ class Agent(BaseAgent):
 
 
     def draw(self, screen):
-        if config['simulation']['rendering_options'].get('agent_path_visualization', True):
-            self.draw_waypoints(screen)
         rotated_image = pygame.transform.rotate(self.image, -math.degrees(self.rotation))
         new_rect = rotated_image.get_rect(center=(self.position.x, self.position.y))
         screen.blit(rotated_image, new_rect.topleft)

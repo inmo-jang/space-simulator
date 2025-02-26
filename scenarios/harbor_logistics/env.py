@@ -182,11 +182,6 @@ class Env(BaseEnv):
         self.ship1.draw(self.screen)
         self.ship2.draw(self.screen)             
 
-        # Draw charging station
-        self.screen.blit(self.charging_station, 
-                        (self.charging_station_position[0] - self.charging_station.get_width() // 2,
-                        self.charging_station_position[1] - self.charging_station.get_height() // 2))    
-        
         # Draw containers
         for color, position in zip(self.destination_images, self.destination_positions):
             if not isinstance(position, tuple) or len(position) != 2:
@@ -201,6 +196,12 @@ class Env(BaseEnv):
                         self.charging_station_position[1] - self.charging_station.get_height() // 2))    
         self.draw_grid()
         self.draw_graph_on_pygame() 
+
+        # Draw charging station
+        self.screen.blit(self.charging_station, 
+                        (self.charging_station_position[0] - self.charging_station.get_width() // 2,
+                        self.charging_station_position[1] - self.charging_station.get_height() // 2))    
+
 
     def draw_graph_on_pygame(self):
         """
@@ -221,6 +222,8 @@ class Env(BaseEnv):
         for agent in self.agents:                    
             if self.rendering_options.get('agent_tail'): # Draw each agent's trajectory tail
                 pass
+            if self.rendering_options.get('agent_path_visualization', False):            
+                agent.draw_waypoints(self.screen)
                 # TODO: 아래는 민지님 코드
                 # agent.draw_path_to_assigned_tasks(screen) 
                 # agent.draw_path_to_destination(screen)                      
