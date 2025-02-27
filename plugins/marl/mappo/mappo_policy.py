@@ -152,8 +152,8 @@ class MAPPOPolicy:
 
         value_loss_clipped = self.mse_loss(error_clipped)
         value_loss_original = self.mse_loss(error_original)
-
-        value_loss = torch.min(value_loss_original, value_loss_clipped)
+        
+        value_loss = torch.where(value_loss_original > value_loss_clipped, value_loss_clipped, value_loss_original)
 
         value_loss = value_loss.mean()
 
