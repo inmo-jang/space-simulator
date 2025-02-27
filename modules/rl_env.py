@@ -46,6 +46,7 @@ class SpaceRLEnv(AECEnv, metaclass=ABCMeta):
         for agent in self.env.agents:
             if last_reward_insert is True:
                 buffer.done[agent.agent_id] = True
+                buffer.rnn_reset() 
                 if len(buffer.actions[agent.agent_id]) - 1 == len(buffer.rewards[agent.agent_id]):
                     buffer.rewards[agent.agent_id].append(agent.blackboard['reward'])
         self.env.reset()

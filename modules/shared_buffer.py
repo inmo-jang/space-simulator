@@ -32,6 +32,8 @@ class SharedReplayBuffer(object):
         self.gamma = gamma
         self.num_agents = num_agents
         self.train_threshold = train_threshold
+        self.recurrent_N = recurrent_N
+        self.hidden_size = hidden_size
 
         # Initialize the buffer as list not numpy for supporting various length btw agents
         self.buffer_reset()
@@ -59,6 +61,11 @@ class SharedReplayBuffer(object):
     def check_train_ready(self):
         total_data_num = sum(len(self.rewards[agent_id]) for agent_id in range(self.num_agents))
         return total_data_num >= self.train_threshold
+
+    def rnn_reset(self):
+        for agent in range(self.num_agents):
+            self.rnn_states[agent][-1] = torch.zeros((self.recurrent_N, self.hidden_size), dtype=torch.float32)
+            self.rnn_states_critic[agent][-1] = torch.zeros((self.recurrent_N, self.hidden_size), dtype=torch.float32)
 
     """Inserts a new transition into the replay buffer."""
     def insert(self, agent_id, share_obs, obs, rnn_states_actor, rnn_states_critic, actions, action_log_probs,
