@@ -89,7 +89,8 @@ class SharedReplayBuffer(object):
             if len(self.rewards[agent_id]) <= 0:
                 continue
             last_advantage = 0
-            #self.value_preds[agent_id].append(next_value[agent_id])
+            if len(self.rewards[agent_id]) == len(self.value_preds[agent_id]):
+                self.value_preds[agent_id].append(next_value[agent_id])
             self.advantages[agent_id] = np.array([0.0 for _ in range(len(self.rewards[agent_id]))])
             for step in reversed(range(len(self.rewards[agent_id]))):
                 delta = (
