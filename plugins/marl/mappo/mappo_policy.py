@@ -97,7 +97,8 @@ class MAPPOPolicy:
     @torch.no_grad()
     def compute(self):
         self.prep_rollout()
-        self.buffer.compute_returns()
+        next_values = [self._get_value(agent_id, self.buffer.share_obs[agent_id][-1])[0] if self.buffer.buffer_index[agent_id] >= 0 else 0.0 for agent_id in range(self.num_agent)]
+        self.buffer.compute_returns(next_values)
     
     """Insert data into the replay buffer."""
     def insert(self, agent_id, data):

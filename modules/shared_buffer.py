@@ -91,7 +91,7 @@ class SharedReplayBuffer(object):
         self.rnn_states_critic = [[self.rnn_states_critic[i][-1].clone()] for i in range(self.num_agents)]
 
     """Computes the discounted returns using the given next value."""
-    def compute_returns(self):
+    def compute_returns(self, next_value):
         for agent_id in range(self.num_agents):
             if len(self.rewards[agent_id]) <= 0:
                 continue
