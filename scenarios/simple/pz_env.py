@@ -18,7 +18,7 @@ class PZEnv(SpaceRLEnv):
         # Initialize previous states
         self.prev_distance_moved = {agent: 0.0 for agent in self.agents}
         self.prev_task_amount_done = {agent: 0.0 for agent in self.agents}
-        self.prev_simulation_time = 0
+        self.prev_simulation_time = {agent: 0.0 for agent in self.agents}
         self.prev_tasks_left = sum(1 for task in self.env.tasks if not task.completed)
         self.reward = 0.0
 
@@ -93,9 +93,10 @@ class PZEnv(SpaceRLEnv):
             reward = 0
             #reward += self.prev_distance_moved[agent] - agent.distance_moved
             #self.prev_distance_moved[agent] = agent.distance_moved
-            reward += (agent.task_amount_done - self.prev_task_amount_done[agent])*10
+            reward += (agent.task_amount_done - self.prev_task_amount_done[agent])
             self.prev_task_amount_done[agent] = agent.task_amount_done
-            reward += self.prev_simulation_time - self.env.simulation_time
-            self.prev_simulation_time = self.env.simulation_time
+            current_simulation_time = self.env.simulation_time
+            reward += self.prev_simulation_time[agent] - current_simulation_time
+            self.prev_simulation_time[agent] = current_simulation_time
 
             agent.blackboard['reward'] += reward
