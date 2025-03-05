@@ -34,11 +34,13 @@ class RNNLayer(nn.Module):
         self.norm = nn.LayerNorm(outputs_dim)
 
     def forward(self, x, hxs):#, masks):
-        if x.size(1) == hxs.size(1):
-            x, hxs = self.rnn(x, hxs)
+        if x.size(0) == hxs.size(0):
+            x, hxs = self.rnn(x, hxs.view(self._recurrent_N, *x.shape[1:]))
             x = x.squeeze(0)
         else:
             # x is a (T, N, -1) tensor that has been flatten to (T * N, -1)
+            print(x.shape)
+            print(hxs.shape)
             N = hxs.size(0)
             T = int(x.size(0) / N)
 
@@ -65,7 +67,6 @@ class FixedCategorical(torch.distributions.Categorical):
             super()
             .log_prob(actions.squeeze(-1))
             .view(actions.size(0), -1)
-            .sum(-1)
             .unsqueeze(-1)
         )
 

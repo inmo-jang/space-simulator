@@ -83,7 +83,7 @@ class MAPPOPolicy:
             self.actor_optimizer.load_state_dict(checkpoint['optimizer_actor_state_dict'])
             self.critic_optimizer.load_state_dict(checkpoint['optimizer_critic_state_dict'])
 
-        self.buffer = SharedReplayBuffer(self.num_agent, self.gamma, self.episode_length * self.num_agent, self.recurrent_N, self.hidden_size)
+        self.buffer = SharedReplayBuffer(self.num_agent, self.gamma, self.episode_length, self.recurrent_N, self.hidden_size)
         register_buffer(self.buffer)
 
        
@@ -162,7 +162,7 @@ class MAPPOPolicy:
 
     """Perform PPO update for both actor and critic."""
     def ppo_update(self, sample):
-        share_obs_batch, obs_batch, rnn_states_batch, rnn_states_critic_batch, actions_batch, \
+        valid_mask_batch, share_obs_batch, obs_batch, rnn_states_batch, rnn_states_critic_batch, actions_batch, \
         value_preds_batch, return_batch, old_action_log_probs_batch, \
         adv_targ, action_masks_batch = sample
 
@@ -180,14 +180,16 @@ class MAPPOPolicy:
         # PPO Clipped Surrogate Objective
         surr1 = imp_weights * adv_targ
         surr2 = torch.clamp(imp_weights, 1.0 - self.clip_param, 1.0 + self.clip_param) * adv_targ
-        policy_action_loss = -torch.min(surr1, surr2).mean()
+        policy_action_loss = torch.where(surr1 > surr2, surr2, surr1).mean()
         
         # Compute final policy loss
         policy_loss = policy_action_loss - dist_entropy * self.entropy_coef  # Entropy regularization
+
+        policy_loss = policy_loss * valid_mask_batch
         
         # Backpropagation
         self.actor_optimizer.zero_grad()
-        policy_loss.backward()
+        policy_loss.mean().backward()
         
         # Gradient Clipping
         torch.nn.utils.clip_grad_norm_(self.actor.parameters(), max_norm=0.5)
@@ -199,10 +201,12 @@ class MAPPOPolicy:
         # critic update
         # Compute value loss
         value_loss = self.cal_value_loss(values, value_preds_batch, return_batch)
+
+        value_loss = value_loss * valid_mask_batch
         
         # Backpropagation
         self.critic_optimizer.zero_grad()
-        (value_loss * self.value_loss_coef).backward()
+        (value_loss * self.value_loss_coef).mean().backward()
         
         # Gradient Clipping
         torch.nn.utils.clip_grad_norm_(self.critic.parameters(), max_norm=0.5)
@@ -213,8 +217,8 @@ class MAPPOPolicy:
 
         if mappo_config['wandb'] is True:
             wandb.log({
-                "Policy Loss": policy_loss.item(),
-                "Value Loss": value_loss.item(),
+                "Policy Loss": policy_loss.mean().item(),
+                "Value Loss": (value_loss * self.value_loss_coef).mean().item(),
                 "Entropy": dist_entropy.mean().item(),
                 "Actor Gradient Norm": actor_grad_norm,
                 "Critic Gradient Norm": critic_grad_norm,
@@ -237,10 +241,10 @@ class MAPPOPolicy:
                 value_loss, critic_grad_norm, policy_loss, dist_entropy, actor_grad_norm, imp_weights \
                     = self.ppo_update(sample)
                 
-                policy_losses.append(policy_loss.item())
-                value_losses.append(value_loss.item())
-                entropies.append(dist_entropy.mean().item())
-                print(f"Policy Loss: {policy_loss.item()}, Value Loss: {value_loss.item()}, Entropy: {dist_entropy.mean().item()}")
+                policy_losses.append(policy_loss.mean().item())
+                value_losses.append(value_loss.mean().item())
+                entropies.append(dist_entropy.item())
+                print(f"Policy Loss: {policy_loss.mean().item()}, Value Loss: {value_loss.mean().item()}, Entropy: {dist_entropy.mean().item()}")
 
         self.buffer.after_update()
 
@@ -321,7 +325,6 @@ class MAPPOPolicy:
                    blackboard['reward'], blackboard['closest_tasks'], \
                    value, action, action_log_prob, rnn_state, rnn_state_critic
             self.insert(agent_id, data)
-            blackboard['reward'] = 0
             if self.buffer.check_train_ready() is True:
                 self.compute()
                 self.prep_training()
