@@ -207,13 +207,15 @@ class MAPPOPolicy:
         # Backpropagation
         self.critic_optimizer.zero_grad()
         (value_loss * self.value_loss_coef).mean().backward()
-        
+
         # Gradient Clipping
         torch.nn.utils.clip_grad_norm_(self.critic.parameters(), max_norm=0.5)
         
         # Update step
         critic_grad_norm = self.get_grad_norm(self.critic.parameters())
         self.critic_optimizer.step()
+
+        self.critic.popart.update(return_batch)
 
         if mappo_config['wandb'] is True:
             wandb.log({

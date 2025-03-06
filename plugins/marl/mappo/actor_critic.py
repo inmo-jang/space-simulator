@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import numpy as np
+from modules.pop_art import PopArt
 
 # The code is based on the MAPPO implementation from the repository: https://github.com/marlbenchmark/on-policy/
 
@@ -188,7 +189,8 @@ class Critic(nn.Module):
 
         self.rnn = RNNLayer(hidden_size, hidden_size, recurrent_N)
 
-        self.v_out = init(nn.Linear(hidden_size, 1), init_method, lambda x: nn.init.constant_(x, 0))
+        self.v_out = init(nn.Linear(hidden_size, hidden_size), init_method, lambda x: nn.init.constant_(x, 0))
+        self.popart = PopArt(hidden_size, 1)
 
         self.to(device)
 
@@ -196,5 +198,6 @@ class Critic(nn.Module):
         critic_features = self.base(cent_obs)
         critic_features, rnn_states = self.rnn(critic_features, rnn_states)
         values = self.v_out(critic_features)
+        values = self.popart(values)
 
         return values, rnn_states
