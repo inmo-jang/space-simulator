@@ -17,8 +17,8 @@ class PopArt(nn.Module):
         return norm_output
 
     def update(self, target_values):
-        new_mean = self.beta * self.mean + (1 - self.beta) * target_values.mean(dim=0)
-        new_var = self.beta * self.var + (1 - self.beta) * target_values.var(dim=0)
+        new_mean = self.beta * self.mean + (1 - self.beta) * target_values.mean()
+        new_var = self.beta * self.var + (1 - self.beta) * target_values.var()
 
         self.mean = new_mean
         self.var = new_var
