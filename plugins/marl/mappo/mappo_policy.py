@@ -47,7 +47,7 @@ class MAPPOPolicy:
         self.lr = mappo_config['lr']
         self.critic_lr = mappo_config['critic_lr']
         self.eps = mappo_config['epsilon']
-        self.weight_decay = mappo_config['weight_decay']
+        self.weight_decay = float(mappo_config['weight_decay'])
         self.hidden_size = mappo_config['hidden_size']
         self.layer_N = mappo_config['layer_N']
         self.recurrent_N = mappo_config['recurrent_N']
