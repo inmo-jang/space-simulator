@@ -197,7 +197,7 @@ class Critic(nn.Module):
     def forward(self, cent_obs, rnn_states):
         critic_features = self.base(cent_obs)
         critic_features, rnn_states = self.rnn(critic_features, rnn_states)
-        values = self.v_out(critic_features)
-        values = self.popart(values)
+        critic_features = self.v_out(critic_features)
+        values = self.popart(critic_features)
 
         return values, rnn_states
