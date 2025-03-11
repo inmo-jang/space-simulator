@@ -15,12 +15,13 @@ decision_making:
     critic_lr: 0.00025  # Learning rate for critic, usually the same as lr
     epsilon: 0.2  # PPO clipping range, commonly set between 0.1 and 0.2
     weight_decay: 0  # L2 regularization weight, generally 0 (if used, set between 1e-5 and 1e-4)
+    lr_decay_step: 100000  # Learning rate decay step, usually 1e5–1e6, 0 means no decay
     hidden_size: 64  # Number of hidden units in the neural network, recommended 64–128
     layer_N: 3  # Number of MLP layers, usually 2–3
     recurrent_N: 1  # Number of recurrent layers in RNN, typically 1–2
     gamma: 0.99  # Discount factor, commonly set between 0.95 and 0.99
     data_chunk_length: 10  # Sequence length for RNN, usually between 10 and 20
-    episode_length: 1000  # Episode length, depends on the environment
+    episode_length: 100  # Episode length, depends on the environment
     mode: train
     save_path: scenarios/simple/rl.pt  # Path to save the trained model
     #load_path: scenarios/simple/rl.pt  # Path to load the trained model
@@ -28,7 +29,7 @@ decision_making:
     wandb: False
 
 agents:
-  behavior_tree_xml: default_bt.xml 
+  behavior_tree_xml: no_reactive_bt.xml 
   quantity: 10
   locations:
     x_min: 0
@@ -41,8 +42,8 @@ agents:
   max_angular_speed: 0.25
   target_approaching_radius: 50
   work_rate: 1  # work rate for each agent (per 1.0/simulation.sampling_freq)
-  communication_radius: 500 # 0 represents "global", meaning that each agent can access to the information of all the other agents
-  situation_awareness_radius: 500 # 0 represents "global", meaning that each agent can access to the information of all the tasks
+  communication_radius: 0 # 0 represents "global", meaning that each agent can access to the information of all the other agents
+  situation_awareness_radius: 0 # 0 represents "global", meaning that each agent can access to the information of all the tasks
   random_exploration_duration: 1000.0 # sec
   nearby_agent_max_num: 10
   nearby_task_max_num: 10
@@ -76,7 +77,7 @@ simulation:
   gif_recording_fps: 0.05  
   task_visualisation_factor: 3  # visualization factor for tasks : 10 means converting 10 amount to 1 pixel
   profiling_mode: False
-  rendering_mode: Screen  # Options: Screen; Terminal; None
+  rendering_mode: Terminal  # Options: Screen; Terminal; None
   rendering_options: # Only works if `rendering_mode` is `Screen`
     agent_tail: True
     agent_communication_topology: True

@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 from modules.reward_norm import RewardNormalizer
 import wandb
 import math
+from torch.optim.lr_scheduler import CosineAnnealingLR
 
 # MAPPOPolicy class encapsulates the MAPPO algorithm for training an agent with a shared policy
 # The code is based on the MAPPO implementation from the repository: https://github.com/marlbenchmark/on-policy/
@@ -48,6 +49,7 @@ class MAPPOPolicy:
         self.critic_lr = mappo_config['critic_lr']
         self.eps = mappo_config['epsilon']
         self.weight_decay = float(mappo_config['weight_decay'])
+        self.lr_decay_step = int(mappo_config['lr_decay_step'])
         self.hidden_size = mappo_config['hidden_size']
         self.layer_N = mappo_config['layer_N']
         self.recurrent_N = mappo_config['recurrent_N']
@@ -71,12 +73,14 @@ class MAPPOPolicy:
         self.critic = Critic(self.hidden_size, self.layer_N, self.recurrent_N, \
                              global_obs_space, self.device)
         self.actor_optimizer = torch.optim.Adam(self.actor.parameters(),
-                                                lr=self.lr, eps=self.eps,
-                                                weight_decay=self.weight_decay)
+                                                lr=self.lr, eps=self.eps)
         self.critic_optimizer = torch.optim.Adam(self.critic.parameters(),
                                                  lr=self.critic_lr,
                                                  eps=self.eps,
                                                  weight_decay=self.weight_decay)
+        if self.lr_decay_step > 0:
+            self.actor_scheduler = CosineAnnealingLR(self.actor_optimizer, T_max=self.lr_decay_step*100, eta_min=1e-5)
+            self.critic_scheduler = CosineAnnealingLR(self.critic_optimizer, T_max=self.lr_decay_step, eta_min=1e-5)
         if self.load_path is not None:
             checkpoint = torch.load(self.load_path)
             self.actor.load_state_dict(checkpoint['actor_state_dict'])
@@ -200,6 +204,8 @@ class MAPPOPolicy:
         # Update step
         actor_grad_norm = self.get_grad_norm(self.actor.parameters())
         self.actor_optimizer.step()
+        if self.lr_decay_step > 0:
+            self.actor_scheduler.step()
 
         # critic update
         # Compute value loss
@@ -217,6 +223,8 @@ class MAPPOPolicy:
         # Update step
         critic_grad_norm = self.get_grad_norm(self.critic.parameters())
         self.critic_optimizer.step()
+        if self.lr_decay_step > 0:
+            self.critic_scheduler.step()
 
         self.critic.popart.update(return_batch)
 
