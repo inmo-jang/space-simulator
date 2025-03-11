@@ -8,6 +8,7 @@ from modules.shared_buffer import SharedReplayBuffer
 from modules.rl_env import register_buffer
 from modules.utils import config
 import matplotlib.pyplot as plt
+from modules.reward_norm import RewardNormalizer
 import wandb
 import math
 
@@ -85,6 +86,8 @@ class MAPPOPolicy:
 
         self.buffer = SharedReplayBuffer(self.num_agent, self.gamma, self.episode_length, self.recurrent_N, self.hidden_size)
         register_buffer(self.buffer)
+
+        self.reward_normalizer = RewardNormalizer(self.eps)
 
        
     """Initialize components of the MAPPO agent. This is for initialization after other instances initialized."""
@@ -324,7 +327,7 @@ class MAPPOPolicy:
 
         if mappo_config['mode'] == "train":
             data = blackboard['local_observation'], blackboard['global_observation'], \
-                   blackboard['reward'], blackboard['closest_tasks'], \
+                   self.reward_normalizer.normalize(blackboard['reward']), blackboard['closest_tasks'], \
                    value, action, action_log_prob, rnn_state, rnn_state_critic
             self.insert(agent_id, data)
             if self.buffer.check_train_ready() is True:
