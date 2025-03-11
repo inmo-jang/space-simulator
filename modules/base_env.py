@@ -157,13 +157,13 @@ class BaseEnv:
             # Draw background
             self.draw_background()
             
+            # Draw tasks & their auxiliary information
+            self.draw_tasks()
+            self.draw_tasks_info()       
+
             # Draw agents & their auxiliary information
             self.draw_agents_info()
             self.draw_agents()
-
-            # Draw tasks & their auxiliary information
-            self.draw_tasks()
-            self.draw_tasks_info()            
 
             # Display task quantity and elapsed simulation time                
             task_time_text = pre_render_text(f'Tasks left: {self.tasks_left}; Time: {self.simulation_time:.2f}s', 36, (0, 0, 0))

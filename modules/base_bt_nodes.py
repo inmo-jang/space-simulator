@@ -62,7 +62,10 @@ class Sequence(Node):
 
     def halt_children(self):
         for child in self.children:
-            child.halt()  
+            child.halt() 
+
+    def halt(self):
+        self.current_child_index = 0
 
 class ReactiveSequence(Node):
     def __init__(self, name, children):
@@ -111,6 +114,9 @@ class Fallback(Node):
     def halt_children(self):
         for child in self.children:
             child.halt()  
+
+    def halt(self):
+        self.current_child_index = 0            
 
 class ReactiveFallback(Node):
     def __init__(self, name, children):
