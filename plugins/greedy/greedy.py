@@ -109,4 +109,56 @@ class FirstClaimGreedy: # Task selection within each agent's `situation_awarenes
 
         distance = (self.agent.position - task.position).length()        
         return distance
-        
+
+
+class Greedy(FirstClaimGreedy):
+    def __init__(self, agent):
+        self.agent = agent
+        self.assigned_task = None
+    
+    def decide(self, blackboard):
+        '''
+        Output: 
+            - `task_id`, if task allocation works well
+            - `None`, otherwise
+        '''
+
+        local_tasks_info = blackboard['local_tasks_info']        
+
+        # Check if the existing task is done
+        if self.assigned_task is not None and (self.assigned_task.completed or self.assigned_task.vertex_agent_num_completed):
+            self.assigned_task = None
+
+        # Give up the decision-making process if there is no task nearby
+        if len(local_tasks_info) == 0: 
+            self.assigned_task = None
+            self.agent.message_to_share = {
+                'agent_id': self.agent.agent_id,
+                'assigned_task_id': None
+            }            
+            return None
+
+       # Given that there is only one task nearby, then enforced to select this
+        if ENFORCED_COLLABORATION and len(local_tasks_info) == 1:
+            self.assigned_task = local_tasks_info[0]
+            return self.assigned_task.task_id
+
+        # Look for a task within situation awareness radius if there is no existing task
+        if self.assigned_task is None:
+            available_tasks_info = local_tasks_info  
+
+            if MODE == "Random":  # Choose a task randomly
+                target_task_id = random.choice(available_tasks_info).task_id
+            elif MODE == "MinDist":  # Choose the closest task
+                target_task_id = self.find_min_dist_task(available_tasks_info)
+            elif MODE == "MaxUtil":  # Choose the task providing the maximum utility
+                target_task_id = self.find_max_utility_task(available_tasks_info)
+                
+            self.assigned_task = self.agent.tasks_info[target_task_id]
+
+            self.agent.message_to_share = {
+                'agent_id': self.agent.agent_id,
+                'assigned_task_id': self.assigned_task.task_id
+            }
+            
+        return self.assigned_task.task_id

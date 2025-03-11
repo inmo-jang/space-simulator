@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root BTCPP_format="4">
+  <BehaviorTree ID="space-simulator">
+    <ReactiveSequence>
+      <GatherLocalInfo/>
+      <Sequence>
+        <ReactiveSequence>
+          <ReactiveFallback>
+            <AssignTask/>
+            <Explore/>
+          </ReactiveFallback>
+          <ReactiveSequence>
+            <ReactiveFallback>
+              <IsArrivedAtBlockTarget/>
+              <MoveToBlockTarget/>
+            </ReactiveFallback>
+            <ReactiveFallback>
+              <IsAllAgents/>
+              <WaitAgents/>
+            </ReactiveFallback>
+          </ReactiveSequence>
+        </ReactiveSequence>
+        <ReactiveFallback>
+          <IsBlockTaskLifted/>
+          <LiftBlockTask/>
+        </ReactiveFallback>
+        <ReactiveFallback>
+          <IsSlotTaskCompleted/>
+          <ReactiveSequence>
+            <ReactiveFallback>
+              <IsArrivedAtSlotTarget/>
+              <MoveToSlotTarget/>
+            </ReactiveFallback>
+            <PlaceDownBlockTask/>
+          </ReactiveSequence>
+        </ReactiveFallback>
+      </Sequence>
+    </ReactiveSequence>
+  </BehaviorTree>
+
+  <!-- Description of Node Models (used by Groot) -->
+  <TreeNodesModel>
+    <Action ID="AssignTask"
+            editable="true"/>
+    <Action ID="Explore"
+            editable="true"/>
+    <Action ID="GatherLocalInfo"
+            editable="true"/>
+    <Condition ID="IsAllAgents"
+               editable="true"/>
+    <Condition ID="IsArrivedAtBlockTarget"
+               editable="true"/>
+    <Condition ID="IsArrivedAtSlotTarget"
+               editable="true"/>
+    <Condition ID="IsBlockTaskLifted"
+               editable="true"/>
+    <Condition ID="IsSlotTaskCompleted"
+               editable="true"/>
+    <Action ID="LiftBlockTask"
+            editable="true"/>
+    <Action ID="MoveToBlockTarget"
+            editable="true"/>
+    <Action ID="MoveToSlotTarget"
+            editable="true"/>
+    <Action ID="PlaceDownBlockTask"
+            editable="true"/>
+    <Action ID="WaitAgents"
+            editable="true"/>
+  </TreeNodesModel>
+
+</root>
