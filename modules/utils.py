@@ -145,7 +145,7 @@ class ResultSaver:
                 image = Image.fromarray(image)
                 image_list.append(image)
 
-            imageio.mimsave(gif_file_path, image_list, duration=1.0/gif_recording_fps)  # Adjust duration for faster playback                    
+            imageio.mimsave(gif_file_path, image_list, duration=1.0/gif_recording_fps, loop=0)  # Adjust duration for faster playback                    
             # imageio.mimsave(gif_file_path, frames)
             print(f"Saved GIF: {gif_file_path}")            
 
