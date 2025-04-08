@@ -9,6 +9,7 @@
 - **Behavior Tree (`base_bt_nodes.py`)**
   - Implemented `ReactiveSequence` and `ReactiveFallback`, which restart from the first child at every tick.
   - Added `halt` functionality to `Sequence`, `ReactiveSequence`, `Fallback`, and `ReactiveFallback` to stop all children when necessary.
+  - Introduced reusable base BT node classes: `_IsTaskCompleted`, `_IsArrivedAtTask`, `_MoveToTask`, `_ExecuteTaskWhileFollowing`, `_ExploreArea`.
 
 ### Changed
 - **Behavior Tree (`base_bt_nodes.py`)**
@@ -17,6 +18,7 @@
     - If the `Sequence` or `Fallback` node is ticked again, it resumes execution from the child that was previously `RUNNING`.
   - Renamed `LocalSensingNode` to `GatherLocalInfo` and `DecisionMakingNode` to `AssignTask` following the new naming convention (using verb forms).
     - `LocalSensingNode` and `DecisionMakingNode` are still available for now but will be removed soon.
+  - Refactored scenario-specific BT nodes (`IsArrivedAtTarget`, etc.) to inherit from new base classes in `base_bt_nodes.py` (`_IsArrivedAtTask`, etc.).
 
 - **Scenario: Simple**
   - Added `IsTaskCompleted`, `IsArrivedAtTarget`, `MoveToTarget`, and `ExecuteTask` to the simple scenario. These replace the functionality of `TaskExecutingNode`, which has been removed.   
