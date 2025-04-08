@@ -239,7 +239,7 @@ class _IsTaskCompleted(SyncAction):
         
         task = agent.tasks_info[_task_id]
         if task.completed is True:
-            blackboard[task_id_key] = None
+            # blackboard[task_id_key] = None
             # agent.set_assigned_task_id(None)
             return Status.SUCCESS  
         return Status.FAILURE          

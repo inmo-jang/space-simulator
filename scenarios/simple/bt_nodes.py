@@ -34,6 +34,8 @@ class IsTaskCompleted(_IsTaskCompleted):
 
     def _update(self, agent, blackboard): 
         result = super()._update(agent, blackboard, task_id_key='assigned_task_id')
+        if result is Status.SUCCESS:
+            blackboard['assigned_task_id'] = None
         return result
 
 
@@ -43,6 +45,8 @@ class IsArrivedAtTarget(_IsArrivedAtTask):
 
     def _update(self, agent, blackboard): 
         result = super()._update(agent, blackboard, task_id_key='assigned_task_id', arrive_threshold=target_arrive_threshold)
+        if result is Status.SUCCESS:
+            pass
         return result
     
     
