@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 import xml.etree.ElementTree as ET
 
 def load_config(config_file):
-    with open(config_file, 'r') as f:
+    with open(config_file, 'r', encoding="utf-8") as f:
         return yaml.safe_load(f)
 
 # Global variable to hold the configuration
