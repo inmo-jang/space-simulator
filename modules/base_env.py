@@ -186,7 +186,7 @@ class BaseEnv:
 
 
         elif self.rendering_mode == "Terminal":
-            print(f"Time: {self.simulation_time:.2f}, Tasks left: {len(self.tasks)}")
+            print(f"Time: {self.simulation_time:.2f}, Tasks left: {self.tasks_left}")
             if self.simulation_time - self.last_print_time > 0.5:                    
                 self.last_print_time = self.simulation_time
                 
