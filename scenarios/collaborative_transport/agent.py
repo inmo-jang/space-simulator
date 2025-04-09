@@ -3,7 +3,7 @@ import math
 import os
 from modules.utils import config, generate_positions 
 from modules.base_agent import BaseAgent
-from scenarios.simple.task import task_colors
+from scenarios.collaborative_transport.task import task_colors
 
 # Load agent configuration (Scenario Specific)
 work_rate = config['agents']['work_rate']
@@ -18,6 +18,11 @@ class Agent(BaseAgent):
 
         
         self.task_amount_done = 0.0        
+        self.assigned_vertex_id = None
+        self.color_id = None
+
+        self.waiting_time = {}        
+        self.cumulative_waiting_time = 0           
 
     def draw(self, screen):
         size = 10
@@ -31,9 +36,29 @@ class Agent(BaseAgent):
         self.update_color()
         pygame.draw.polygon(screen, self.color, [p1, p2, p3])
 
-    def update_color(self):        
-        self.color = task_colors.get(self.assigned_task_id, (20, 20, 20))  # Default to Dark Grey if no task is assigned
+    def set_vertex_id(self, assigned_vertex_id):
+        self.assigned_vertex_id = assigned_vertex_id
 
+    def set_color_id(self, color_id):
+        self.color_id = color_id
+
+    def update_color(self):        
+        self.color = task_colors.get(self.color_id, (20, 20, 20))  # Default to Dark Grey if no task is assigned
+
+    def get_block_tasks_nearby(self, radius = None, with_completed_task = True):
+        local_tasks_info = self.get_tasks_nearby(radius, with_completed_task)
+        local_block_tasks_info = [task for task in local_tasks_info if task.task_type == "block"]
+        return local_block_tasks_info
+    
+    def update_waiting_time(self, wait_time_increment):
+        if self.assigned_task_id is None:
+            raise ValueError(f"[{self.assigned_task_id}] Error: No assigned_task_id found!")             
+        _waiting_time = self.waiting_time.get(self.assigned_task_id, 0)
+        _waiting_time += wait_time_increment
+        self.waiting_time[self.assigned_task_id] = _waiting_time
+
+    def update_cumulative_waiting_time(self, wait_time_increment):
+        self.cumulative_waiting_time += wait_time_increment    
 
 
 def generate_agents(tasks_info):

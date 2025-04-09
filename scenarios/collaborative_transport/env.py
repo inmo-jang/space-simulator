@@ -1,8 +1,7 @@
 from modules.base_env import BaseEnv
 from modules.utils import ResultSaver
-from scenarios.simple.task import generate_tasks
-from scenarios.simple.agent import generate_agents
-import pygame
+from scenarios.collaborative_transport.task import generate_tasks
+from scenarios.collaborative_transport.agent import generate_agents
 
 class Env(BaseEnv):
     def __init__(self, config):
@@ -26,6 +25,14 @@ class Env(BaseEnv):
         
         # Initialize data recording
         self.data_records = []
+
+    async def step(self): 
+        await super().step()
+
+        for task in self.tasks:
+            if task.task_type == "block" and task.completed and len(task.ready_agents) != 0:
+                """ at task position or vertex point """
+                task.initialize_position_to_center(self.agents)
 
     def save_results(self):
         # Save gif
