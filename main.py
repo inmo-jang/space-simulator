@@ -32,6 +32,7 @@ async def game_loop():
                 env.record_timewise_result()
 
         env.render()
+        env.update_display()
         if env.recording:
             env.record_screen_frame()
 
