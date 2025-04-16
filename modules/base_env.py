@@ -179,11 +179,6 @@ class BaseEnv:
                 text_rect = self.mission_completed_text.get_rect(center=(self.screen_width // 2, self.screen_height // 2))
                 self.screen.blit(self.mission_completed_text, text_rect)
 
-            pygame.display.flip()
-            self.clock.tick(self.sampling_freq*self.speed_up_factor)
-
-
-
 
         elif self.rendering_mode == "Terminal":
             print(f"Time: {self.simulation_time:.2f}, Tasks left: {self.tasks_left}")
@@ -199,6 +194,10 @@ class BaseEnv:
                 print(f'[{self.simulation_time:.2f}] MISSION COMPLETED')
                 self.running = False                
 
+    def update_display(self):
+        if self.rendering_mode == "Screen" and self.screen:
+            pygame.display.flip()
+            self.clock.tick(self.sampling_freq*self.speed_up_factor)
 
     def close(self):
         pygame.quit()

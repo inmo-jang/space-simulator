@@ -12,6 +12,12 @@
   - Introduced reusable base BT node classes: `_IsTaskCompleted`, `_IsArrivedAtTask`, `_MoveToTask`, `_ExecuteTaskWhileFollowing`, `_ExploreArea`.
 
 ### Changed
+- **GRAPE (`grape.py`)**
+  - `local_convergence` flag support: Agents now consider themselves converged if their assigned task does not change between iterations.
+  - Reordered GRAPE decision-making flow: D-Mutex now precedes the task selection process.
+  - Task selection is now executed unconditionally at every decision step, even if the agent is already satisfied with the current partition. This improves adaptability to dynamic environments and avoids deadlocks in Nash-stable states.
+
+
 - **Behavior Tree (`base_bt_nodes.py`)**
   - Updated `Sequence` and `Fallback`:
     - Now, when a child returns `RUNNING`, the node returns `RUNNING` without proceeding to the next child.

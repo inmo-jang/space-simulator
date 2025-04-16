@@ -8,6 +8,7 @@ class BaseTask:
         self.position = pygame.Vector2(position)
         self.completed = False
         self.amount = 0.0
+        self.radius = 0.0
 
     def set_done(self):
         self.completed = True
