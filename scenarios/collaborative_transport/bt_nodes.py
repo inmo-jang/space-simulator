@@ -1,12 +1,14 @@
 import math
 import random
 from modules.base_bt_nodes import BTNodeList, Status, Node, Sequence, Fallback, ReactiveSequence, ReactiveFallback, SyncAction, GatherLocalInfo, AssignTask
-from modules.base_bt_nodes import _IsTaskCompleted, _ExecuteTask, _ExploreArea
+from modules.base_bt_nodes import _IsTaskCompleted, _ExecuteTask, _ExploreArea, _IsArrivedAtTask, _MoveToTask
+from modules.base_bt_nodes import AssignTask as _AssignTask
 # BT Node List
 CUSTOM_ACTION_NODES = [
     'WaitAgents',
     'MoveToBlockTask',
     'MoveToSlotTask',
+    'MoveToVertex',
     'LiftBlockTask',
     'PlaceDownBlockTask',
     'SelectVertex',
@@ -19,6 +21,8 @@ CUSTOM_CONDITION_NODES = [
     'IsAllAgents',
     'IsArrivedAtBlockTask',
     'IsArrivedAtSlotTask',
+    'IsArrivedAtVertex',
+    'IsAllAgentsAtVertex',
     'IsBlockTaskLifted',
     'IsSlotTaskCompleted'
 ]
@@ -106,36 +110,77 @@ class SelectVertex(SyncAction):
         super().__init__(name, self._update)   
 
     def _update(self, agent, blackboard):        
-        assigned_task_id = blackboard.get('assigned_task_id')
-        if assigned_task_id is None:
-            raise ValueError(f"[{self.name}] Error: No assigned_task_id found in the blackboard!")
+        block_task_id = blackboard.get('block_task_id')
+        if block_task_id is None:
+            raise ValueError(f"[{self.name}] Error: No block_task_id found in the blackboard!")
 
-        current_block_task_id = blackboard.get('block_task_id', None)
-        if assigned_task_id is not current_block_task_id: # New decision
-            # Release existing one
-            if current_block_task_id is not None:
-                current_block_task = agent.tasks_info[current_block_task_id]
-                current_block_task.remove_from_assigned_agents(agent.agent_id)
-                current_block_task.remove_from_ready_agents(agent.agent_id)
-                
-            # Set new one
-            new_block_task = agent.tasks_info[assigned_task_id]
-            _vertex_id = new_block_task.include_to_assigned_agents(agent.agent_id)
-            if _vertex_id is False:                
-                # Due to sequential process of agent.run_tree(), some leaving agents may be not fully left yet
-                # print(f"[{self.name}] Error: _vertex_id is None. some leaving agents may be not fully left yet")                            
-                return Status.RUNNING                
-            else:
-                blackboard['block_task_id'] = assigned_task_id
-                blackboard['slot_task_id'] = new_block_task.matching_slot_id                        
-                agent.set_assigned_task_id(assigned_task_id)
-                agent.set_color_id(new_block_task.color_id)
-                agent.set_vertex_id(_vertex_id)            
-                return Status.SUCCESS 
-        else:            
-            return Status.SUCCESS
+        block_task = agent.tasks_info[block_task_id]
+        # Vertex assignment if available
+        _vertex_id = block_task.include_to_assigned_agents(agent.agent_id)            
+        if _vertex_id is True: # Already assigned to me
+            pass
+        elif _vertex_id is False: # NOTE: Debug purpose -- When agents more than required are arrived
+            return Status.FAILURE
+        else:
+            blackboard['slot_task_id'] = block_task.matching_slot_id 
+            agent.set_vertex_id(_vertex_id)
 
-class IsArrivedAtBlockTask(_IsArrivedAtVertex): 
+        # Debug
+        if len(block_task.ready_agents) < len(block_task.assigned_agents):
+            ValueError(f"[BUG]")
+
+        return Status.SUCCESS
+
+
+class AssignTask(_AssignTask):
+    def __init__(self, name, agent):
+        super().__init__(name, agent)   
+    def _decide(self, agent, blackboard):
+        result = super()._decide(agent, blackboard)                
+        if result is Status.SUCCESS:            
+            assigned_task_id = blackboard.get('assigned_task_id')
+            blackboard['block_task_id'] = assigned_task_id # For MoveToBlockTask
+            block_task = agent.tasks_info[assigned_task_id]
+            agent.set_color_id(block_task.color_id)
+        else:
+            blackboard['block_task_id'] = None
+            agent.set_color_id(None)
+        return result
+        
+
+
+class IsArrivedAtBlockTask(_IsArrivedAtTask): 
+    def __init__(self, name, agent):
+        super().__init__(name, agent)   
+
+    def _update(self, agent, blackboard): 
+        result = super()._update(agent, blackboard, task_id_key='block_task_id', arrive_threshold = 0)
+
+        block_task_id = blackboard.get('block_task_id')
+        block_task = agent.tasks_info[block_task_id]
+        if result is Status.SUCCESS:
+            agent.reset_movement()
+            block_task.include_to_ready_agents(agent.agent_id)
+        else: # While this agent is moving towards to the task
+            if block_task.is_all_agents_ready() and not agent.agent_id in block_task.ready_agents: # Other agents already gathered for this task
+                # Reset
+                agent.set_color_id(None)
+                agent.reset_movement()
+        return result
+
+class MoveToBlockTask(_MoveToTask):
+    def __init__(self, name, agent):
+        super().__init__(name, agent)   
+
+    def _update(self, agent, blackboard): 
+        if blackboard.get('block_task_id', None) is None:
+            return Status.FAILURE
+
+        result = super()._update(agent, blackboard, task_id_key='block_task_id')
+        return result
+
+
+class IsArrivedAtVertex(_IsArrivedAtVertex): 
     def __init__(self, name, agent):
         super().__init__(name, agent)   
 
@@ -143,12 +188,12 @@ class IsArrivedAtBlockTask(_IsArrivedAtVertex):
         result = super()._update(agent, blackboard, task_id_key='block_task_id')
         if result is Status.SUCCESS:
             block_task_id = blackboard.get('block_task_id')
-            block_task = agent.tasks_info[block_task_id]
-            block_task.include_to_ready_agents(agent.agent_id)
+            block_task = agent.tasks_info[block_task_id]            
+            block_task.include_to_vertex_arrival_agents(agent.agent_id)
             agent.reset_movement()
         return result
 
-class MoveToBlockTask(_MoveToVertex):
+class MoveToVertex(_MoveToVertex):
     def __init__(self, name, agent):
         super().__init__(name, agent)   
 
@@ -157,6 +202,19 @@ class MoveToBlockTask(_MoveToVertex):
         return result
         
 
+class IsAllAgentsAtVertex(SyncAction): 
+    def __init__(self, name, agent):
+        super().__init__(name, self._update)   
+
+    def _update(self, agent, blackboard): 
+        block_task_id = blackboard.get('block_task_id')
+        if block_task_id is None:
+            raise ValueError(f"[{self.name}] Error: No block_task_id found in the blackboard!")
+        
+        block_task = agent.tasks_info[block_task_id]
+        if block_task.is_all_agents_vertex_arrival(): 
+            return Status.SUCCESS            
+        return Status.FAILURE
     
 class IsAllAgents(SyncAction):
     def __init__(self, name, agent):
@@ -168,8 +226,8 @@ class IsAllAgents(SyncAction):
             raise ValueError(f"[{self.name}] Error: No block_task_id found in the blackboard!")
 
         block_task = agent.tasks_info[block_task_id]
-        if block_task.is_all_agents_ready():
-            return Status.SUCCESS
+        if block_task.is_all_agents_ready():            
+            return Status.SUCCESS # Go to the next phase
         else:
             return Status.FAILURE
 

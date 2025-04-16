@@ -24,7 +24,8 @@ class Task(BaseTask):
 
         # Participating agent management
         self.assigned_agents = {} # Dictionary for agent_id, vertex_id
-        self.ready_agents = set()      
+        self.ready_agents = set()
+        self.vertex_arrival_agents = set()      
 
         # Vertex
         self.available_vertex_id = { index for index in range(0, self.num_sides) }
@@ -78,6 +79,16 @@ class Task(BaseTask):
             return True
         else:
             return False
+        
+    def include_to_vertex_arrival_agents(self, agent_id):
+        if agent_id not in self.vertex_arrival_agents:
+            self.vertex_arrival_agents.add(agent_id)
+
+    def is_all_agents_vertex_arrival(self):
+        if len(self.vertex_arrival_agents) == self.num_sides:
+            return True
+        else:
+            return False        
 
     def initialize_position_to_center(self, agents):
         agent_positions = [

@@ -5,13 +5,10 @@
       <GatherLocalInfo/>
       <Sequence>
         <ReactiveSequence>
-          <ReactiveSequence>
-            <ReactiveFallback>
-              <AssignTask/>
-              <Explore/>
-            </ReactiveFallback>
-            <SelectVertex/>
-          </ReactiveSequence>
+          <ReactiveFallback>
+            <AssignTask/>
+            <Explore/>
+          </ReactiveFallback>
           <ReactiveSequence>
             <ReactiveFallback>
               <IsArrivedAtBlockTask/>
@@ -23,10 +20,18 @@
             </ReactiveFallback>
           </ReactiveSequence>
         </ReactiveSequence>
-        <ReactiveFallback>
-          <IsBlockTaskLifted/>
-          <LiftBlockTask/>
-        </ReactiveFallback>
+        <ReactiveSequence>
+          <SelectVertex/>
+          <ReactiveFallback>
+            <IsArrivedAtVertex/>
+            <MoveToVertex/>
+          </ReactiveFallback>
+          <IsAllAgentsAtVertex/>
+          <ReactiveFallback>
+            <IsBlockTaskLifted/>
+            <LiftBlockTask/>
+          </ReactiveFallback>
+        </ReactiveSequence>
         <ReactiveFallback>
           <IsSlotTaskCompleted/>
           <ReactiveSequence>
@@ -51,9 +56,13 @@
             editable="true"/>
     <Condition ID="IsAllAgents"
                editable="true"/>
+    <Condition ID="IsAllAgentsAtVertex"
+               editable="true"/>
     <Condition ID="IsArrivedAtBlockTask"
                editable="true"/>
     <Condition ID="IsArrivedAtSlotTask"
+               editable="true"/>
+    <Condition ID="IsArrivedAtVertex"
                editable="true"/>
     <Condition ID="IsBlockTaskLifted"
                editable="true"/>
@@ -64,6 +73,8 @@
     <Action ID="MoveToBlockTask"
             editable="true"/>
     <Action ID="MoveToSlotTask"
+            editable="true"/>
+    <Action ID="MoveToVertex"
             editable="true"/>
     <Action ID="PlaceDownBlockTask"
             editable="true"/>
