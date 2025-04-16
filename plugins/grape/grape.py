@@ -87,6 +87,10 @@ class GRAPE:
 
         # GRAPE algorithm for each agent (Phase 2)        
         _max_task_id, _max_utility = self.find_max_utility_task(_local_tasks_info)
+        
+        if _max_utility == float('-inf'): # Somehow, there is no selectable task, i.e., void task
+            return None
+                
         _current_utility = self.compute_utility(self.assigned_task)
         if _max_utility > _current_utility: 
             self.update_partition(_max_task_id)

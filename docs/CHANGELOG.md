@@ -16,7 +16,7 @@
   - `local_convergence` flag support: Agents now consider themselves converged if their assigned task does not change between iterations.
   - Reordered GRAPE decision-making flow: D-Mutex now precedes the task selection process.
   - Task selection is now executed unconditionally at every decision step, even if the agent is already satisfied with the current partition. This improves adaptability to dynamic environments and avoids deadlocks in Nash-stable states.
-
+  - Failure handling: If all available tasks yield insufficient utility, the agent selects a void task (i.e., no task) and returns None.
 
 - **Behavior Tree (`base_bt_nodes.py`)**
   - Updated `Sequence` and `Fallback`:
