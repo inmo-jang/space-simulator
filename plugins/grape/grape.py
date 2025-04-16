@@ -2,7 +2,8 @@ import random
 import copy
 from modules.utils import config, pre_render_text
 
-KEEP_MOVING_DURING_CONVERGENCE = config['decision_making']['GRAPE'].get('execute_movements_during_convergence', False)
+KEEP_MOVING_DURING_CONVERGENCE = config['decision_making']['GRAPE'].get('execute_movements_during_convergence', False) # TODO: Remove later as this is just for backward compatibility
+LOCAL_CONVERGENCE = config['decision_making']['GRAPE'].get('local_convergence', False)
 INITIALIZE_PARTITION = config['decision_making']['GRAPE']['initialize_partition']
 REINITIALIZE_PARTITION = config['decision_making']['GRAPE']['reinitialize_partition_on_completion']
 COST_WEIGHT_FACTOR = config['decision_making']['GRAPE']['cost_weight_factor']
@@ -52,10 +53,22 @@ class GRAPE:
             - `None`, otherwise
         '''           
 
+        previous_assigned_task_id = self.assigned_task.task_id if self.assigned_task is not None else None  # For Debug
+
+        # D-Mutex (Phase 1)            
+        self.evolution_number, self.time_stamp, self.partition, self.satisfied = self.distributed_mutex(self.agent.messages_received)                
+        self.agent.reset_messages_received()
+        self.assigned_task = self.get_assigned_task_from_partition(self.partition)
+
+
         _local_tasks_info = blackboard['local_tasks_info']
         
         # Check if the existing task is done        
-        if self.assigned_task is not None and self.assigned_task.completed:            
+        if self.assigned_task is not None and self.assigned_task.completed:           
+            # For Debug
+            if self.agent.agent_id not in self.partition[self.assigned_task.task_id]: 
+                ValueError(f"[BUG] agent {self.agent.agent_id} tried to reset the completed task {self.assigned_task.task_id}, where the agent does not belong to")
+
             _neighbor_agents_info = self.get_neighbor_agents_info_in_partition(self.partition)    
             # Default routine
             self.partition[self.assigned_task.task_id] = set()  # Empty the previous task's coalition                  
@@ -71,18 +84,15 @@ class GRAPE:
         if len(_local_tasks_info) == 0: 
             return None
 
-            
-        # GRAPE algorithm for each agent (Phase 1)        
-        if len(_local_tasks_info) == 0:
-            return None
-        if not self.satisfied:            
-            _max_task_id, _max_utility = self.find_max_utility_task(_local_tasks_info)
-            self.assigned_task = self.get_assigned_task_from_partition(self.partition) 
-            if _max_utility > self.compute_utility(self.assigned_task):                
-                self.update_partition(_max_task_id)
-                self.evolution_number += 1
-                self.time_stamp = random.uniform(0, 1)                   
-            
+
+        # GRAPE algorithm for each agent (Phase 2)        
+        _max_task_id, _max_utility = self.find_max_utility_task(_local_tasks_info)
+        _current_utility = self.compute_utility(self.assigned_task)
+        if _max_utility > _current_utility: 
+            self.update_partition(_max_task_id)
+            self.evolution_number += 1
+            self.time_stamp = random.uniform(0, 1)      
+            self.assigned_task = self.get_assigned_task_from_partition(self.partition) # New assignment
             self.satisfied = True
 
             # Broadcasting # NOTE: Implemented separately
@@ -93,18 +103,17 @@ class GRAPE:
                 'time_stamp': self.time_stamp
                 }
             
+            # NOTE: Since the assigned task has changed, this indicates that convergence has not yet been reached, so it returns None
             return None
 
-        
-        # D-Mutex (Phase 2)            
-        self.evolution_number, self.time_stamp, self.partition, self.satisfied = self.distributed_mutex(self.agent.messages_received)                
-        self.agent.reset_messages_received()
-
-        self.assigned_task = self.get_assigned_task_from_partition(self.partition)        
-
         if not self.satisfied:
-            if not KEEP_MOVING_DURING_CONVERGENCE:
+            if LOCAL_CONVERGENCE:
+                # For Debug                
+                if previous_assigned_task_id != self.assigned_task.task_id: 
+                    ValueError(f"[BUG] Agent is satisfied with the task in the updated partition (Task ID: {self.assigned_task.task_id}), but it is different from the previously assigned task (Task ID:{previous_assigned_task_id})")
+            else:
                 self.agent.reset_movement()  # Neutralise the agent's current movement during converging to a Nash stable partition
+                    
 
         return copy.deepcopy(self.assigned_task.task_id) if self.assigned_task is not None else None
 
