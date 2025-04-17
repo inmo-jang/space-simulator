@@ -31,8 +31,26 @@ class Task(BaseTask):
         self.available_vertex_id = { index for index in range(0, self.num_sides) }
         self.vertex_positions = self.generate_vertex_positions()
         
+        # for waiting time utility
+        self.max_waiting_time = 0.0 
 
 
+    def get_max_waiting_time(self, agents):
+        waiting_time_dict = {}
+
+        for agent in agents:
+            if agent.agent_id in self.assigned_agents:
+                waiting_time = agent.waiting_time.get(self.task_id, 0.0)
+            else:
+                waiting_time = 0.0
+            waiting_time_dict[agent.agent_id] = waiting_time
+
+        if waiting_time_dict:
+            self.max_waiting_time = max(waiting_time_dict.values())
+        else:
+            self.max_waiting_time = 0.0
+
+        return self.max_waiting_time
 
     def generate_vertex_positions(self):
         angle_step = 2 * math.pi / self.num_sides  # 꼭짓점 간 각도
