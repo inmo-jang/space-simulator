@@ -67,7 +67,7 @@ class Task(BaseTask):
             self.assigned_agents.pop(agent_id)
 
     def include_to_ready_agents(self, agent_id):
-        if agent_id not in self.ready_agents:
+        if agent_id not in self.ready_agents and len(self.ready_agents) < self.num_sides:
             self.ready_agents.add(agent_id)
 
     def remove_from_ready_agents(self, agent_id):
