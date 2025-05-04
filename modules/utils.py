@@ -184,41 +184,18 @@ class ResultSaver:
         
         # Extract time and data columns
         time = df['time']
-        agents_total_distance_moved = df['agents_total_distance_moved']
-        agents_total_task_amount_done = df['agents_total_task_amount_done']
-        remaining_tasks = df['remaining_tasks']
-        tasks_total_amount_left = df['tasks_total_amount_left']
+        data_columns = [col for col in df.columns if col != 'time']
+        num_plots = len(data_columns)
 
+        plt.figure(figsize=(12, 2 * num_plots))
 
-        plt.figure(figsize=(12, 8))
-
-        plt.subplot(2, 2, 1)
-        plt.plot(time, agents_total_distance_moved, label='Total Distance Moved by Agents')
-        plt.xlabel('Time')
-        plt.ylabel('Distance Moved')
-        plt.legend()
-        plt.grid(True)  
-
-        plt.subplot(2, 2, 2)
-        plt.plot(time, agents_total_task_amount_done, label='Total Task Amount Done by Agents')
-        plt.xlabel('Time')
-        plt.ylabel('Task Amount Done')
-        plt.legend()
-        plt.grid(True)  
-
-        plt.subplot(2, 2, 3)
-        plt.plot(time, remaining_tasks, label='The Number of Remaining Tasks')
-        plt.xlabel('Time')
-        plt.ylabel('The Number of Remaining Tasks')
-        plt.legend()
-        plt.grid(True)  
-
-        plt.subplot(2, 2, 4)
-        plt.plot(time, tasks_total_amount_left, label='Total Amount of Tasks')
-        plt.xlabel('Time')
-        plt.ylabel('Tasks Total Amount')
-        plt.legend()
-        plt.grid(True)  
+        for i, col in enumerate(data_columns):
+            plt.subplot((num_plots + 1) // 2, 2, i + 1)
+            plt.plot(time, df[col], label=col)
+            plt.xlabel('Time')
+            plt.ylabel(col.replace('_', ' ').title())
+            plt.legend()
+            plt.grid(True)
 
         plt.tight_layout()
 
