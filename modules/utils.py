@@ -40,13 +40,19 @@ def generate_positions(quantity, x_min, x_max, y_min, y_max, radius=10):
             positions.append(pos)
     return positions
 
+def generate_random_values(quantity, min, max):
+    value_list = []
+    while len(value_list) < quantity:
+        _value = random.randint(min, max)
+        value_list.append(_value)
+    return value_list
 
 # Generate task_colors based on tasks.quantity
-def generate_task_colors(quantity):
-    colors = cm.get_cmap('tab20', quantity)  # 'tab20' is a colormap with 20 distinct colors
+def generate_task_colors(quantity):    
+    colors = cm.get_cmap('tab20', 20)  # 'tab20' is a colormap with 20 distinct colors
     task_colors = {}
     for i in range(quantity):
-        color = colors(i)  # Get color from colormap
+        color = colors(i % 20)  # Get color from colormap
         task_colors[i] = (int(color[0] * 255), int(color[1] * 255), int(color[2] * 255))  # Convert to RGB tuple
     return task_colors
 
