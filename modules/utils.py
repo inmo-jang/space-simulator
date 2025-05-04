@@ -21,6 +21,7 @@ config = None
 def set_config(config_file):
     global config
     config = load_config(config_file)
+    config['config_file_path'] = config_file
 
 # Pre-render static elements
 def pre_render_text(text, font_size, color):
@@ -93,8 +94,8 @@ class ObjectToRender:
 
 # Results saving
 class ResultSaver:
-    def __init__(self, config_file_path):
-        self.config_file_path = config_file_path
+    def __init__(self, config):
+        self.config_file_path = config['config_file_path']
         self.result_file_path = self.generate_output_filename()
         self.timewise_result_file_path = self.generate_output_filename(additional_keyword="timewise")
         self.agentwise_result_file_path = self.generate_output_filename(additional_keyword="agentwise")
