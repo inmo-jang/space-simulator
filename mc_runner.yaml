@@ -1,31 +1,7 @@
 cases:
-  - config/example/grape_a10_c100.yaml
-  - config/example/grape_a10_c200.yaml
-  - config/example/grape_a10_c300.yaml
-  - config/example/greedy_a10_c100.yaml
-  - config/example/greedy_a10_c200.yaml
-  - config/example/greedy_a10_c300.yaml
-  - config/example/cbba_a10_c100.yaml
-  - config/example/cbba_a10_c200.yaml
-  - config/example/cbba_a10_c300.yaml
-  - config/example/grape_a30_c100.yaml
-  - config/example/grape_a30_c200.yaml
-  - config/example/grape_a30_c300.yaml
-  - config/example/greedy_a30_c100.yaml
-  - config/example/greedy_a30_c200.yaml
-  - config/example/greedy_a30_c300.yaml
-  - config/example/cbba_a30_c100.yaml
-  - config/example/cbba_a30_c200.yaml
-  - config/example/cbba_a30_c300.yaml
-  - config/example/grape_a50_c100.yaml
-  - config/example/grape_a50_c200.yaml
-  - config/example/grape_a50_c300.yaml
-  - config/example/greedy_a50_c100.yaml
-  - config/example/greedy_a50_c200.yaml
-  - config/example/greedy_a50_c300.yaml
-  - config/example/cbba_a50_c100.yaml
-  - config/example/cbba_a50_c200.yaml
-  - config/example/cbba_a50_c300.yaml
+  - scenarios/simple_battery/config/equal.yaml
+  - scenarios/simple_battery/config/proportional.yaml
+  - scenarios/simple_battery/config/resource.yaml
 
 
-num_runs: 1
+num_runs: 10

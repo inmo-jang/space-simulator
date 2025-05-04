@@ -7,7 +7,7 @@ from modules.utils import set_config
 
 # Parse command line arguments
 parser = argparse.ArgumentParser(description='SPACE (Swarm Planning And Control Evaluation) Simulator')
-parser.add_argument('--config', type=str, default='config.yaml', help='Path to the configuration file (default: --config=config.yaml)')
+parser.add_argument('--config', type=str, default='scenarios/simple_battery/config/st_mr.yaml', help='Path to the configuration file (default: --config=config.yaml)')
 args = parser.parse_args()
 
 # Load configuration and initialize the environment

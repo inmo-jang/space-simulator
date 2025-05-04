@@ -4,7 +4,7 @@ scenario:
 decision_making:
   plugin: scenarios.simple_battery.plugin.grape_balance.GRAPE
   GRAPE:
-    utility_type: Resource_aware
+    utility_type: Proportional 
     cost_weight_factor: 0.01
     social_inhibition_factor: 0
     initialize_partition: Distance # Options: None; Distance      
@@ -60,7 +60,7 @@ simulation:
   gif_recording_fps: 0.05  
   task_visualisation_factor: 20  # visualization factor for tasks : 10 means converting 10 amount to 1 pixel
   profiling_mode: False
-  rendering_mode: Screen  # Options: Screen; Terminal; None
+  rendering_mode: None  # Options: Screen; Terminal; None
   rendering_options: # Only works if `rendering_mode` is `Screen`
     agent_tail: True
     agent_communication_topology: False
@@ -71,8 +71,8 @@ simulation:
     agent_path_to_assigned_tasks: False
     task_id: False
   saving_options:
-    output_folder: output
-    with_date_subfolder: True
+    output_folder: output/mc_tests/data/proportional
+    with_date_subfolder: False
     save_gif: False  # Only works if `rendering_mode` is `Screen`
     save_timewise_result_csv: True    
     save_agentwise_result_csv: True

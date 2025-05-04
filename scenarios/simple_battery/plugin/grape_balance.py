@@ -8,6 +8,7 @@ INITIALIZE_PARTITION = config['decision_making']['GRAPE']['initialize_partition'
 REINITIALIZE_PARTITION = config['decision_making']['GRAPE']['reinitialize_partition_on_completion']
 COST_WEIGHT_FACTOR = config['decision_making']['GRAPE']['cost_weight_factor']
 SOCIAL_INHIBITION_FACTOR = config['decision_making']['GRAPE']['social_inhibition_factor']
+UTIL_TYPE = config['decision_making']['GRAPE']['utility_type']
 
 class GRAPE:
     def __init__(self, agent):
@@ -29,8 +30,11 @@ class GRAPE:
             'agent_id': self.agent.agent_id,
             'partition': self.partition, 
             'evolution_number': self.evolution_number,
-            'time_stamp': self.time_stamp
+            'time_stamp': self.time_stamp,
+            'battery_level': self.agent.battery_level
             } 
+        
+        self.max_agent_battery_level = self.agent.battery_level
 
 
     def initialize_partition_by_distance(self, agents_info, tasks_info, partition):
@@ -56,7 +60,7 @@ class GRAPE:
         previous_assigned_task_id = self.assigned_task.task_id if self.assigned_task is not None else None  # For Debug
 
         # D-Mutex (Phase 1)            
-        self.evolution_number, self.time_stamp, self.partition, self.satisfied = self.distributed_mutex(self.agent.messages_received)                
+        self.evolution_number, self.time_stamp, self.partition, self.satisfied, self.max_agent_battery_level = self.distributed_mutex(self.agent.messages_received)                
         self.agent.reset_messages_received()
         self.assigned_task = self.get_assigned_task_from_partition(self.partition)
 
@@ -104,7 +108,8 @@ class GRAPE:
                 'agent_id': self.agent.agent_id,
                 'partition': self.partition, 
                 'evolution_number': self.evolution_number,
-                'time_stamp': self.time_stamp
+                'time_stamp': self.time_stamp,
+                'battery_level': self.agent.battery_level
                 }
             
             # NOTE: Since the assigned task has changed, this indicates that convergence has not yet been reached, so it returns None
@@ -157,7 +162,19 @@ class GRAPE:
             num_collaborator += 1
 
         distance = (self.agent.position - task.position).length()              
-        utility = task.amount / (num_collaborator) - COST_WEIGHT_FACTOR * distance * (num_collaborator ** SOCIAL_INHIBITION_FACTOR) 
+
+        # Proportional
+        if UTIL_TYPE == "Proportional":       
+            _current_members_id = self.partition[task.task_id].copy()
+            _current_members_id.add(self.agent.agent_id)
+            _current_members_resources_sum = sum(agent.battery_level for agent in self.agent.agents_info if agent.agent_id in _current_members_id)             
+            agent_contribution = self.agent.battery_level / (_current_members_resources_sum + 1e-8)
+        elif UTIL_TYPE == "Resource_aware":
+            agent_contribution = (self.agent.battery_level / self.max_agent_battery_level) / num_collaborator * 5
+        elif UTIL_TYPE == "Equal":
+            agent_contribution = 1 / num_collaborator
+
+        utility = agent_contribution * task.amount - COST_WEIGHT_FACTOR * distance * (num_collaborator ** SOCIAL_INHIBITION_FACTOR) 
         return utility
 
     def distributed_mutex(self, messages_received):        
@@ -166,7 +183,14 @@ class GRAPE:
         _partition = self.partition
         _time_stamp = self.time_stamp
         
+        _max_agent_battery = self.agent.battery_level
+
+
         for message in messages_received:
+            # Battery level consensus
+            _max_agent_battery = message['battery_level'] if message['battery_level'] > _max_agent_battery else _max_agent_battery
+
+            # GRAPE
             if message['evolution_number'] > _evolution_number or (message['evolution_number'] == _evolution_number and message['time_stamp'] > _time_stamp):
                 _evolution_number = message['evolution_number']
                 _time_stamp = message['time_stamp']
@@ -175,7 +199,7 @@ class GRAPE:
                 _satisfied = False
         
         _final_partition = {k: v.copy() for k, v in _partition.items()}
-        return _evolution_number, _time_stamp, _final_partition, _satisfied
+        return _evolution_number, _time_stamp, _final_partition, _satisfied, _max_agent_battery
                 
 
     def get_assigned_task_from_partition(self, partition):

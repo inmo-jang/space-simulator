@@ -3,22 +3,19 @@
   <BehaviorTree ID="space-simulator">
     <ReactiveSequence>
       <GatherLocalInfo/>
-      <ReactiveSequence>
-        <ReactiveFallback>
+      <Sequence>
+        <ReactiveSequence>
           <AssignTask/>
-          <Explore/>
-        </ReactiveFallback>
+          <ReactiveFallback>
+            <IsArrivedAtTarget/>
+            <MoveToTarget/>
+          </ReactiveFallback>
+        </ReactiveSequence>
         <ReactiveFallback>
           <IsTaskCompleted/>
-          <ReactiveSequence>
-            <ReactiveFallback>
-              <IsArrivedAtTarget/>
-              <MoveToTarget/>
-            </ReactiveFallback>
-            <ExecuteTask/>
-          </ReactiveSequence>
+          <ExecuteTask/>
         </ReactiveFallback>
-      </ReactiveSequence>
+      </Sequence>
     </ReactiveSequence>
   </BehaviorTree>
 
@@ -27,8 +24,6 @@
     <Action ID="AssignTask"
             editable="true"/>
     <Action ID="ExecuteTask"
-            editable="true"/>
-    <Action ID="Explore"
             editable="true"/>
     <Action ID="GatherLocalInfo"
             editable="true"/>
