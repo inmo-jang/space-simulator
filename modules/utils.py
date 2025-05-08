@@ -28,7 +28,10 @@ def pre_render_text(text, font_size, color):
     font = pygame.font.Font(None, font_size)
     return font.render(text, True, color)
 
-def generate_positions(quantity, x_min, x_max, y_min, y_max, radius=10):
+def generate_positions(quantity, x_min, x_max, y_min, y_max, radius=10, seed=None):
+    if seed is not None:
+        random.seed(seed)
+
     positions = []
     while len(positions) < quantity:
         pos = (random.randint(x_min + radius, x_max - radius),
@@ -40,7 +43,10 @@ def generate_positions(quantity, x_min, x_max, y_min, y_max, radius=10):
             positions.append(pos)
     return positions
 
-def generate_random_values(quantity, min, max):
+def generate_random_values(quantity, min, max, seed=None):
+    if seed is not None:
+        random.seed(seed)
+
     value_list = []
     while len(value_list) < quantity:
         _value = random.randint(min, max)

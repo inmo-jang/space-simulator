@@ -91,6 +91,9 @@ class BaseAgent:
         desired = target - self.position
         d = desired.length()
 
+        if d == 0: # Exception
+            return
+
         if d < agent_approaching_to_target_radius:
             # Apply arrival behavior
             desired.normalize_ip()
