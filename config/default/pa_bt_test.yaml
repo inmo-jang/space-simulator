@@ -42,7 +42,7 @@ agents:
   target_approaching_radius: 50
   work_rate: 1  
   communication_radius: 500 
-  situation_awareness_radius: 250  # was 500
+  situation_awareness_radius: 500  # was 500
   random_exploration_duration: 1000.0 
 
 tasks:
@@ -65,6 +65,9 @@ tasks:
 
 simulation:
   ppa_library_path: "scenarios/pa_bt_test/ppa_library.csv"
+  bt_visualiser:
+    enabled: True       # Set to True to enable BT visualisation, False to disable
+    agent_id: 0         # ID of the agent whose behaviour tree will be visualised
   sampling_freq: 1.0 
   speed_up_factor: 0 
   max_simulation_time: 0

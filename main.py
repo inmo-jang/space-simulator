@@ -2,6 +2,7 @@ import asyncio
 import argparse
 import cProfile
 import importlib
+from threading import Thread
 
 from modules.utils import set_config
 
@@ -41,6 +42,20 @@ async def game_loop():
 
 
 def main():
+    bt_viz_cfg = config['simulation'].get('bt_visualiser', {})
+    if bt_viz_cfg.get('enabled', False):
+        agent_id = bt_viz_cfg.get('agent_id', 0)
+        if agent_id < len(env.agents):
+            from modules.bt_visualiser import visualise_bt
+            agent = env.agents[agent_id]
+            Thread(
+                target=visualise_bt, 
+                args=(agent.agent_id, agent.tree), 
+                daemon=True
+            ).start()
+        else:
+            print(f"[Warning] BT visualiser: agent_id {agent_id} is out of range!")
+    
     asyncio.run(game_loop())
 
 if __name__ == "__main__":

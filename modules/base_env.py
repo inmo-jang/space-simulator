@@ -1,3 +1,5 @@
+import os
+os.environ['SDL_VIDEO_WINDOW_POS'] = "0,30"  # top-left corner
 import pygame
 import importlib
 from modules.utils import pre_render_text, ResultSaver
