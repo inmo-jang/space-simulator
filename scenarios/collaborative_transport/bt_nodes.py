@@ -158,14 +158,15 @@ class IsArrivedAtBlockTask(_IsArrivedAtTask):
 
         block_task_id = blackboard.get('block_task_id')
         block_task = agent.tasks_info[block_task_id]
+
+        # For Debug - # While this agent is moving towards to the task
+        if block_task.is_all_agents_ready() and not agent.agent_id in block_task.ready_agents: # Other agents already gathered for this task
+            # Reset
+            raise ValueError(f"[{self.name}] Error: This task should have not been selected in AssignTask!")
+
         if result is Status.SUCCESS:
             agent.reset_movement()
             block_task.include_to_ready_agents(agent.agent_id)
-        else: # While this agent is moving towards to the task
-            if block_task.is_all_agents_ready() and not agent.agent_id in block_task.ready_agents: # Other agents already gathered for this task
-                # Reset
-                agent.set_color_id(None)
-                agent.reset_movement()
         return result
 
 class MoveToBlockTask(_MoveToTask):
@@ -191,6 +192,8 @@ class IsArrivedAtVertex(_IsArrivedAtVertex):
             block_task = agent.tasks_info[block_task_id]            
             block_task.include_to_vertex_arrival_agents(agent.agent_id)
             agent.reset_movement()
+            if agent.agent_id not in block_task.ready_agents:
+                raise ValueError(f"[{self.name}] Error: Agent {agent.agent_id} must be in ready_agents!")
         return result
 
 class MoveToVertex(_MoveToVertex):
@@ -213,6 +216,8 @@ class IsAllAgentsAtVertex(SyncAction):
         
         block_task = agent.tasks_info[block_task_id]
         if block_task.is_all_agents_vertex_arrival(): 
+            if agent.agent_id not in block_task.vertex_arrival_agents:
+                raise ValueError(f"[{self.name}] Error: Agent {agent.agent_id} must be in vertex_arrival_agents!")
             return Status.SUCCESS            
         return Status.FAILURE
     
@@ -227,6 +232,8 @@ class IsAllAgents(SyncAction):
 
         block_task = agent.tasks_info[block_task_id]
         if block_task.is_all_agents_ready():            
+            if agent.agent_id not in block_task.ready_agents:
+                raise ValueError(f"[{self.name}] Error: Agent {agent.agent_id} must be in ready_agents!")
             return Status.SUCCESS # Go to the next phase
         else:
             return Status.FAILURE

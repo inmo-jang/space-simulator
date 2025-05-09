@@ -57,7 +57,7 @@ class FirstClaimGreedy: # Task selection within each agent's `situation_awarenes
                 target_task_id = self.find_min_dist_task(unassigned_tasks_info)
             
             elif MODE == "MaxUtil": # Choose the task providing the maximum utility                
-                target_task_id = self.find_max_utility_task(unassigned_tasks_info)
+                target_task_id, _max_utility = self.find_max_utility_task(unassigned_tasks_info)
                 
             self.assigned_task = self.agent.tasks_info[target_task_id]            
 
@@ -93,9 +93,10 @@ class FirstClaimGreedy: # Task selection within each agent's `situation_awarenes
         }
 
         _max_task_id = max(_current_utilities, key=_current_utilities.get)        
+        _max_utility = _current_utilities[_max_task_id]
 
-        return _max_task_id
-    
+        return _max_task_id, _max_utility
+
     def compute_utility(self, task): # Individual Utility Function  
         if task is None:
             return float('-inf')

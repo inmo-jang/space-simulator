@@ -18,20 +18,23 @@
               <IsAllAgents/>
               <WaitAgents/>
             </ReactiveFallback>
+            <SelectVertex/>
           </ReactiveSequence>
         </ReactiveSequence>
-        <ReactiveSequence>
-          <SelectVertex/>
-          <ReactiveFallback>
-            <IsArrivedAtVertex/>
-            <MoveToVertex/>
-          </ReactiveFallback>
-          <IsAllAgentsAtVertex/>
-          <ReactiveFallback>
-            <IsBlockTaskLifted/>
+        <ReactiveFallback>
+          <IsBlockTaskLifted/>
+          <ReactiveSequence>
+            <ReactiveFallback>
+              <IsArrivedAtVertex/>
+              <MoveToVertex/>
+            </ReactiveFallback>
+            <ReactiveFallback>
+              <IsAllAgentsAtVertex/>
+              <WaitAgents/>
+            </ReactiveFallback>
             <LiftBlockTask/>
-          </ReactiveFallback>
-        </ReactiveSequence>
+          </ReactiveSequence>
+        </ReactiveFallback>
         <ReactiveFallback>
           <IsSlotTaskCompleted/>
           <ReactiveSequence>
