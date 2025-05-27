@@ -30,12 +30,21 @@ class Status(Enum):
 class Node:
     def __init__(self, name):
         self.name = name
+        self.type = None
+        self.status = None
 
     async def run(self, agent, blackboard):
         raise NotImplementedError
     
     def halt(self):
         pass
+
+    def reset(self):
+        self.status = None
+        if hasattr(self, "children"):
+            for child in self.children:
+                child.reset()
+    
 
 # Sequence node: Runs child nodes in sequence until one fails
 class Sequence(Node):
@@ -47,6 +56,7 @@ class Sequence(Node):
     async def run(self, agent, blackboard):
         while self.current_child_index < len(self.children):
             status = await self.children[self.current_child_index].run(agent, blackboard)
+            self.status = status
 
             if status == Status.RUNNING:
                 return Status.RUNNING  
@@ -76,6 +86,7 @@ class ReactiveSequence(Node):
     async def run(self, agent, blackboard):
         for child in self.children:
             status = await child.run(agent, blackboard)
+            self.status = status
             if status == Status.FAILURE:
                 self.halt_children()
                 return Status.FAILURE  
@@ -98,6 +109,7 @@ class Fallback(Node):
     async def run(self, agent, blackboard):
         while self.current_child_index < len(self.children):
             status = await self.children[self.current_child_index].run(agent, blackboard)
+            self.status = status
 
             if status == Status.RUNNING:
                 return Status.RUNNING  
@@ -127,6 +139,7 @@ class ReactiveFallback(Node):
     async def run(self, agent, blackboard):
         for child in self.children:
             status = await child.run(agent, blackboard)
+            self.status = status
             if status == Status.SUCCESS:
                 self.halt_children()
                 return Status.SUCCESS  
@@ -147,10 +160,12 @@ class SyncAction(Node):
     def __init__(self, name, action):
         super().__init__(name)
         self.action = action
+        self.type = "Action"
 
     async def run(self, agent, blackboard):
         result = self.action(agent, blackboard)
         blackboard[self.name] = result
+        self.status = result
         return result
 
 class SyncCondition(Node):
@@ -158,10 +173,12 @@ class SyncCondition(Node):
         super().__init__(name)
         self.condition = condition
         self.is_expanded = False
+        self.type = "Condition"
 
     async def run(self, agent, blackboard):
         result = self.condition(agent, blackboard)
         blackboard[self.name] = {'status': result, 'is_expanded': self.is_expanded} 
+        self.status = result
         return result
 
     def set_expanded(self):
@@ -228,7 +245,7 @@ class AssignTask(SyncAction):
             return Status.SUCCESS    
 
 
-class _IsTaskCompleted(SyncAction):
+class _IsTaskCompleted(SyncCondition):
     def __init__(self, name, agent):
         super().__init__(name, self._update)
 
@@ -244,7 +261,7 @@ class _IsTaskCompleted(SyncAction):
             return Status.SUCCESS  
         return Status.FAILURE          
     
-class _IsArrivedAtTask(SyncAction):
+class _IsArrivedAtTask(SyncCondition):
     def __init__(self, name, agent):
         super().__init__(name, self._update)
 
