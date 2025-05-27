@@ -102,8 +102,8 @@ class ResultSaver:
         self.df_agentwise_result = None
 
     def generate_output_filename(self, extension = "csv", additional_keyword = None):
-        agent_quantity = config['agents'].get('quantity', 0)
-        task_quantity = config['tasks'].get('quantity', 0)
+        agent_quantity = config['agents']['quantity']
+        task_quantity = config['tasks']['quantity']
         decision_making_module_path = config['decision_making']['plugin']
         module_path, class_name = decision_making_module_path.rsplit('.', 1)
         datetime_now = datetime.datetime.now()
@@ -182,11 +182,11 @@ class ResultSaver:
         df = pd.read_csv(csv_file_path)
         
         # Extract time and data columns
-        time = df['time']
-        agents_total_distance_moved = df['agents_total_distance_moved']
-        agents_total_task_amount_done = df['agents_total_task_amount_done']
-        remaining_tasks = df['remaining_tasks']
-        tasks_total_amount_left = df['tasks_total_amount_left']
+        time = df['time'].values
+        agents_total_distance_moved = df['agents_total_distance_moved'].values
+        agents_total_task_amount_done = df['agents_total_task_amount_done'].values
+        remaining_tasks = df['remaining_tasks'].values
+        tasks_total_amount_left = df['tasks_total_amount_left'].values
 
 
         plt.figure(figsize=(12, 8))
