@@ -42,7 +42,7 @@ def test_with_seeds(base_config_path, seed_range, num_runs):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Batch run Monte Carlo simulations using different configurations.")
+    parser = argparse.ArgumentParser(description="Batch run simulations using different configurations and seeds.")
     parser.add_argument("--config", default='mc_runner_seed.yaml', type=str, help="YAML file with the list of configurations and number of runs.")
     args = parser.parse_args()
 
