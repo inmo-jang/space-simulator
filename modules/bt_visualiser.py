@@ -18,30 +18,30 @@ def get_status(node):
         return status.name
     return "UNKNOWN"
 
-def layout_tree(node, depth=0, x_offset=0, layout=None, level_widths=None):
+def layout_tree(node, depth=0, y_offset=0, layout=None, level_heights=None):
     """
-    Recursively assign x, y positions to each node for visualization.
+    Recursively assign x, y positions to each node for horizontal visualization.
     """
     if layout is None:
         layout = {}
-    if level_widths is None:
-        level_widths = {}
+    if level_heights is None:
+        level_heights = {}
 
-    if depth not in level_widths:
-        level_widths[depth] = 0
+    if depth not in level_heights:
+        level_heights[depth] = 0
     else:
-        level_widths[depth] += 1
+        level_heights[depth] += 1
 
-    x = level_widths[depth]
-    layout[node] = (x, depth)
+    y = level_heights[depth]
+    layout[node] = (depth, y)
 
     if hasattr(node, 'children'):
         for child in node.children:
-            layout_tree(child, depth + 1, x, layout, level_widths)
+            layout_tree(child, depth + 1, y, layout, level_heights)
 
     return layout
 
-def visualise_bt(agent_id, tree, refresh_interval_ms=10, screen_offset_x=1400, screen_offset_y=0, width=630, height=1000):
+def visualise_bt(agent_id, tree, refresh_interval_ms=10, screen_offset_x=1400, screen_offset_y=0, width=920, height=1000):
     """
     Visualise the given BT tree using tkinter, reading status from node.result.
     The window is positioned to the right of the pygame window.
@@ -85,8 +85,8 @@ def visualise_bt(agent_id, tree, refresh_interval_ms=10, screen_offset_x=1400, s
                         line_width = 1
 
                     canvas.create_line(
-                        px + NODE_WIDTH / 2, py + NODE_HEIGHT,
-                        cx + NODE_WIDTH / 2, cy,
+                        px + NODE_WIDTH, py + NODE_HEIGHT / 2,
+                        cx, cy + NODE_HEIGHT / 2,
                         fill=line_color,
                         width=line_width
                     )
@@ -100,10 +100,11 @@ def visualise_bt(agent_id, tree, refresh_interval_ms=10, screen_offset_x=1400, s
                 canvas.create_oval(x, y, x + NODE_WIDTH, y + NODE_HEIGHT, fill=colour, outline="black")
             else:
                 canvas.create_rectangle(x, y, x + NODE_WIDTH, y + NODE_HEIGHT, fill=colour, outline="black")
-            # canvas.create_rectangle(x, y, x + NODE_WIDTH, y + NODE_HEIGHT, fill=colour, outline="black")
+
             canvas.create_text(x + NODE_WIDTH / 2, y + NODE_HEIGHT / 2, text=node.name, font=("Arial", 10), fill="white")
 
-        window.after(refresh_interval_ms, draw_tree)
+        window.after(refresh_interval_ms, draw_tree)    
+
 
     draw_tree()
     window.mainloop()
