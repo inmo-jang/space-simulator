@@ -34,6 +34,26 @@ class Task(BaseTask):
         # for waiting time utility
         self.max_waiting_time = 0.0 
 
+    def get_max_waiting_time(self, agents):
+        max_waiting_time = 0
+        for agent_id in self.ready_agents:
+            waiting_time = agents[agent_id].waiting_time.get(self.task_id, 0.0)
+            if waiting_time > max_waiting_time:
+                max_waiting_time = waiting_time
+
+        return max_waiting_time
+    
+    def get_mean_waiting_time(self, agents):
+        total_waiting_time = 0
+        if len(self.ready_agents) == 0:
+            return 0
+        
+        for agent_id in self.ready_agents:
+            waiting_time = agents[agent_id].waiting_time.get(self.task_id, 0.0)
+            total_waiting_time += waiting_time            
+        
+
+        return total_waiting_time/len(self.ready_agents)
 
     def get_max_waiting_time(self, agents):
         waiting_time_dict = {}
