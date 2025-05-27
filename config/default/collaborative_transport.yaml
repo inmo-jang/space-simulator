@@ -103,3 +103,6 @@ simulation:
     save_timewise_result_csv: False  
     save_agentwise_result_csv: False
     save_config_yaml: False
+  bt_visualiser:
+    enabled: True       # Set to True to enable BT visualisation, False to disable
+    agent_id: 0         # ID of the agent whose behaviour tree will be visualised
