@@ -200,7 +200,7 @@ def get_random_num_sides():
 def get_random_amount():
     return random.uniform(config['tasks']['amounts']['min'], config['tasks']['amounts']['max'])
 
-def generate_tasks(task_quantity=None, task_id_start = 0):
+def generate_tasks(task_quantity=None, task_id_start = 0, seed=None):
     if task_quantity is None:
         task_quantity = config['tasks']['quantity']        
     task_locations = config['tasks']['locations']
@@ -210,14 +210,16 @@ def generate_tasks(task_quantity=None, task_id_start = 0):
                                         task_locations['x_max'],
                                         task_locations['y_min'],
                                         task_locations['y_max'],
-                                        radius=task_locations['non_overlap_radius'])
+                                        radius=task_locations['non_overlap_radius'],
+                                        seed=seed)
     
     slot_tasks_positions = generate_positions(task_quantity // 2,
                                         task_locations['x_min'],
                                         task_locations['x_max'],
                                         task_locations['y_min'],
                                         task_locations['y_max'],
-                                        radius=task_locations['non_overlap_radius'])
+                                        radius=task_locations['non_overlap_radius'],
+                                        seed=seed + 1)
 
     # Initialize tasks
     tasks = []
