@@ -44,7 +44,7 @@ class Env(BaseEnv):
 
         # Save time series data
         if self.save_timewise_result_csv:        
-            csv_file_path = self.result_saver.save_to_csv("timewise", self.data_records, ['time', 'agents_total_distance_moved', 'agents_total_task_amount_done', 'remaining_tasks', 'tasks_total_amount_left'])          
+            csv_file_path = self.result_saver.save_to_csv("timewise", self.data_records, ['time', 'agents_total_distance_moved', 'agents_total_task_amount_done', 'completed_tasks', 'remaining_tasks', 'tasks_total_amount_left'])          
             self.result_saver.plot_timewise_result(csv_file_path)
         
         # Save agent-wise data            
@@ -62,6 +62,7 @@ class Env(BaseEnv):
     def record_timewise_result(self):
         agents_total_distance_moved = sum(agent.distance_moved for agent in self.agents)
         agents_total_task_amount_done = sum(agent.task_amount_done for agent in self.agents)
+        completed_tasks = len([task for task in self.tasks if task.completed])
         remaining_tasks = len([task for task in self.tasks if not task.completed])
         tasks_total_amount_left = sum(task.amount for task in self.tasks)
         
@@ -69,6 +70,7 @@ class Env(BaseEnv):
             self.simulation_time, 
             agents_total_distance_moved,
             agents_total_task_amount_done,
+            completed_tasks,
             remaining_tasks,
             tasks_total_amount_left
         ])        
