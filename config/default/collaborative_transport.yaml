@@ -16,6 +16,9 @@ decision_making: # Case 1-1
     social_inhibition_factor: 100
     initialize_partition: None # Options: None; Distance      
     reinitialize_partition_on_completion: None # Options: None; Distance; 
+  CT:
+    waiting_time_tolerance: 10
+    min_waiting_factor: 10
 
 # decision_making: # Case 2
 #   plugin: plugins.cbba.cbba.CBBA
@@ -31,7 +34,6 @@ decision_making: # Case 1-1
 #     mode: MinDist  # Options: Random; MinDist; MaxUtil
 #     weight_factor_cost: 10000.0 # Only used for `MaxUtil` mode
 #     enforced_collaboration: False  
-
 
 
 agents:
