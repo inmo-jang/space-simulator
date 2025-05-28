@@ -35,6 +35,19 @@ decision_making: # Case 1-1
 #     weight_factor_cost: 10000.0 # Only used for `MaxUtil` mode
 #     enforced_collaboration: False  
 
+# decision_making: # Case 3-1
+#   plugin: scenarios.collaborative_transport.plugins.greedy_not_FC.Greedy
+#   FirstClaimGreedy:  
+#     mode: MinDist  # Options: Random; MinDist; MaxUtil
+#     weight_factor_cost: 10000.0 # Only used for `MaxUtil` mode
+#     enforced_collaboration: False  
+
+# decision_making: # Case 3-2
+#   plugin: scenarios.collaborative_transport.plugins.ljf.LJF
+#   FirstClaimGreedy:  
+#     mode: MinDist  # Options: Random; MinDist; MaxUtil
+#     weight_factor_cost: 10000.0 # Only used for `MaxUtil` mode
+#     enforced_collaboration: False  
 
 agents:
   behavior_tree_xml: default_bt.xml 
