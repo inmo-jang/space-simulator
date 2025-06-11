@@ -61,7 +61,7 @@ class Agent(BaseAgent):
         self.cumulative_waiting_time += wait_time_increment    
 
 
-def generate_agents(tasks_info):
+def generate_agents(tasks_info, seed=None):
     agent_quantity = config['agents']['quantity']
     agent_locations = config['agents']['locations']
 
@@ -70,7 +70,8 @@ def generate_agents(tasks_info):
                                       agent_locations['x_max'],
                                       agent_locations['y_min'],
                                       agent_locations['y_max'],
-                                      radius=agent_locations['non_overlap_radius'])
+                                      radius=agent_locations['non_overlap_radius'],
+                                      seed=seed)
 
     # Initialize agents
     agents = [Agent(idx, pos, tasks_info) for idx, pos in enumerate(agents_positions)]

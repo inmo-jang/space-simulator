@@ -1,3 +1,5 @@
+import os
+os.environ['SDL_VIDEO_WINDOW_POS'] = "0,30"  # top-left corner
 import pygame
 import importlib
 from modules.utils import pre_render_text, ResultSaver
@@ -15,6 +17,11 @@ class BaseEnv:
         self.speed_up_factor = config.get('simulation').get('speed_up_factor', 1)
         self.rendering_options = config['simulation'].get('rendering_options', {})        
 
+        self.seed = config['simulation'].get('random_seed', "None")
+        if self.seed == "None":
+            self.seed = None
+        else:
+            print(f"Random seed set to: {self.seed}")
 
         self.save_gif = config.get('simulation').get('saving_options').get('save_gif', False)
         self.save_timewise_result_csv = config.get('simulation').get('saving_options').get('save_timewise_result_csv', False)
@@ -212,7 +219,8 @@ class BaseEnv:
         if self.generation_count < self.max_generations:
             if self.simulation_time - self.last_generation_time >= self.generation_interval:
                 new_task_id_start = len(self.tasks)
-                new_tasks = self.generate_tasks(task_quantity=self.tasks_per_generation, task_id_start=new_task_id_start)
+                seed = self.seed + self.generation_count + 1 if self.seed is not None else None
+                new_tasks = self.generate_tasks(task_quantity=self.tasks_per_generation, task_id_start=new_task_id_start, seed=seed)
                 self.tasks.extend(new_tasks)
                 self.last_generation_time = self.simulation_time
                 self.generation_count += 1

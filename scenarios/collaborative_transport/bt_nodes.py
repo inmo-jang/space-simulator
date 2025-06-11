@@ -135,6 +135,8 @@ class SelectVertex(SyncAction):
 class AssignTask(_AssignTask):
     def __init__(self, name, agent):
         super().__init__(name, agent)   
+        self.prev_task_id = None
+
     def _decide(self, agent, blackboard):
         result = super()._decide(agent, blackboard)                
         if result is Status.SUCCESS:            
@@ -142,9 +144,27 @@ class AssignTask(_AssignTask):
             blackboard['block_task_id'] = assigned_task_id # For MoveToBlockTask
             block_task = agent.tasks_info[assigned_task_id]
             agent.set_color_id(block_task.color_id)
+
+            # 현재 task랑 이전 task가 다르면 set 업데이트(remove)
+            if self.prev_task_id is not None and self.prev_task_id != assigned_task_id:
+                prev_task = agent.tasks_info[self.prev_task_id]
+                prev_task.remove_from_assigned_agents(agent.agent_id)
+                prev_task.remove_from_ready_agents(agent.agent_id)
+
+            # 현재 task 저장
+            self.prev_task_id = assigned_task_id
         else:
             blackboard['block_task_id'] = None
             agent.set_color_id(None)
+
+            # 현재 task가 None이면 이전 task의 set 업데이트(remove)
+            if self.prev_task_id is not None:
+                prev_task = agent.tasks_info[self.prev_task_id]
+                prev_task.remove_from_assigned_agents(agent.agent_id)
+                prev_task.remove_from_ready_agents(agent.agent_id)
+
+            # 현재 task(None) 저장
+            self.prev_task_id = None
         return result
         
 

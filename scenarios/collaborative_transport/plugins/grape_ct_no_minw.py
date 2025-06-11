@@ -6,10 +6,10 @@ from modules.utils import config
 from plugins.grape.grape import *
 
 WAITING_TIME_TOLERANCE = config['decision_making']['CT']['waiting_time_tolerance']
-MIN_WAITING_FACTOR = config['decision_making']['CT']['min_waiting_factor']
-MIN_WAITING_TIME = MIN_WAITING_FACTOR * WAITING_TIME_TOLERANCE
+# MIN_WAITING_FACTOR = config['decision_making']['CT']['min_waiting_factor']
+# MIN_WAITING_TIME = MIN_WAITING_FACTOR * WAITING_TIME_TOLERANCE
 
-class GRAPE_CT(GRAPE):
+class GRAPE_CT_(GRAPE):
     def __init__(self, agent):
         super().__init__(agent)
 
@@ -29,16 +29,16 @@ class GRAPE_CT(GRAPE):
         # max_waiting_time = task.get_max_waiting_time(self.agent.agents_info)
         waiting_time = task.get_mean_waiting_time(self.agent.agents_info)
         
-        # min waiting time threshold
-        waiting_time = max(waiting_time, MIN_WAITING_TIME)
-        waiting_time = 0 if waiting_time == MIN_WAITING_TIME else waiting_time
+        # # min waiting time threshold
+        # waiting_time = max(waiting_time, MIN_WAITING_TIME)
+        # waiting_time = 0 if waiting_time == MIN_WAITING_TIME else waiting_time
 
 
         # # Default Utility
         # utility = task.amount / (num_collaborator) - COST_WEIGHT_FACTOR * distance * (num_collaborator ** SOCIAL_INHIBITION_FACTOR)         
 
-
         # GRAPE with waiting time        
+
         deficiency_ratio = (task.num_sides - len(task.ready_agents))/task.num_sides # 낮을 수록 이미 많은 agents가 모였다는 것임. 
         deficiency_ratio += 0.1
         deficiency_ratio_inverse = 1/deficiency_ratio
