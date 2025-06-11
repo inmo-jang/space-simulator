@@ -21,8 +21,8 @@ class Env(BaseEnv):
         super().reset()
 
         # Initialize agents and tasks
-        self.tasks = generate_tasks()
-        self.agents = generate_agents(self.tasks)
+        self.tasks = generate_tasks(seed=self.seed)
+        self.agents = generate_agents(self.tasks, seed=self.seed)
         
         # Initialize data recording
         self.data_records = []
@@ -48,9 +48,9 @@ class Env(BaseEnv):
             
             self.result_saver.plot_boxplot(csv_file_path, variables_to_save[1:])
 
-        # Save yaml: TODO - To debug
-        # if self.save_config_yaml:                
-            # self.result_saver.save_config_yaml()           
+        # Save yaml
+        if self.save_config_yaml:                
+            self.result_saver.save_config_yaml()           
    
     def record_timewise_result(self):
         agents_total_distance_moved = sum(agent.distance_moved for agent in self.agents)

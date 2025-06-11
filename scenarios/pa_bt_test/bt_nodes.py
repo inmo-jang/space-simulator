@@ -1,6 +1,6 @@
 import math
 import random
-from modules.base_bt_nodes import BTNodeList, Status, Node, Sequence, Fallback, SyncAction, SyncCondition, LocalSensingNode, DecisionMakingNode
+from modules.base_bt_nodes import BTNodeList, Status, Node, ReactiveSequence, ReactiveFallback, SyncAction, SyncCondition, LocalSensingNode, DecisionMakingNode
 
 # BT Node List
 CUSTOM_ACTION_NODES = [

@@ -11,6 +11,12 @@
   - Added `halt` functionality to `Sequence`, `ReactiveSequence`, `Fallback`, and `ReactiveFallback` to stop all children when necessary.
   - Introduced reusable base BT node classes: `_IsTaskCompleted`, `_IsArrivedAtTask`, `_MoveToTask`, `_ExecuteTaskWhileFollowing`, `_ExploreArea`.
 
+- **BT Visualiser (`bt_visualiser.py`)**
+  - Implemented BT visualisation to display the BT structure and real-time node status updates for a selected agent.
+  
+- **Environment**
+  - Support for `random_seed` in `simulation` YAML config. Use an integer ≥ 1 for reproducible runs, or `None` for randomised execution (Currently only support for `simple`).
+
 ### Changed
 - **GRAPE (`grape.py`)**
   - `local_convergence` flag support: Agents now consider themselves converged if their assigned task does not change between iterations.

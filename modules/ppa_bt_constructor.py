@@ -1,5 +1,5 @@
 # ppa_bt_expansion.py
-from modules.base_bt_nodes import config, Fallback, Sequence, BTNodeList
+from modules.base_bt_nodes import config, ReactiveFallback, ReactiveSequence, BTNodeList
 from modules.utils import ResultSaver
 from xml.dom import minidom
 import xml.etree.ElementTree as ET
@@ -7,7 +7,7 @@ import csv
 import os
 import importlib
 bt_module = importlib.import_module(config.get('scenario').get('environment') + ".bt_nodes")
-result_saver = ResultSaver(config_file_path="/path/to/config.yaml")  #TODO: Needs debug
+result_saver = ResultSaver(config)  
 
 # Algorithm 2: LoadLibrary Function
 def load_library(csv_file_path):
@@ -61,8 +61,8 @@ def expand_behavior_tree(tree, failed_condition, ppa_library):
 def generate_ppa_bt(post_condition, ppa_fail_entry):
     print(f"[DEBUG] Generating PPA-BT for Post_condition: {post_condition}")
 
-    # Create Fallback Node
-    fallback = Fallback("Fallback", children=[])
+    # Create ReactiveFallback Node
+    fallback = ReactiveFallback("ReactiveFallback", children=[])
 
     # Initialize Seqeunce Node
     sequence = None
@@ -70,8 +70,8 @@ def generate_ppa_bt(post_condition, ppa_fail_entry):
     # Check if Pre-conditions exist
     if ppa_fail_entry["action"]:
         if ppa_fail_entry["pre_conditions"]:
-            sequence = Sequence("Sequence", [])
-            # Add Pre-conditions as Sequence Node
+            sequence = ReactiveSequence("ReactiveSequence", [])
+            # Add Pre-conditions as ReactiveSequence Node
             for pre_condition in ppa_fail_entry["pre_conditions"]:
                 condition_class = getattr(bt_module, pre_condition)
                 condition_node = condition_class(pre_condition, None)
@@ -86,12 +86,12 @@ def generate_ppa_bt(post_condition, ppa_fail_entry):
             action_class = getattr(bt_module, ppa_fail_entry["action"])
             sequence = action_class(ppa_fail_entry["action"], None)
 
-    # Add Post-condition Node to Fallback
+    # Add Post-condition Node to ReactiveFallback
     condition_class = getattr(bt_module, post_condition)
     condition_node = condition_class(post_condition, None)
     condition_node.set_expanded()
     fallback.children.append(condition_node)
-    # Add Sequence only if it exists (not None)
+    # Add ReactiveSequence only if it exists (not None)
     if sequence:
         fallback.children.append(sequence)
 

@@ -18,48 +18,45 @@ def get_status(node):
         return status.name
     return "UNKNOWN"
 
-def layout_tree(node, depth=0, y_offset=0, layout=None, level_heights=None):
+def layout_tree(node, direction, depth=0, offset=0, layout=None, level_tracker=None):
     """
-    Recursively assign x, y positions to each node for horizontal visualization.
+    Recursively assigns layout positions to nodes in either direction.
     """
     if layout is None:
         layout = {}
-    if level_heights is None:
-        level_heights = {}
+    if level_tracker is None:
+        level_tracker = {}
 
-    if depth not in level_heights:
-        level_heights[depth] = 0
+    if depth not in level_tracker:
+        level_tracker[depth] = 0
     else:
-        level_heights[depth] += 1
+        level_tracker[depth] += 1
 
-    y = level_heights[depth]
-    layout[node] = (depth, y)
+    axis_pos = level_tracker[depth]
+    if direction == "Horizontal":
+        layout[node] = (depth, axis_pos)
+    else:
+        layout[node] = (axis_pos, depth)
 
     if hasattr(node, 'children'):
         for child in node.children:
-            layout_tree(child, depth + 1, y, layout, level_heights)
+            layout_tree(child, direction, depth + 1, axis_pos, layout, level_tracker)
 
     return layout
 
-def visualise_bt(agent_id, tree, refresh_interval_ms=10, screen_offset_x=1400, screen_offset_y=0, width=920, height=1000):
-    """
-    Visualise the given BT tree using tkinter, reading status from node.result.
-    The window is positioned to the right of the pygame window.
-    """
+def visualise_bt(agent_id, tree, direction="Vertical", refresh_interval_ms=10,
+                         screen_offset_x=1400, screen_offset_y=0, width=920, height=1000):
+
     window = tk.Tk()
     window.title(f"[BT Viewer] Agent {agent_id}")
-
-    # Place the tkinter window just to the right of the pygame window
     window.geometry(f"{width}x{height}+{screen_offset_x}+{screen_offset_y}")
-
     canvas = tk.Canvas(window, width=width, height=height, bg="white")
     canvas.pack()
-
 
     def draw_tree():
         canvas.delete("all")
 
-        layout = layout_tree(tree)
+        layout = layout_tree(tree, direction=direction)
         positions = {}
 
         for node, (x, y) in layout.items():
@@ -73,23 +70,19 @@ def visualise_bt(agent_id, tree, refresh_interval_ms=10, screen_offset_x=1400, s
                 for child in parent.children:
                     cx, cy = positions[child]
 
-                    # Colour the edge between a running parent-child node
                     parent_status = get_status(parent)
                     child_status = get_status(child)
+                    line_color = "blue" if parent_status == child_status == "RUNNING" else "black"
+                    line_width = 3 if line_color == "blue" else 1
 
-                    if parent_status == 'RUNNING' and child_status == 'RUNNING':
-                        line_color = "blue"
-                        line_width = 3
+                    if direction == "Horizontal":
+                        canvas.create_line(px + NODE_WIDTH, py + NODE_HEIGHT / 2,
+                                           cx, cy + NODE_HEIGHT / 2,
+                                           fill=line_color, width=line_width)
                     else:
-                        line_color = "black"
-                        line_width = 1
-
-                    canvas.create_line(
-                        px + NODE_WIDTH, py + NODE_HEIGHT / 2,
-                        cx, cy + NODE_HEIGHT / 2,
-                        fill=line_color,
-                        width=line_width
-                    )
+                        canvas.create_line(px + NODE_WIDTH / 2, py + NODE_HEIGHT,
+                                           cx + NODE_WIDTH / 2, cy,
+                                           fill=line_color, width=line_width)
 
         # Draw nodes
         for node, (x, y) in positions.items():
@@ -101,10 +94,10 @@ def visualise_bt(agent_id, tree, refresh_interval_ms=10, screen_offset_x=1400, s
             else:
                 canvas.create_rectangle(x, y, x + NODE_WIDTH, y + NODE_HEIGHT, fill=colour, outline="black")
 
-            canvas.create_text(x + NODE_WIDTH / 2, y + NODE_HEIGHT / 2, text=node.name, font=("Arial", 10), fill="white")
+            canvas.create_text(x + NODE_WIDTH / 2, y + NODE_HEIGHT / 2,
+                               text=node.name, font=("Arial", 10), fill="white")
 
-        window.after(refresh_interval_ms, draw_tree)    
-
+        window.after(refresh_interval_ms, draw_tree)
 
     draw_tree()
     window.mainloop()

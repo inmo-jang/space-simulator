@@ -21,6 +21,7 @@ config = None
 def set_config(config_file):
     global config
     config = load_config(config_file)
+    config['config_file_path'] = config_file
 
 # Pre-render static elements
 def pre_render_text(text, font_size, color):
@@ -53,11 +54,11 @@ def generate_random_values(quantity, min, max, seed=None):
     return value_list
 
 # Generate task_colors based on tasks.quantity
-def generate_task_colors(quantity):
-    colors = cm.get_cmap('tab20', quantity)  # 'tab20' is a colormap with 20 distinct colors
+def generate_task_colors(quantity):    
+    colors = cm.get_cmap('tab20', 20)  # 'tab20' is a colormap with 20 distinct colors
     task_colors = {}
     for i in range(quantity):
-        color = colors(i)  # Get color from colormap
+        color = colors(i % 20)  # Get color from colormap
         task_colors[i] = (int(color[0] * 255), int(color[1] * 255), int(color[2] * 255))  # Convert to RGB tuple
     return task_colors
 
@@ -105,8 +106,8 @@ class ObjectToRender:
 
 # Results saving
 class ResultSaver:
-    def __init__(self, config_file_path, seed=None):  # seed 추가
-        self.config_file_path = config_file_path
+    def __init__(self, config, seed=None):  # seed 추가
+        self.config_file_path = config['config_file_path']
         self.seed = seed  # seed 저장
         self.result_file_path = self.generate_output_filename()
         self.timewise_result_file_path = self.generate_output_filename(additional_keyword="timewise")
@@ -199,42 +200,19 @@ class ResultSaver:
         df = pd.read_csv(csv_file_path)
         
         # Extract time and data columns
-        time = df['time'].values
-        agents_total_distance_moved = df['agents_total_distance_moved'].values
-        agents_total_task_amount_done = df['agents_total_task_amount_done'].values
-        remaining_tasks = df['remaining_tasks'].values
-        tasks_total_amount_left = df['tasks_total_amount_left'].values
+        time = df['time']
+        data_columns = [col for col in df.columns if col != 'time']
+        num_plots = len(data_columns)
 
+        plt.figure(figsize=(12, 2 * num_plots))
 
-        plt.figure(figsize=(12, 8))
-
-        plt.subplot(2, 2, 1)
-        plt.plot(time, agents_total_distance_moved, label='Total Distance Moved by Agents')
-        plt.xlabel('Time')
-        plt.ylabel('Distance Moved')
-        plt.legend()
-        plt.grid(True)  
-
-        plt.subplot(2, 2, 2)
-        plt.plot(time, agents_total_task_amount_done, label='Total Task Amount Done by Agents')
-        plt.xlabel('Time')
-        plt.ylabel('Task Amount Done')
-        plt.legend()
-        plt.grid(True)  
-
-        plt.subplot(2, 2, 3)
-        plt.plot(time, remaining_tasks, label='The Number of Remaining Tasks')
-        plt.xlabel('Time')
-        plt.ylabel('The Number of Remaining Tasks')
-        plt.legend()
-        plt.grid(True)  
-
-        plt.subplot(2, 2, 4)
-        plt.plot(time, tasks_total_amount_left, label='Total Amount of Tasks')
-        plt.xlabel('Time')
-        plt.ylabel('Tasks Total Amount')
-        plt.legend()
-        plt.grid(True)  
+        for i, col in enumerate(data_columns):
+            plt.subplot((num_plots + 1) // 2, 2, i + 1)
+            plt.plot(time, df[col], label=col)
+            plt.xlabel('Time')
+            plt.ylabel(col.replace('_', ' ').title())
+            plt.legend()
+            plt.grid(True)
 
         plt.tight_layout()
 
