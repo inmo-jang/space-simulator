@@ -214,4 +214,3 @@ if __name__ == "__main__":
 
     analyzer = MonteCarloAnalyzer(args.config)
     analyzer.run_analysis()
-

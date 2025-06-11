@@ -27,4 +27,3 @@ class BaseTask:
             font = pygame.font.Font(None, 15)
             text_surface = font.render(f"task_id {self.task_id}", True, (50, 50, 50))
             screen.blit(text_surface, (self.position[0], self.position[1]))
-

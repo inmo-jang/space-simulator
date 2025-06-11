@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root BTCPP_format="4">
+  <BehaviorTree ID="space-simulator">
+    <ReactiveSequence>
+      <GatherLocalInfo/>
+      <Sequence>
+        <ReactiveSequence>
+          <ReactiveFallback>
+            <AssignTask/>
+            <Explore/>
+          </ReactiveFallback>
+          <ReactiveSequence>
+            <ReactiveFallback>
+              <IsArrivedAtBlockTask/>
+              <MoveToBlockTask/>
+            </ReactiveFallback>
+            <ReactiveFallback>
+              <IsAllAgents/>
+              <WaitAgents/>
+            </ReactiveFallback>
+            <SelectVertex/>
+          </ReactiveSequence>
+        </ReactiveSequence>
+        <ReactiveFallback>
+          <IsBlockTaskLifted/>
+          <ReactiveSequence>
+            <ReactiveFallback>
+              <IsArrivedAtVertex/>
+              <MoveToVertex/>
+            </ReactiveFallback>
+            <ReactiveFallback>
+              <IsAllAgentsAtVertex/>
+              <WaitAgents/>
+            </ReactiveFallback>
+            <LiftBlockTask/>
+          </ReactiveSequence>
+        </ReactiveFallback>
+        <ReactiveFallback>
+          <IsSlotTaskCompleted/>
+          <ReactiveSequence>
+            <ReactiveFallback>
+              <IsArrivedAtSlotTask/>
+              <MoveToSlotTask/>
+            </ReactiveFallback>
+            <PlaceDownBlockTask/>
+          </ReactiveSequence>
+        </ReactiveFallback>
+      </Sequence>
+    </ReactiveSequence>
+  </BehaviorTree>
+
+  <!-- Description of Node Models (used by Groot) -->
+  <TreeNodesModel>
+    <Action ID="AssignTask"
+            editable="true"/>
+    <Action ID="Explore"
+            editable="true"/>
+    <Action ID="GatherLocalInfo"
+            editable="true"/>
+    <Condition ID="IsAllAgents"
+               editable="true"/>
+    <Condition ID="IsAllAgentsAtVertex"
+               editable="true"/>
+    <Condition ID="IsArrivedAtBlockTask"
+               editable="true"/>
+    <Condition ID="IsArrivedAtSlotTask"
+               editable="true"/>
+    <Condition ID="IsArrivedAtVertex"
+               editable="true"/>
+    <Condition ID="IsBlockTaskLifted"
+               editable="true"/>
+    <Condition ID="IsSlotTaskCompleted"
+               editable="true"/>
+    <Action ID="LiftBlockTask"
+            editable="true"/>
+    <Action ID="MoveToBlockTask"
+            editable="true"/>
+    <Action ID="MoveToSlotTask"
+            editable="true"/>
+    <Action ID="MoveToVertex"
+            editable="true"/>
+    <Action ID="PlaceDownBlockTask"
+            editable="true"/>
+    <Action ID="SelectVertex"
+            editable="true"/>
+    <Action ID="WaitAgents"
+            editable="true"/>
+  </TreeNodesModel>
+
+</root>
