@@ -116,8 +116,8 @@ class ResultSaver:
         self.df_agentwise_result = None
 
     def generate_output_filename(self, extension = "csv", additional_keyword = None):
-        agent_quantity = config['agents']['quantity']
-        task_quantity = config['tasks']['quantity']
+        agent_quantity = config['agents'].get('quantity', 0)
+        task_quantity = config['tasks'].get('quantity', 0)
         decision_making_module_path = config['decision_making']['plugin']
         module_path, class_name = decision_making_module_path.rsplit('.', 1)
         datetime_now = datetime.datetime.now()
