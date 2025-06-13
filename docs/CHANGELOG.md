@@ -3,6 +3,9 @@
 ## [Unreleased]
 
 ### Added
+- **TacView Interface (`tacview_interface/`)**
+  - Added support for TacView visualisation via `TacViewInterface` and `TacviewServer`. Thanks to @9iant from UNIST, Korea. 
+
 - **Planning-and-Acting Behavior Tree (`pa_bt_constructor.py`)**
   - Added the PA-BT functionality
 
