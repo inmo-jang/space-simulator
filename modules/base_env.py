@@ -3,6 +3,7 @@ os.environ['SDL_VIDEO_WINDOW_POS'] = "0,30"  # top-left corner
 import pygame
 import importlib
 from modules.utils import pre_render_text, ResultSaver
+from modules.tacview_interface.tacview_interface import TacViewInterface
 
 class BaseEnv:
     def __init__(self, config):
@@ -50,6 +51,12 @@ class BaseEnv:
 
         else:
             self.screen = None
+
+        self.tacview_enabled = config.get('simulation', {}).get('tacview', {}).get('enabled', False)
+        if self.tacview_enabled is True:
+            self.tacview_interface = TacViewInterface(self, self.screen_width, self.screen_height)
+
+
 
         # Pre-rendered text
         self.mission_completed_text = pre_render_text("MISSION COMPLETED", 72, (0, 0, 0))
@@ -200,6 +207,11 @@ class BaseEnv:
             if self.mission_completed:
                 print(f'[{self.simulation_time:.2f}] MISSION COMPLETED')
                 self.running = False                
+
+        # TacView Rendering
+        if self.tacview_enabled is True:
+            self.tacview_interface.send_telemetry()
+
 
     def update_display(self):
         if self.rendering_mode == "Screen" and self.screen:

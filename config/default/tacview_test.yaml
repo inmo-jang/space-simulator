@@ -29,18 +29,18 @@ decision_making: # Case 2
 
 agents:
   behavior_tree_xml: default_bt.xml 
-  quantity: 1 #10
+  quantity: 3 #10
   locations:
     x_min: 0
     x_max: 1400
     y_min: 0
     y_max: 1000
     non_overlap_radius: 0 
-  max_speed: 0.25  
-  max_accel: 0.05
-  max_angular_speed: 0.25
-  target_approaching_radius: 50
-  work_rate: 1  
+  max_speed: 250.0  
+  max_accel: 50.0
+  max_angular_speed: 250.0
+  target_approaching_radius: 500
+  work_rate: 100  
   communication_radius: 500 
   situation_awareness_radius: 500  # was 500
   random_exploration_duration: 1000.0 
@@ -57,19 +57,19 @@ tasks:
   amounts:  # Added amounts range for tasks
     min: 6.0
     max: 60.0      
-  # dynamic_task_generation:
-  #   enabled: True
-  #   interval_seconds: 2000
-  #   max_generations: 0 #3
-  #   tasks_per_generation: 25
+  dynamic_task_generation:
+    enabled: True
+    interval_seconds: 5
+    max_generations: 60 #3
+    tasks_per_generation: 1
 
 simulation:
   ppa_library_path: "scenarios/pa_bt_test/ppa_library.csv"
   bt_visualiser:
     enabled: True       # Set to True to enable BT visualisation, False to disable
     agent_id: 0         # ID of the agent whose behaviour tree will be visualised
-  sampling_freq: 1.0 
-  speed_up_factor: 0 
+  sampling_freq: 30.0 
+  speed_up_factor: 1 
   max_simulation_time: 0
   agent_track_size: 400  
   screen_width: 1400 
@@ -94,3 +94,8 @@ simulation:
     save_timewise_result_csv: False #True    
     save_agentwise_result_csv: False #True
     save_config_yaml: False #True
+  bt_visualiser:
+    enabled: False       # Set to True to enable BT visualisation, False to disable
+    agent_id: 0         # ID of the agent whose behaviour tree will be visualised
+  tacview:
+    enabled: True

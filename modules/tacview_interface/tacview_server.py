@@ -7,14 +7,15 @@ import threading
 import time
 import queue
 from datetime import datetime, timezone
-from aircraft_state import AircraftState
-from config import HOST, PORT
+from modules.tacview_interface.agent_state import AircraftState
 
 class TacviewServer:
-    def __init__(self, data_queue: queue.Queue):
+    def __init__(self, data_queue: queue.Queue, host = '0.0.0.0', port = 42674):
         self.data_queue = data_queue
         self.server_socket = None
         self.running = False
+        self.host = host
+        self.port = port
 
     def handle_client(self, conn: socket.socket, addr):
         print(f"[+] Client connected: {addr}")
@@ -22,7 +23,7 @@ class TacviewServer:
         
         try:
             # Send server probe and wait for client handshake
-            conn.sendall("XtraLib.Stream.0\nTacview.RealTimeTelemetry.0\nPX4-Multi-Bridge\n\0".encode('utf-8'))
+            conn.sendall("XtraLib.Stream.0\nTacview.RealTimeTelemetry.0\nSPACE-simulator\n\0".encode('utf-8'))
             conn.settimeout(5.0)
             handshake = conn.recv(1024)
             if not handshake:
@@ -96,9 +97,9 @@ class TacviewServer:
         self.running = True
         
         try:
-            self.server_socket.bind((HOST, PORT))
+            self.server_socket.bind((self.host, self.port))
             self.server_socket.listen(5)
-            print(f"[+] Tacview server listening on {HOST}:{PORT}")
+            print(f"[+] Tacview server listening on {self.host}:{self.port}")
 
             while self.running:
                 conn, addr = self.server_socket.accept()
