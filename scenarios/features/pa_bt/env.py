@@ -1,7 +1,7 @@
 from modules.base_env import BaseEnv
 from modules.utils import ResultSaver
-from scenarios.pa_bt_test.task import generate_tasks
-from scenarios.pa_bt_test.agent import generate_agents
+from scenarios.features.pa_bt.task import generate_tasks
+from scenarios.features.pa_bt.agent import generate_agents
 
 from modules.base_bt_nodes import Status
 from modules.ppa_bt_constructor import load_library, expand_behavior_tree

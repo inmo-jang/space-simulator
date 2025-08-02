@@ -3,7 +3,7 @@ import math
 import os
 from modules.utils import config, generate_positions 
 from modules.base_agent import BaseAgent, bt_module
-from scenarios.pa_bt_test.task import task_colors
+from scenarios.features.pa_bt.task import task_colors
 from modules.base_bt_nodes import Status, BTNodeList, SyncCondition
 
 # Load agent configuration (Scenario Specific)

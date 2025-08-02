@@ -1,5 +1,5 @@
 scenario: 
-  environment: scenarios.pa_bt_test
+  environment: scenarios.features.pa_bt
   # environment: scenarios.harbor_logistics
   # environment: scenarios.drone_delivery
 
@@ -64,7 +64,7 @@ tasks:
   #   tasks_per_generation: 25
 
 simulation:
-  ppa_library_path: "scenarios/pa_bt_test/ppa_library.csv"
+  ppa_library_path: "scenarios/features/pa_bt/ppa_library.csv"
   bt_visualiser:
     enabled: True       # Set to True to enable BT visualisation, False to disable
     agent_id: 0         # ID of the agent whose behaviour tree will be visualised
@@ -88,7 +88,7 @@ simulation:
     agent_path_to_assigned_tasks: True
     task_id: False
   saving_options:
-    output_folder: scenarios/pa_bt_test/output
+    output_folder: scenarios/features/pa_bt/output
     with_date_subfolder: True
     save_gif: False
     save_timewise_result_csv: False #True    
