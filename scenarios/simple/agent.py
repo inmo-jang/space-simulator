@@ -15,9 +15,20 @@ class Agent(BaseAgent):
     def __init__(self, agent_id, position, tasks_info):
         super().__init__(agent_id, position, tasks_info)
         self.work_rate = work_rate
+        self.task_amount_done = 0.0
+        self.external_pose = None  # 외부 pose를 위한 변수 추가
 
-        
-        self.task_amount_done = 0.0        
+    def set_external_pose(self, x, y, yaw):
+        """외부에서 실시간 위치를 설정하는 함수"""
+        self.external_pose = (x, y, yaw)
+
+    def update(self, *args, **kwargs):
+        if self.external_pose:
+            self.position.x = self.external_pose[0]
+            self.position.y = self.external_pose[1]
+            self.rotation = self.external_pose[2]
+        #else: 
+            #super().update(*args, **kwargs) #기존 bt_nodes의 update 부분을 삭제
 
     def draw(self, screen):
         size = 10
@@ -35,18 +46,17 @@ class Agent(BaseAgent):
         self.color = task_colors.get(self.assigned_task_id, (20, 20, 20))  # Default to Dark Grey if no task is assigned
 
 
-
 def generate_agents(tasks_info, seed=None):
     agent_quantity = config['agents']['quantity']
     agent_locations = config['agents']['locations']
 
     agents_positions = generate_positions(agent_quantity,
-                                      agent_locations['x_min'],
-                                      agent_locations['x_max'],
-                                      agent_locations['y_min'],
-                                      agent_locations['y_max'],
-                                      radius=agent_locations['non_overlap_radius'],
-                                      seed=seed)
+                                          agent_locations['x_min'],
+                                          agent_locations['x_max'],
+                                          agent_locations['y_min'],
+                                          agent_locations['y_max'],
+                                          radius=agent_locations['non_overlap_radius'],
+                                          seed=seed)
 
     # Initialize agents
     agents = [Agent(idx, pos, tasks_info) for idx, pos in enumerate(agents_positions)]
