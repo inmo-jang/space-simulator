@@ -8,13 +8,15 @@ from scenarios.harbor_logistics.grid_graph import GridGraph
 class Env(BaseEnv):
     def __init__(self, config):
         super().__init__(config)
-        self.running = True
-        self.game_paused = False
-        self.mission_completed = False
-        self.simulation_time = 0.0
-        self.recording = False
+
         # Initialize the background and environment
         self.set_background()
+
+        # Set `generate_tasks` function for dynamic task generation
+        self.generate_tasks = generate_tasks
+
+        # Set data recording
+        self.result_saver = ResultSaver(config)
 
         # Set grid size
         self.grid_size = config['grid']['size']
@@ -25,13 +27,19 @@ class Env(BaseEnv):
         # 그래프 생성
         self.grid_graph = GridGraph(self.grid_nodes, self.grid_size)
 
+        # Initialise
+        self.reset()
+
+
+    def reset(self):
+        super().reset()
+
         # Initialize agents and tasks
         self.tasks = generate_tasks()
         self.agents = generate_agents(self.tasks, self)
-        self.generate_tasks = generate_tasks
-
+        
         # Initialize data recording
-        self.data_records = []
+        self.data_records = []     
 
     def set_background(self):
         assets_path = 'scenarios/harbor_logistics/assets'                
