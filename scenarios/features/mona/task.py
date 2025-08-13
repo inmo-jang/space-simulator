@@ -25,8 +25,7 @@ class Task(BaseTask):
 
     def draw_task_id(self, screen):
         if not self.completed:
-            font = pygame.font.Font(None, 15)
-            text_surface = font.render(f"task_id {self.task_id}: {self.amount:.2f}", True, (250, 250, 250))
+            text_surface = self.font.render(f"task_id {self.task_id}: {self.amount:.2f}", True, (250, 250, 250))
             screen.blit(text_surface, (self.position[0], self.position[1]))
 
 

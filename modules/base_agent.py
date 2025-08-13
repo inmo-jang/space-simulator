@@ -27,6 +27,7 @@ class BaseAgent:
         self.memory_location = []  # To draw track
         self.rotation = 0  # Initial rotation
         self.color = (0, 0, 255)  # Blue color
+        self.font = pygame.font.Font(None, 15)
         self.blackboard = {}
 
         self.tasks_info = tasks_info # global info
@@ -224,8 +225,7 @@ class BaseAgent:
 
     def draw_agent_id(self, screen):
         # Draw assigned_task_id next to agent position
-        font = pygame.font.Font(None, 15)
-        text_surface = font.render(f"agent_id: {self.agent_id}", True, (50, 50, 50))
+        text_surface = self.font.render(f"agent_id: {self.agent_id}", True, (50, 50, 50))
         screen.blit(text_surface, (self.position[0] + 10, self.position[1] - 10))
 
     def draw_assigned_task_id(self, screen):
@@ -234,16 +234,14 @@ class BaseAgent:
             assigned_task_id_list = [task.task_id for task in self.planned_tasks]
         else:
             assigned_task_id_list = self.assigned_task_id
-        font = pygame.font.Font(None, 15)
-        text_surface = font.render(f"task_id: {assigned_task_id_list}", True, (50, 50, 50))
+        text_surface = self.font.render(f"task_id: {assigned_task_id_list}", True, (50, 50, 50))
         screen.blit(text_surface, (self.position[0] + 10, self.position[1]))
 
     def draw_work_done(self, screen):
         # Draw assigned_task_id next to agent position
-        font = pygame.font.Font(None, 15)
-        text_surface = font.render(f"dist: {self.distance_moved:.1f}", True, (50, 50, 50))
+        text_surface = self.font.render(f"dist: {self.distance_moved:.1f}", True, (50, 50, 50))
         screen.blit(text_surface, (self.position[0] + 10, self.position[1] + 10))
-        text_surface = font.render(f"work: {self.task_amount_done:.1f}", True, (50, 50, 50))
+        text_surface = self.font.render(f"work: {self.task_amount_done:.1f}", True, (50, 50, 50))
         screen.blit(text_surface, (self.position[0] + 10, self.position[1] + 20))
 
     def draw_situation_awareness_circle(self, screen):
