@@ -2,8 +2,10 @@ import pygame
 import math
 import copy
 import os
+import random
 from modules.utils import config, generate_positions 
 from modules.base_agent import BaseAgent
+from .path_planner.plugin_manager import planner_manager
 
 # Load agent configuration (Scenario Specific)
 work_rate = config['agents']['work_rate']
@@ -12,10 +14,8 @@ work_rate = config['agents']['work_rate']
 behavior_tree_xml = f"{os.path.dirname(os.path.abspath(__file__))}/{config['agents']['behavior_tree_xml']}"
 
 class Agent(BaseAgent):
-    def __init__(self, agent_id, position, tasks_info, env):
+    def __init__(self, agent_id, position, tasks_info):
         super().__init__(agent_id, position, tasks_info)
-        self.env = env
-        self.grid_graph = env.grid_graph
 
         self.work_rate = work_rate
 
@@ -31,6 +31,12 @@ class Agent(BaseAgent):
         # TTC 필요값
         self.safe_distance = 30  # 안전 거리 
         self.ttc_threshold = 3   # Time-To-Collision(TTC) 임계값
+
+
+    def set_path_planner(self, grid_graph):
+        self.grid_graph = grid_graph
+        self.path_planner = planner_manager.get_planner(config['planner']['algorithm'], self.grid_graph)
+
 
     def update_battery(self):
 
@@ -173,22 +179,19 @@ class Agent(BaseAgent):
             text_rect.topleft = (self.position.x + 30, self.position.y - 20)  # 에이전트 옆에 표시
             screen.blit(text_surface, text_rect)
 
-def generate_agents(tasks_info, env):
+def generate_agents(tasks_info, grid_graph):
     agent_quantity = config['agents']['quantity']
     
-    # 그리드 노드 리스트 가져오기
-    grid_nodes = list(env.grid_graph.graph.nodes)
-    
-    # 에이전트 수만큼 랜덤하게 그리드 노드 선택 (중복 방지)
-    import random
-    selected_positions = random.sample(grid_nodes, agent_quantity)
+    # Generate agents positions
+    grid_nodes = list(grid_graph.graph.nodes) # 그리드 노드 리스트 가져오기
+    selected_positions = random.sample(grid_nodes, agent_quantity) # 에이전트 수만큼 랜덤하게 그리드 노드 선택 (중복 방지)
     
     # Initialize agents
-    agents = [Agent(idx, pos, tasks_info, env) for idx, pos in enumerate(selected_positions)]
+    agents = [Agent(idx, pos, tasks_info) for idx, pos in enumerate(selected_positions)]
 
     # Provide the global info and create behavior tree
     for agent in agents:
         agent.set_global_info_agents(agents)
         agent.create_behavior_tree(behavior_tree_xml)
-
+        agent.set_path_planner(grid_graph)
     return agents

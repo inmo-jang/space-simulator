@@ -11,16 +11,16 @@ class PathPlannerPluginManager:
         """
         self.planners[name] = planner_class
 
-    def get_planner(self, name, agent):
+    def get_planner(self, name, grid_graph):
         """
         등록된 플러그인 인스턴스 반환
         :param name: 플러그인 이름
-        :param agent: 에이전트 인스턴스
+        :param grid_graph: Grid 환경 인스턴스
         :return: 선택된 플러그인의 인스턴스
         """
         if name not in self.planners:
             raise ValueError(f"Planner '{name}' is not registered.")
-        return self.planners[name](agent)
+        return self.planners[name](grid_graph)
 
 # 플러그인 매니저 생성 및 플러그인 등록
 from .xy_planner import XYPlanner

@@ -1,6 +1,6 @@
 class XYPlanner:
-    def __init__(self, agent):
-        self.agent = agent
+    def __init__(self, grid_graph):
+        self.grid_graph = grid_graph  # GridGraph 객체 사용
         
     def generate(self, start, goal):  
         """

@@ -2,7 +2,6 @@ from enum import Enum
 import math
 import pygame
 from modules.base_bt_nodes import BTNodeList, Status, Node, Sequence, Fallback, SyncAction, LocalSensingNode, DecisionMakingNode,  ReactiveSequence
-from .path_planner.plugin_manager import planner_manager
 
 # BT Node List
 CUSTOM_ACTION_NODES = [
@@ -147,8 +146,8 @@ class DecideShip(SyncAction):
         }
         # 현재 Ship에 가고 있는 Agent 수를 확인 (ship별 agent count)
         ship_agent_count = {
-            "Ship1": sum(1 for a in agent.env.agents if a.blackboard.get('chosen_ship') == "Ship1"),
-            "Ship2": sum(1 for a in agent.env.agents if a.blackboard.get('chosen_ship') == "Ship2")
+            "Ship1": sum(1 for a in agent.agents_nearby if a.blackboard.get('chosen_ship') == "Ship1"),
+            "Ship2": sum(1 for a in agent.agents_nearby if a.blackboard.get('chosen_ship') == "Ship2")
         }
 
         for ship, tasks in ship_tasks.items():
@@ -174,11 +173,9 @@ class GoToShip(SyncAction):
     def __init__(self, name, agent):
         super().__init__(name, self._move)
         self.waypoint_follower = WaypointFollower(agent, target_arrive_threshold)
-        planner_name = config['planner']['algorithm']  
-        self.path_planner = planner_manager.get_planner(planner_name, agent)
             
     def _move(self, agent, blackboard):
-        if agent.check_collision(agent.env.agents):
+        if agent.check_collision(agent.agents_nearby):
             return Status.FAILURE
 
         if blackboard.get('is_going_to_charging_station', False):
@@ -219,13 +216,13 @@ class GoToShip(SyncAction):
             start = agent.position  # 에이전트 현재 위치
             goal = position_to_pickup  # 목표 위치 (Ship)
             
-            waypoints = self.path_planner.generate(start, goal)
+            waypoints = agent.path_planner.generate(start, goal)
             self.waypoint_follower.set_waypoints(waypoints)
             blackboard['waypoints'] = waypoints
             self.waypoint_follower.next_waypoint_index = 0
             print(f"Agent {agent.agent_id} waypoints to ship: {waypoints}")
         
-        if agent.check_collision(agent.env.agents):
+        if agent.check_collision(agent.agents_nearby):
             return Status.FAILURE
         
         # Waypoint Following
@@ -241,11 +238,9 @@ class GoToDestination(SyncAction):
     def __init__(self, name, agent):
         super().__init__(name, self._move)
         self.waypoint_follower = WaypointFollower(agent, target_arrive_threshold)
-        planner_name = config['planner']['algorithm']  
-        self.path_planner = planner_manager.get_planner(planner_name, agent)
 
     def _move(self, agent, blackboard):
-        if agent.check_collision(agent.env.agents):
+        if agent.check_collision(agent.agents_nearby):
             return Status.FAILURE
 
         if blackboard.get('is_going_to_charging_station', False):
@@ -278,16 +273,16 @@ class GoToDestination(SyncAction):
 
 
             goal = position_to_deliver
-            waypoints_first = self.path_planner.generate(start, transit_point) 
-            waypoints_second = self.path_planner.generate(transit_point, (goal[0], transit_point[1])) 
-            waypoints_third = self.path_planner.generate((goal[0], transit_point[1]), goal) 
+            waypoints_first = agent.path_planner.generate(start, transit_point) 
+            waypoints_second = agent.path_planner.generate(transit_point, (goal[0], transit_point[1])) 
+            waypoints_third = agent.path_planner.generate((goal[0], transit_point[1]), goal) 
             waypoints = waypoints_first + waypoints_second[:-1] + waypoints_third
-            # waypoints = self.path_planner.generate(start, goal) 
+            waypoints = agent.path_planner.generate(start, goal) 
             self.waypoint_follower.set_waypoints(waypoints)
             blackboard['waypoints'] = waypoints
             self.waypoint_follower.next_waypoint_index = 0
 
-        if agent.check_collision(agent.env.agents):
+        if agent.check_collision(agent.agents_nearby):
             return Status.FAILURE
         
         # Waypoint Following        
@@ -301,8 +296,6 @@ class GoToChargingStation(SyncAction):
     def __init__(self, name, agent):
         super().__init__(name, self._move)
         self.waypoint_follower = WaypointFollower(agent, target_arrive_threshold)
-        planner_name = config['planner']['algorithm']  
-        self.path_planner = planner_manager.get_planner(planner_name, agent)
 
         # 에이전트 ID에 따라 충전소 위치 계산
         x = config['charging_station_position']['x']
@@ -316,7 +309,7 @@ class GoToChargingStation(SyncAction):
         #print(f"Agent {self.agent.agent_id}: Target charging station position: {self.charging_station_position}")
 
     def _move(self, agent, blackboard):
-        if agent.check_collision(agent.env.agents):
+        if agent.check_collision(agent.agents_nearby):
             return Status.FAILURE
 
         if blackboard.get('is_charging', False):  # 충전 중일 때는 이동 금지
@@ -333,12 +326,12 @@ class GoToChargingStation(SyncAction):
             goal = self.charging_station_position  # 목표 위치
             
             # 경로 생성 
-            waypoints = self.path_planner.generate(start, goal)
+            waypoints = agent.path_planner.generate(start, goal)
             self.waypoint_follower.set_waypoints(waypoints)
             blackboard['waypoints'] = waypoints
             print(f"Agent {agent.agent_id} waypoints to charging station: {waypoints}")
         
-        if agent.check_collision(agent.env.agents):
+        if agent.check_collision(agent.agents_nearby):
             return Status.FAILURE
         
         # Waypoint Following

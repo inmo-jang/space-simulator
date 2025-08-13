@@ -3,9 +3,8 @@ import networkx as nx
 from collections import defaultdict
 
 class AStarPlanner:
-    def __init__(self, agent):
-        self.agent = agent
-        self.grid_graph = agent.env.grid_graph  # GridGraph 객체 사용
+    def __init__(self, grid_graph):
+        self.grid_graph = grid_graph  # GridGraph 객체 사용
 
     def heuristic(self, node, goal):
         """Manhattan 거리 휴리스틱 함수"""
