@@ -8,7 +8,12 @@ from scenarios.drone_delivery.agent import generate_agents
 class Env(BaseEnv):
     def __init__(self, config):
         super().__init__(config)
-        
+        self.gathering_point = pygame.Vector2(700, 500)
+        self.target_arrive_threshold = 5
+        self.tasks = generate_tasks() or []
+        self.tasks_left = len(self.tasks)
+        self.agents = generate_agents(self.tasks, gathering_point=self.gathering_point)
+
         # Initialize the background and environment
         self.set_background()
 
@@ -31,6 +36,10 @@ class Env(BaseEnv):
         # Initialize data recording
         self.data_records = []        
 
+        #self._paused_pressed = False
+        self.previous_paused_state = None
+
+
     def set_background(self):
         CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
         ASSETS_DIR = os.path.join(CURRENT_DIR, 'assets')
@@ -46,33 +55,37 @@ class Env(BaseEnv):
         self.final_point_image = pygame.transform.scale(final_point_image, (80, 80)) #size
 
     async def step(self):
-        await super().step() # Execution of `step()` in `BaseEnv`           
-            
-        # NOTE: 아래는 재호님 구현 한 부분. Refactoring 필요
-        # tasks_left = sum(1 for task in tasks if not task.completed)
-        # if tasks_left == 0:
-        #     all_agents_gathered = all(
-        #         agent.position.distance_to(pygame.Vector2(700, 500)) < target_arrive_threshold
-        #         for agent in agents
-        # )
-        #     if all_agents_gathered:
-        #         mission_completed = not generation_enabled or generation_count == max_generations
+        await super().step() # Execution of `step()` in `BaseEnv`
 
+        for agent in self.agents:
+            agent.update_mission_status(self.gathering_point, self.target_arrive_threshold)
+
+        self.tasks_left = sum(1 for task in self.tasks if not task.completed)
+        all_agents_gathered = all(agent.reached_gathering_point for agent in self.agents)
+
+        self.mission_completed = self.tasks_left == 0 and all_agents_gathered
+
+        if self.tasks_left == 0 and all_agents_gathered:
+            self.mission_complete = True
+            
     def draw_background(self): # Override
         self.screen.blit(self.background_image, (0, 0))
         self.screen.blit(self.final_point_image, (670, 460))
 
     def draw_tasks_info(self):
         super().draw_tasks_info()
-
-        # Line btw the pick-up point to the delivery point
-        for idx in range(0, len(self.tasks), 2):
-            start_task = self.tasks[idx]
-            end_task = self.tasks[idx + 1]
-            if not end_task.completed:
-                pygame.draw.line(self.screen, start_task.color, start_task.position, end_task.position, width=2)
-            start_task.draw(self.screen)
-            end_task.draw(self.screen) 
+    
+        for task in self.tasks:
+            if task.pickup_completed and not task.completed:
+                agent_position = self.agents[task.assigned_agent_id].position
+                pygame.draw.line(
+                    self.screen,
+                    task.color,
+                    (agent_position.x, agent_position.y),
+                    (task.delivery_position.x, task.delivery_position.y),
+                    width=3
+                    )
+            task.draw(self.screen)
     
     def save_results(self):
         # Save gif
@@ -113,3 +126,14 @@ class Env(BaseEnv):
             tasks_total_amount_left
         ])        
                   
+    def draw_agents(self):
+        for agent in self.agents:
+            agent.draw(self.screen, paused=self.game_paused)
+
+    def handle_keyboard_events(self):
+        super().handle_keyboard_events()
+
+        for event in pygame.event.get():
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_p:
+                    self.game_paused = not self.game_paused

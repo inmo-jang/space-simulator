@@ -1,33 +1,36 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <root BTCPP_format="4">
   <BehaviorTree ID="delivery">
-    <Sequence>
+    <ReactiveSequence>
       <LocalSensingNode/>
-      <Fallback>
-        <Sequence>
+      <ReactiveFallback>
+        <ReactiveSequence>
           <DecisionMakingNode/>
-          <Fallback>
-            <Sequence> <!-- Pick_up -->
+          <ReactiveFallback>
+            <ReactiveSequence>
               <CheckingitemsNode/>
               <DeliveryexecutingNode/>
-            </Sequence>
-            <Sequence> <!-- Drop_off -->
+            </ReactiveSequence>
+            <ReactiveSequence>
               <RightplacecheckingNode/>
               <DropoffexecutingNode/>
-            </Sequence>
-          </Fallback>
-        </Sequence>
-        <Sequence> <!-- Handle No Tasks -->
+            </ReactiveSequence>
+          </ReactiveFallback>
+        </ReactiveSequence>
+        <ReactiveSequence>
           <CheckingnomoreTask/>
           <GatheringNode/>
-        </Sequence>
-        <ExplorationNode/> <!-- Fallback to exploration if no tasks or gathering -->
-      </Fallback>
-    </Sequence>
+        </ReactiveSequence>
+        <ExplorationNode/>
+      </ReactiveFallback>
+    </ReactiveSequence>
   </BehaviorTree>
-  
+
+  <!-- Description of Node Models (used by Groot) -->
   <TreeNodesModel>
     <Action ID="CheckingitemsNode"
+            editable="true"/>
+    <Action ID="CheckingnomoreTask"
             editable="true"/>
     <Action ID="DecisionMakingNode"
             editable="true"/>
@@ -35,11 +38,9 @@
             editable="true"/>
     <Action ID="DropoffexecutingNode"
             editable="true"/>
-    <Action ID="CheckingnomoreTask"
+    <Action ID="ExplorationNode"
             editable="true"/>
     <Action ID="GatheringNode"
-            editable="true"/>
-    <Action ID="ExplorationNode"
             editable="true"/>
     <Action ID="LocalSensingNode"
             editable="true"/>
