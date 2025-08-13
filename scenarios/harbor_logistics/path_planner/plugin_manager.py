@@ -23,9 +23,9 @@ class PathPlannerPluginManager:
         return self.planners[name](agent)
 
 # 플러그인 매니저 생성 및 플러그인 등록
-from plugins.path_planner.xy_planner import XYPlanner
-from plugins.path_planner.yx_planner import YXPlanner
-from plugins.path_planner.a_star_planner import AStarPlanner
+from .xy_planner import XYPlanner
+from .yx_planner import YXPlanner
+from .a_star_planner import AStarPlanner
 
 
 planner_manager = PathPlannerPluginManager()

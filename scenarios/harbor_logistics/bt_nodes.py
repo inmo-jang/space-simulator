@@ -2,7 +2,7 @@ from enum import Enum
 import math
 import pygame
 from modules.base_bt_nodes import BTNodeList, Status, Node, Sequence, Fallback, SyncAction, LocalSensingNode, DecisionMakingNode,  ReactiveSequence
-from plugins.path_planner.plugin_manager import planner_manager
+from .path_planner.plugin_manager import planner_manager
 
 # BT Node List
 CUSTOM_ACTION_NODES = [
