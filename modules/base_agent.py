@@ -1,6 +1,6 @@
 import pygame
 import math
-from modules.utils import config, parse_behavior_tree
+from modules.utils import config, parse_behavior_tree, convert_value
 import importlib
 bt_module = importlib.import_module(config.get('scenario').get('environment') + ".bt_nodes")
 
@@ -62,10 +62,11 @@ class BaseAgent:
             children.append(self._parse_xml_to_bt(child))
 
         BTNodeList = getattr(bt_module, "BTNodeList")        
+        attrib = {k: convert_value(v) for k, v in xml_node.attrib.items()}  
         if node_type in BTNodeList.CONTROL_NODES:
             # control_class = globals()[node_type]  # Control class should be globally available
             control_class = getattr(bt_module, node_type)
-            return control_class(node_type, children=children)
+            return control_class(node_type, children=children, **attrib)
         elif node_type in BTNodeList.ACTION_NODES + BTNodeList.CONDITION_NODES:
             # action_class = globals()[node_type]  # Action class should be globally available
             action_class = getattr(bt_module, node_type)
