@@ -205,14 +205,10 @@ class CheckingnomoreTask(SyncAction):
             return Status.FAILURE
             
 class GatheringNode(SyncAction):
-    def __init__(self, name, agents, total_agents = None):
+    def __init__(self, name, agent):
         super().__init__(name, self._gather_to_point)
-        self.gathering_mode = False 
         self.gathering_point = pygame.Vector2(700, 500) # gathering point(700, 500)
         self.target_arrive_threshold = target_arrive_threshold
-        self.total_agents = total_agents
-        self.agents = agents
-        self.agents_arrived = set()
 
     def _gather_to_point(self, agent, blackboard):
         distance_to_target = (self.gathering_point - agent.position).length()
@@ -221,13 +217,10 @@ class GatheringNode(SyncAction):
             agent.follow(self.gathering_point)
             return Status.RUNNING
         
-        self.agents_arrived.add(agent.agent_id)
         agent.position = self.gathering_point
         agent.reset_movement() 
-        agent.visible = True
-        if self.total_agents is not None and len(self.agents_arrived) == self.total_agents:
-            return Status.SUCCESS  # Mission Complete
-        return Status.RUNNING
+        agent.visible = False
+        return Status.SUCCESS
 
     
 # Exploration node

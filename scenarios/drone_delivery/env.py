@@ -4,7 +4,6 @@ import os
 from modules.utils import pre_render_text, ResultSaver, ObjectToRender
 from scenarios.drone_delivery.task import generate_tasks
 from scenarios.drone_delivery.agent import generate_agents
-from scenarios.drone_delivery.bt_nodes import GatheringNode
 
 class Env(BaseEnv):
     def __init__(self, config):
