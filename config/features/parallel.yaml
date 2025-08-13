@@ -1,5 +1,5 @@
 scenario: 
-  environment: scenarios.simple
+  environment: scenarios.features.parallel
 
 # decision_making: # Case 1
 #   plugin: plugins.grape.grape.GRAPE
@@ -26,7 +26,7 @@ decision_making: # Case 2
 
 
 agents:
-  behavior_tree_xml: default_bt.xml 
+  behavior_tree_xml: default_bt_with_parallel.xml 
   quantity: 10
   locations:
     x_min: 0

@@ -13,6 +13,7 @@
   - Implemented `ReactiveSequence` and `ReactiveFallback`, which restart from the first child at every tick.
   - Added `halt` functionality to `Sequence`, `ReactiveSequence`, `Fallback`, and `ReactiveFallback` to stop all children when necessary.
   - Introduced reusable base BT node classes: `_IsTaskCompleted`, `_IsArrivedAtTask`, `_MoveToTask`, `_ExecuteTaskWhileFollowing`, `_ExploreArea`.
+  - Implemented the `Parallel` control node with configurable `success_count` and `failure_count` thresholds, executing all children sequentially within the same tick.
 
 - **Base Agent (`base_agent.py`)**
   - Enabled retrieval of node input arguments during BT construction from `bt.xml`, applied to the `Parallel` node.

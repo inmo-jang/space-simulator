@@ -1,6 +1,6 @@
 import math
 import random
-from modules.base_bt_nodes import BTNodeList, Status, Node, Sequence, Fallback, ReactiveSequence, ReactiveFallback, SyncAction, GatherLocalInfo, AssignTask
+from modules.base_bt_nodes import BTNodeList, Status, Node, Sequence, Fallback, ReactiveSequence, ReactiveFallback, Parallel, SyncAction, SyncCondition, GatherLocalInfo, AssignTask
 from modules.base_bt_nodes import _IsTaskCompleted, _IsArrivedAtTask, _MoveToTask, _ExecuteTaskWhileFollowing, _ExploreArea
 # BT Node List
 CUSTOM_ACTION_NODES = [
@@ -12,6 +12,7 @@ CUSTOM_ACTION_NODES = [
 CUSTOM_CONDITION_NODES = [
     'IsTaskCompleted',
     'IsArrivedAtTarget',
+    'IsAssignedTask'
 ]
 
 # BT Node List
@@ -27,7 +28,16 @@ sampling_freq = config['simulation']['sampling_freq']
 sampling_time = 1.0 / sampling_freq  # in seconds
 agent_max_random_movement_duration = config.get('agents', {}).get('random_exploration_duration', None)
 
+class IsAssignedTask(SyncCondition):
+    def __init__(self, name, agent):
+        super().__init__(name, self._update)
 
+    def _update(self, agent, blackboard):        
+        _assigned_task_id = blackboard.get('assigned_task_id', None)
+        if _assigned_task_id is None:
+            return Status.FAILURE  
+        return Status.SUCCESS     
+    
 class IsTaskCompleted(_IsTaskCompleted): 
     def __init__(self, name, agent):
         super().__init__(name, agent)   
