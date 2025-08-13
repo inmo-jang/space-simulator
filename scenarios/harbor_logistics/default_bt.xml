@@ -2,27 +2,42 @@
 <root BTCPP_format="4">
   <BehaviorTree ID="space-simulator">
     <Sequence>
-      <LocalSensingNode/>
       <Fallback>
-        <IsFinishedTask/>
+        <IsBatterySufficient/>
         <Sequence>
           <Fallback>
-            <IsHoldingItem/>
-            <Sequence>
-              <Fallback>
-                <IsArrivedAtShip/>
-                <GoToShip/>
-              </Fallback>
-              <PickItem/>
-            </Sequence>
+            <IsArrivedAtChargingStation/>
+            <GoToChargingStation/>
           </Fallback>
-          <Fallback>
-            <IsArrivedAtDestination/>
-            <GoToDestination/>
-          </Fallback>
-          <PlaceItem/>
+          <ChargeBattery/>
         </Sequence>
       </Fallback>
+      <Sequence>
+        <LocalSensingNode/>
+        <Fallback>
+          <IsFinishedTask/>
+          <Sequence>
+            <Fallback>
+              <IsHoldingItem/>
+              <Sequence>
+                <Fallback>
+                  <IsArrivedAtShip/>
+                  <Sequence>
+                    <DecideShip/>
+                    <GoToShip/>
+                  </Sequence>
+                </Fallback>
+                <PickItem/>
+              </Sequence>
+            </Fallback>
+            <Fallback>
+              <IsArrivedAtDestination/>
+              <GoToDestination/>
+            </Fallback>
+            <PlaceItem/>
+          </Sequence>
+        </Fallback>
+      </Sequence>
     </Sequence>
   </BehaviorTree>
 
@@ -30,11 +45,15 @@
   <TreeNodesModel>
     <Action ID="GoToDestination"
             editable="true"/>
+    <Action ID="DecideShip"
+            editable="true"/>
     <Action ID="GoToShip"
             editable="true"/>
     <Condition ID="IsArrivedAtDestination"
                editable="true"/>
     <Condition ID="IsArrivedAtShip"
+               editable="true"/>
+    <Condition ID="IsArrivedAtChargingStation"
                editable="true"/>
     <Condition ID="IsFinishedTask"
                editable="true"/>
@@ -45,6 +64,12 @@
     <Action ID="PickItem"
             editable="true"/>
     <Action ID="PlaceItem"
+            editable="true"/>
+    <Condition ID="IsBatterySufficient"
+               editable="true"/>
+    <Action ID="GoToChargingStation"
+            editable="true"/>
+    <Action ID="ChargeBattery"
             editable="true"/>
   </TreeNodesModel>
 
