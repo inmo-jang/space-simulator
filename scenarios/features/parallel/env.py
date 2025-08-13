@@ -1,7 +1,7 @@
 from modules.base_env import BaseEnv
 from modules.utils import ResultSaver
-from scenarios.simple.task import generate_tasks
-from scenarios.simple.agent import generate_agents
+from scenarios.features.parallel.task import generate_tasks
+from scenarios.features.parallel.agent import generate_agents
 import pygame
 
 class Env(BaseEnv):
