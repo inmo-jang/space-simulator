@@ -87,6 +87,19 @@ def merge_dicts(dict1, dict2):
             
     return merged_dict    
 
+def convert_value(v): # "None" → None; 문자열 숫자는 숫자로 변환
+    if v == "None":
+        return None
+    if isinstance(v, str):
+        if v.isdigit() or (v.startswith('-') and v[1:].isdigit()):
+            return int(v)
+        try:
+            return float(v)
+        except ValueError:
+            pass
+    return v
+
+
 class ObjectToRender:
     def __init__(self, position, image_path, scale_by = None, width = None, height = None, rotation=0):
         image_temp = pygame.image.load(image_path)        

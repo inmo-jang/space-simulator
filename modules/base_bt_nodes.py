@@ -7,7 +7,7 @@ class BTNodeList:
         'Fallback',
         'ReactiveSequence',
         'ReactiveFallback',
-
+        'Parallel'
     ]
 
     ACTION_NODES = [
@@ -153,6 +153,59 @@ class ReactiveFallback(Node):
         for child in self.children:
             child.halt()  
 
+# Parallel node: Ticks all children sequentially in the same tick and returns by success_count / failure_count
+class Parallel(Node):
+    def __init__(self, name, children, success_count=None, failure_count=None):
+        """
+        success_count: number of SUCCESS children required for overall SUCCESS
+                       (default: len(children))
+        failure_count: number of FAILURE children causing overall FAILURE
+                       (default: None → failures alone don't decide FAILURE)
+        """
+        super().__init__(name)
+        self.children = children
+        self.success_count = len(children) if success_count is None else success_count
+        self.failure_count = failure_count  # None means ignore failures in final decision
+
+    async def run(self, agent, blackboard):
+        successes = 0
+        failures = 0
+        any_running = False
+
+        # Tick all children sequentially within the same tick
+        for child in self.children:
+            status = await child.run(agent, blackboard)
+            self.status = status  # update to latest child's status
+
+            if status == Status.SUCCESS:
+                successes += 1
+            elif status == Status.FAILURE:
+                failures += 1
+            elif status == Status.RUNNING:
+                any_running = True
+
+        # Final decision after evaluating all children
+        if successes >= self.success_count:
+            self.halt_children()
+            return Status.SUCCESS
+
+        if self.failure_count is not None and failures >= self.failure_count:
+            self.halt_children()
+            return Status.FAILURE
+
+        if any_running:
+            return Status.RUNNING
+
+        # All finished, thresholds not satisfied → FAILURE
+        self.halt_children()
+        return Status.FAILURE
+
+    def halt_children(self):
+        for child in self.children:
+            child.halt()
+
+    def halt(self):
+        self.halt_children()
 
 
 # Synchronous action node
