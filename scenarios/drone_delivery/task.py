@@ -67,7 +67,7 @@ class Task(BaseTask):
 def generate_random_color():
         return (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
 
-def generate_tasks(task_quantity=None, task_id_start = 0):
+def generate_tasks(task_quantity=None, task_id_start = 0, seed=None):
     if task_quantity is None:
         task_quantity = config['tasks']['quantity']        
     task_locations = config['tasks']['locations']
@@ -77,7 +77,7 @@ def generate_tasks(task_quantity=None, task_id_start = 0):
                                         task_locations['x_max'],
                                         task_locations['y_min'],
                                         task_locations['y_max'],
-                                        radius=task_locations['non_overlap_radius'])
+                                        radius=task_locations['non_overlap_radius'], seed=seed)
 
     # Initialize tasks
     tasks = []

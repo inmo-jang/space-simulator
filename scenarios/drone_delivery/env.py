@@ -10,9 +10,6 @@ class Env(BaseEnv):
         super().__init__(config)
         self.gathering_point = pygame.Vector2(700, 500)
         self.target_arrive_threshold = 5
-        self.tasks = generate_tasks() or []
-        self.tasks_left = len(self.tasks)
-        self.agents = generate_agents(self.tasks, gathering_point=self.gathering_point)
 
         # Initialize the background and environment
         self.set_background()
@@ -30,8 +27,10 @@ class Env(BaseEnv):
         super().reset()
 
         # Initialize agents and tasks
-        self.tasks = generate_tasks()
-        self.agents = generate_agents(self.tasks)
+        self.tasks = generate_tasks(seed=self.seed)
+        self.tasks_left = len(self.tasks)
+                
+        self.agents = generate_agents(self.tasks, gathering_point=self.gathering_point)
         
         # Initialize data recording
         self.data_records = []        
