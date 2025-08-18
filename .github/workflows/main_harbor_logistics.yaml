@@ -16,7 +16,7 @@ jobs:
       fail-fast: false  # 하나의 작업이 실패해도 다른 작업은 계속 진행    
       matrix:
         os: [ubuntu-22.04, ubuntu-latest, windows-latest, macos-latest]
-        python-version: [3.11, 3.12, 3.13]
+        python-version: [3.10]
 
     steps:
       - name: Checkout code
