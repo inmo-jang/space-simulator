@@ -179,11 +179,14 @@ class Agent(BaseAgent):
             text_rect.topleft = (self.position.x + 30, self.position.y - 20)  # 에이전트 옆에 표시
             screen.blit(text_surface, text_rect)
 
-def generate_agents(tasks_info, grid_graph):
+def generate_agents(tasks_info, grid_graph, seed=None):
     agent_quantity = config['agents']['quantity']
     
     # Generate agents positions
     grid_nodes = list(grid_graph.graph.nodes) # 그리드 노드 리스트 가져오기
+
+    if seed is not None:
+        random.seed(seed)
     selected_positions = random.sample(grid_nodes, agent_quantity) # 에이전트 수만큼 랜덤하게 그리드 노드 선택 (중복 방지)
     
     # Initialize agents
