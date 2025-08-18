@@ -1,8 +1,12 @@
 import pygame
 import math
-from modules.utils import config, parse_behavior_tree, convert_value
-import importlib
-bt_module = importlib.import_module(config.get('scenario').get('environment') + ".bt_nodes")
+from modules.base_bt_nodes import Status
+from modules.utils import config, first_action_or_condition_name, optional_import
+env_pkg = config.get('scenario').get('environment')
+bt_module = optional_import(env_pkg + ".bt_nodes")
+
+from modules.bt_constructor import build_behavior_tree
+
 
 # Load agent configuration
 agent_max_speed = config['agents']['max_speed']
@@ -18,6 +22,7 @@ sampling_time = 1.0 / config['simulation']['sampling_freq']  # in seconds
 class BaseAgent:
     def __init__(self, agent_id, position, tasks_info):
         self.agent_id = agent_id
+        self.type = None
         self.position = pygame.Vector2(position)
         self.velocity = pygame.Vector2(0, 0)
         self.acceleration = pygame.Vector2(0, 0)
@@ -44,37 +49,10 @@ class BaseAgent:
         self.assigned_task_id = None         # Local decision-making result.
         self.planned_tasks = []              # Local decision-making result.
 
+    def create_behavior_tree(self, behavior_tree_xml):
+        self.behavior_tree_xml = behavior_tree_xml
+        self.tree = build_behavior_tree(self, behavior_tree_xml, env_pkg)
 
-    def create_behavior_tree(self, behavior_tree_xml):        
-        xml_root = parse_behavior_tree(behavior_tree_xml)        
-        self.tree = self._create_behavior_tree(xml_root)
-
-    # Agent's Behavior Tree
-    def _create_behavior_tree(self, xml_root):
-        behavior_tree = self._parse_xml_to_bt(xml_root.find('BehaviorTree'))
-        return behavior_tree        
-    
-    def _parse_xml_to_bt(self, xml_node):
-        node_type = xml_node.tag
-        children = []
-
-        for child in xml_node:
-            children.append(self._parse_xml_to_bt(child))
-
-        BTNodeList = getattr(bt_module, "BTNodeList")        
-        attrib = {k: convert_value(v) for k, v in xml_node.attrib.items()}  
-        if node_type in BTNodeList.CONTROL_NODES:
-            # control_class = globals()[node_type]  # Control class should be globally available
-            control_class = getattr(bt_module, node_type)
-            return control_class(node_type, children=children, **attrib)
-        elif node_type in BTNodeList.ACTION_NODES + BTNodeList.CONDITION_NODES:
-            # action_class = globals()[node_type]  # Action class should be globally available
-            action_class = getattr(bt_module, node_type)
-            return action_class(node_type, self)
-        elif node_type == "BehaviorTree": # Root
-            return children[0]
-        else:
-            raise ValueError(f"[ERROR] Unknown behavior node type: {node_type}")    
 
     def _reset_bt_action_node_status(self):
         self.tree.reset()
@@ -148,6 +126,15 @@ class BaseAgent:
         if vector.length_squared() > max_value**2:
             vector.scale_to_length(max_value)
         return vector
+
+    def broadcast_message(self, to_all = False):
+        if to_all:
+            agents_nearby = getattr(self, "agents_info", []) # Global agents  
+        else:
+            agents_nearby = getattr(self, "agents_nearby", []) # Local agents
+        for other_agent in agents_nearby: 
+            if other_agent.agent_id != self.agent_id:                         
+                other_agent.receive_message(self.message_to_share)        
 
     def local_message_receive(self):
         self.agents_nearby = self.get_agents_nearby()
@@ -249,6 +236,9 @@ class BaseAgent:
         # Draw the situation awareness radius circle    
         if self.situation_awareness_radius > 0:    
             pygame.draw.circle(screen, self.color, (self.position[0], self.position[1]), self.situation_awareness_radius, 1)
+
+    def set_agent_type(self, type):
+        self.type = type
 
     def set_assigned_task_id(self, task_id):
         self.assigned_task_id = task_id

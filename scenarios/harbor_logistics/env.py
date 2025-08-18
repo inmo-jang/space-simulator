@@ -35,8 +35,8 @@ class Env(BaseEnv):
         super().reset()
 
         # Initialize agents and tasks
-        self.tasks = generate_tasks()
-        self.agents = generate_agents(self.tasks, self.grid_graph)
+        self.tasks = generate_tasks(seed=self.seed)
+        self.agents = generate_agents(self.tasks, self.grid_graph, seed=self.seed)
         
         # Initialize data recording
         self.data_records = []     

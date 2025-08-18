@@ -14,10 +14,15 @@ class BTNodeList:
         'LocalSensingNode',
         'DecisionMakingNode',
         'GatherLocalInfo',
-        'AssignTask'        
+        'AssignTask',
     ]
 
     CONDITION_NODES = [
+        'AlwaysFailure',
+        'AlwaysSuccess',
+    ]
+
+    DECORATOR_NODES = [
     ]
 
 # Status enumeration for behavior tree nodes
@@ -175,7 +180,6 @@ class Parallel(Node):
         # Tick all children sequentially within the same tick
         for child in self.children:
             status = await child.run(agent, blackboard)
-            self.status = status  # update to latest child's status
 
             if status == Status.SUCCESS:
                 successes += 1
@@ -187,18 +191,22 @@ class Parallel(Node):
         # Final decision after evaluating all children
         if successes >= self.success_count:
             self.halt_children()
-            return Status.SUCCESS
+            self.status = Status.SUCCESS  
+            return self.status
 
         if self.failure_count is not None and failures >= self.failure_count:
             self.halt_children()
-            return Status.FAILURE
+            self.status = Status.FAILURE  
+            return self.status
 
         if any_running:
-            return Status.RUNNING
+            self.status = Status.RUNNING  
+            return self.status
 
         # All finished, thresholds not satisfied → FAILURE
         self.halt_children()
-        return Status.FAILURE
+        self.status = Status.FAILURE  
+        return self.status
 
     def halt_children(self):
         for child in self.children:
@@ -297,6 +305,44 @@ class AssignTask(SyncAction):
         else:                        
             return Status.SUCCESS    
 
+# ---- Helper: AlwaysFailure & AlwaysSuccess -----------------------
+class AlwaysFailure(SyncCondition):
+    def __init__(self, name, agent):
+        super().__init__(name, self._check)
+
+    def _check(self, agent, blackboard):
+        return Status.FAILURE
+
+class AlwaysSuccess(SyncCondition):
+    def __init__(self, name, agent):
+        super().__init__(name, self._check)
+
+    def _check(self, agent, blackboard):
+        return Status.SUCCESS
+    
+# -- Base Condition Nodes --------------------
+class _IsNearbyPos(SyncCondition):
+    def __init__(self, name, agent):
+        super().__init__(name, self._update)
+
+    def _update(self, agent, blackboard, position, radius):
+        distance = agent.position.distance_to(position)
+        if distance < radius:
+            agent.reset_movement()
+            return Status.SUCCESS
+        else:
+            return Status.FAILURE
+
+class _IsNearby(SyncCondition):
+    def __init__(self, name, agent):
+        super().__init__(name, self._update)
+
+    def _update(self, agent, blackboard, target, radius):
+        distance = agent.position.distance_to(target.position)
+        if distance < radius:
+            return Status.SUCCESS
+        else:
+            return Status.FAILURE
 
 class _IsTaskCompleted(SyncCondition):
     def __init__(self, name, agent):
@@ -305,7 +351,7 @@ class _IsTaskCompleted(SyncCondition):
     def _update(self, agent, blackboard, task_id_key = 'task_id'):        
         _task_id = blackboard.get(task_id_key)
         if _task_id is None:
-            raise ValueError(f"[{self.name}] Error: No {task_id_key} found in the blackboard!")
+            return Status.RUNNING # Waiting for a task to be assigned!!
         
         task = agent.tasks_info[_task_id]
         if task.completed is True:
@@ -331,7 +377,27 @@ class _IsArrivedAtTask(SyncCondition):
         if distance < agent.tasks_info[_task_id].radius + arrive_threshold: # Agent reached the task position                                                
             return Status.SUCCESS  
         return Status.FAILURE      
+
+
+# -- Base Action Nodes --------------------
+class _MoveTo(SyncAction):
+    def __init__(self, name, agent):
+        super().__init__(name, self._update)
+
+    def _update(self, agent, blackboard, target):
+        if not target:
+            raise ValueError(f"[{self.name}] Error: Target is not defined")
+        agent.follow(target.position) 
+        return Status.RUNNING
     
+class _MoveToPos(SyncAction):
+    def __init__(self, name, agent):
+        super().__init__(name, self._update)
+
+    def _update(self, agent, blackboard, position):
+        agent.follow(position) 
+        return Status.RUNNING  
+        
 class _MoveToTask(SyncAction):
     def __init__(self, name, agent):
         super().__init__(name, self._update)

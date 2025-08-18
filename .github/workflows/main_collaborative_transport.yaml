@@ -1,5 +1,4 @@
-name: Main Test - Harbor Logistics
-
+name: Main Test - Collaborative Transport
 on:
   push:
     branches:
@@ -33,4 +32,4 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run tests with test_config.yaml
-        run: python main.py --config=config/test/main_harbor_logistics.yaml
+        run: python main.py --config=config/test/main_collaborative_transport.yaml

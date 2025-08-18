@@ -1,0 +1,133 @@
+scenario: 
+  environment: scenarios.collaborative_transport
+
+# decision_making: # Case 1
+#   plugin: plugins.grape.grape.GRAPE
+#   GRAPE:
+#     cost_weight_factor: 1.0
+#     social_inhibition_factor: 100
+#     initialize_partition: None # Options: None; Distance      
+#     reinitialize_partition_on_completion: None # Options: None; Distance; 
+
+decision_making: # Case 1-1
+  plugin: scenarios.collaborative_transport.plugins.grape_ct.GRAPE_CT
+  GRAPE:
+    cost_weight_factor: 1.0
+    social_inhibition_factor: 100
+    initialize_partition: None # Options: None; Distance      
+    reinitialize_partition_on_completion: None # Options: None; Distance; 
+  CT:
+    waiting_time_tolerance: 10
+    min_waiting_factor: 10
+
+# decision_making: # Case 1-2
+#   plugin: scenarios.collaborative_transport.plugins.grape_ct_no_minw.GRAPE_CT_
+#   GRAPE:
+#     cost_weight_factor: 1.0
+#     social_inhibition_factor: 100
+#     initialize_partition: None # Options: None; Distance      
+#     reinitialize_partition_on_completion: None # Options: None; Distance; 
+#   CT:
+#     waiting_time_tolerance: 10
+
+# decision_making: # Case 2
+#   plugin: plugins.cbba.cbba.CBBA
+#   CBBA:  
+#     max_tasks_per_agent: 5 
+#     task_reward_discount_factor: 0.999 
+#     winning_bid_cancel: True
+#     acceptable_empty_bundle_duration: 500 # sec
+
+# decision_making: # Case 3
+#   plugin: plugins.greedy.greedy.FirstClaimGreedy
+#   FirstClaimGreedy:  
+#     mode: MinDist  # Options: Random; MinDist; MaxUtil
+#     weight_factor_cost: 10000.0 # Only used for `MaxUtil` mode
+#     enforced_collaboration: False  
+
+# decision_making: # Case 3-1
+#   plugin: scenarios.collaborative_transport.plugins.greedy_not_FC.Greedy
+#   FirstClaimGreedy:  
+#     mode: MinDist  # Options: Random; MinDist; MaxUtil
+#     weight_factor_cost: 10000.0 # Only used for `MaxUtil` mode
+#     enforced_collaboration: False  
+
+# decision_making: # Case 3-2
+#   plugin: scenarios.collaborative_transport.plugins.ljf.LJF
+#   FirstClaimGreedy:  
+#     mode: MinDist  # Options: Random; MinDist; MaxUtil
+#     weight_factor_cost: 10000.0 # Only used for `MaxUtil` mode
+#     enforced_collaboration: False  
+
+agents:
+  behavior_tree_xml: default_bt.xml 
+  quantity: 60
+  locations:
+    x_min: 0
+    x_max: 1400
+    y_min: 0
+    y_max: 1000
+    non_overlap_radius: 0 
+  max_speed: 0.8  
+  max_accel: 0.05
+  max_angular_speed: 0.05
+  target_approaching_radius: 50
+  work_rate: 1  # work rate for each agent (per 1.0/simulation.sampling_freq)
+  communication_radius: 0 # 0 represents "global", meaning that each agent can access to the information of all the other agents
+  situation_awareness_radius: 0 # 0 represents "global", meaning that each agent can access to the information of all the tasks
+  random_exploration_duration: 500.0 # sec
+
+tasks:
+  quantity: 20  # collaborative_transport 시나리오 에서는 짝수로 설정할 것
+  locations:
+    x_min: 0
+    x_max: 1400
+    y_min: 0
+    y_max: 1000
+    non_overlap_radius: 0
+  threshold_done_by_arrival: 1.0
+  shape:
+    side_num:
+      min: 5 # 무조건 3 이상이어야 함(삼각형)
+      max: 6
+  amounts:  # Added amounts range for tasks
+    min: 100.0
+    max: 170.0
+    fixed: 35  
+  dynamic_task_generation:
+    enabled: False
+    interval_seconds: 1000
+    max_generations: 10
+    tasks_per_generation: 0  # collaborative_transport 시나리오 에서는 짝수로 설정할 것
+
+simulation:
+  random_seed: 1  # Random seed (integer ≥ 1), or None to disable seeding
+  sampling_freq: 1.0 
+  speed_up_factor: 0 # 0 mean max booster; 1 means normal; 10 means 10-times faster
+  max_simulation_time: 500 # 0 means no limit  
+  agent_track_size: 400  
+  screen_width: 1400 
+  screen_height: 1000 
+  gif_recording_fps: 0.05  
+  task_visualisation_factor: 3  # visualization factor for tasks : 10 means converting 10 amount to 1 pixel
+  profiling_mode: False
+  rendering_mode: Screen  # Options: Screen; Terminal; None
+  rendering_options: # Only works if `rendering_mode` is `Screen`
+    agent_tail: False
+    agent_communication_topology: False
+    agent_situation_awareness_circle: False
+    agent_id: False
+    agent_work_done: False
+    agent_assigned_task_id: False
+    agent_path_to_assigned_tasks: False
+    task_id: False
+  saving_options:
+    output_folder: output
+    with_date_subfolder: False
+    save_gif: False  # Only works if `rendering_mode` is `Screen`
+    save_timewise_result_csv: False  
+    save_agentwise_result_csv: False
+    save_config_yaml: False
+  bt_visualiser:
+    enabled: True       # Set to True to enable BT visualisation, False to disable
+    agent_id: 0         # ID of the agent whose behaviour tree will be visualised

@@ -10,6 +10,7 @@ import shutil
 import pandas as pd
 import matplotlib.pyplot as plt
 import xml.etree.ElementTree as ET
+import importlib
 
 def load_config(config_file):
     with open(config_file, 'r', encoding="utf-8") as f:
@@ -63,7 +64,8 @@ def generate_task_colors(quantity):
     return task_colors
 
 
-
+def get_file_dirname(file):
+    return os.path.dirname(os.path.abspath(file))  # 모듈 파일 기준
 
 # BT xml
 def parse_behavior_tree(xml_path):
@@ -99,6 +101,43 @@ def convert_value(v): # "None" → None; 문자열 숫자는 숫자로 변환
             pass
     return v
 
+def first_action_or_condition_name(children):
+    """
+    children 및 그 하위(children만 사용)를 DFS로 순회하며
+    type이 'Action' 또는 'Condition'인 첫 노드의 name을 반환.
+    없으면 None 반환.
+    """
+    if not children:
+        return None
+
+    def dfs(nodes):
+        for node in nodes:
+            node_type = getattr(node, "type", None)
+            if node_type in ("Action", "Condition"):
+                name = getattr(node, "name", None)
+                if name is not None:
+                    return name  # 첫 유효 name 반환
+
+            subchildren = getattr(node, "children", None)
+            if subchildren:
+                found = dfs(subchildren)
+                if found is not None:
+                    return found
+        return None
+
+    return dfs(children)
+
+def optional_import(name):
+    if not name:
+        return None
+    try:
+        return importlib.import_module(name)
+    except ModuleNotFoundError as e:
+        # 요청한 모듈 자체가 없을 때만 None 반환
+        if e.name == name:
+            return None
+        # 내부 의존 모듈 누락 등은 그대로 올림
+        raise
 
 class ObjectToRender:
     def __init__(self, position, image_path, scale_by = None, width = None, height = None, rotation=0):

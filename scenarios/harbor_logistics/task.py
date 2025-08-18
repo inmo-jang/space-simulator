@@ -88,7 +88,7 @@ class Task(BaseTask):
             screen.blit(self.image, (self.position[0] - task_width // 2, self.position[1] - task_height // 2))            
 
 
-def generate_tasks(task_quantity=None, task_id_start = 0):
+def generate_tasks(task_quantity=None, task_id_start = 0, seed=None):
     if task_quantity is None:
         task_quantity = config['tasks']['quantity']
     tasks_per_group = task_quantity // 2 #task개수를 선박의 개수만큼 나눔
@@ -99,7 +99,7 @@ def generate_tasks(task_quantity=None, task_id_start = 0):
                                         task_locations1['x_max'],
                                         task_locations1['y_min'],
                                         task_locations1['y_max'],
-                                        radius=task_locations1['non_overlap_radius'])
+                                        radius=task_locations1['non_overlap_radius'], seed=seed)
 
     task_locations2 = config['tasks']['locations2']
     tasks_positions2 = generate_positions(tasks_per_group,
@@ -107,7 +107,7 @@ def generate_tasks(task_quantity=None, task_id_start = 0):
                                         task_locations2['x_max'],
                                         task_locations2['y_min'],
                                         task_locations2['y_max'],
-                                        radius=task_locations2['non_overlap_radius'])
+                                        radius=task_locations2['non_overlap_radius'], seed=seed)
 
     # Task 생성 시 Ship ID를 포함
     tasks = []
