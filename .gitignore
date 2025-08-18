@@ -7,3 +7,6 @@ monte_carlo_analysis/
 
 # Ignore BT-related auto-generated file
 *.btproj
+
+# Ignore MacOS specific files
+.DS_Store
