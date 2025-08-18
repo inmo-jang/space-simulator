@@ -1,0 +1,35 @@
+name: Main Test - Collaborative Transport
+on:
+  push:
+    branches:
+      - '**'  # 모든 브랜치에 대해 트리거
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false  # 하나의 작업이 실패해도 다른 작업은 계속 진행    
+      matrix:
+        os: [ubuntu-22.04, ubuntu-latest, windows-latest, macos-latest]
+        python-version: [3.11, 3.12, 3.13]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run tests with test_config.yaml
+        run: python main.py --config=config/test/main_collaborative_transport.yaml
