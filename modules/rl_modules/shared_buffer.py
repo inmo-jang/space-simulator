@@ -19,7 +19,7 @@ def _remove_last_data(x, last_index):
 """Reshapes the input tensor x to be one-dimensional over the first axis."""
 def _cast(x, last_index, max_timesteps, pad_value = 0.0):
     x = _remove_last_data(x, last_index)
-    if isinstance(x[0][0], torch.Tensor):  # 이미 torch.Tensor인 경우
+    if isinstance(x[0][0], torch.Tensor): 
         x = [torch.stack(sublist + [torch.full_like(sublist[0], pad_value) for _ in range(max_timesteps - len(sublist))])
              if len(sublist) < max_timesteps else torch.stack(sublist) for sublist in x]
         x = torch.stack(x)  # (num_agents, max_timesteps, feature_dim)
@@ -142,7 +142,7 @@ class SharedReplayBuffer(object):
         for agent_id in range(self.num_agents):
             self.advantages[agent_id] = (np.array(self.advantages[agent_id]) - mean_adv) / std_adv
             self.returns[agent_id] = np.reshape(self.advantages[agent_id], (-1,1)) + np.array(self.value_preds[agent_id][:-1])
-        
+
     """Generates mini-batches for training using recurrent states."""
     def recurrent_generator(self, num_mini_batch, data_chunk_length):
         batch_size = self.train_threshold

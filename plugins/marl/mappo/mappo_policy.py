@@ -3,9 +3,9 @@ import torch.nn as nn
 import torch.optim as optim
 import numpy as np
 from plugins.marl.mappo.actor_critic import Actor, Critic
-from modules.separated_buffer import SeparateReplayBuffer
-from modules.shared_buffer import SharedReplayBuffer
-from modules.rl_env import register_buffer
+from modules.rl_modules.separated_buffer import SeparateReplayBuffer
+from modules.rl_modules.shared_buffer import SharedReplayBuffer
+from modules.rl_modules.rl_env import register_buffer
 from modules.utils import config
 import matplotlib.pyplot as plt
 from modules.reward_norm import RewardNormalizer
@@ -57,8 +57,11 @@ class MAPPOPolicy:
         self.num_mini_batch = mappo_config['num_mini_batch']
         self.data_chunk_length = mappo_config['data_chunk_length']
         self.episode_length = mappo_config['episode_length']
-        self.save_path = mappo_config['save_path']
         self.mode = mappo_config['mode']
+        if mappo_config['mode'] == "train":
+            self.save_path = mappo_config['save_path']
+        else:
+            self.save_path = None
         if 'load_path' in mappo_config.keys():
             self.load_path = mappo_config['load_path']
         else:
@@ -333,11 +336,11 @@ class MAPPOPolicy:
         else:
             selected_task_id = None
 
+        data = blackboard['local_observation'], blackboard['global_observation'], \
+               self.reward_normalizer.normalize(blackboard['reward']), blackboard['closest_tasks'], \
+               value, action, action_log_prob, rnn_state, rnn_state_critic
+        self.insert(agent_id, data)
         if mappo_config['mode'] == "train":
-            data = blackboard['local_observation'], blackboard['global_observation'], \
-                   self.reward_normalizer.normalize(blackboard['reward']), blackboard['closest_tasks'], \
-                   value, action, action_log_prob, rnn_state, rnn_state_critic
-            self.insert(agent_id, data)
             if self.buffer.check_train_ready() is True:
                 self.compute()
                 self.prep_training()

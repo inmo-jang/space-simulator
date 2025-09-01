@@ -8,6 +8,12 @@ bt_module = optional_import(env_pkg + ".bt_nodes")
 from modules.bt_constructor import build_behavior_tree
 
 
+# Load additional configuration and import decision-making class dynamically
+decision_making_module_path = config['decision_making']['plugin']
+module_path, class_name = decision_making_module_path.rsplit('.', 1)
+decision_making_module = importlib.import_module(module_path)
+decision_making_class = getattr(decision_making_module, class_name)
+
 # Load agent configuration
 agent_max_speed = config['agents']['max_speed']
 agent_max_accel = config['agents']['max_accel']
@@ -46,6 +52,8 @@ class BaseAgent:
         self.distance_moved = 0.0
         self.task_amount_done = 0.0
 
+        self.decision_maker = decision_making_class(self)  # Decision-making class instance
+        self.decision_updated = False
         self.assigned_task_id = None         # Local decision-making result.
         self.planned_tasks = []              # Local decision-making result.
 
@@ -60,9 +68,8 @@ class BaseAgent:
         action_nodes = BTNodeList.ACTION_NODES
         self.blackboard = {key: None if key in action_nodes else value for key, value in self.blackboard.items()}
 
-
-
     async def run_tree(self):
+        self.decision_updated = False
         self._reset_bt_action_node_status()
         return await self.tree.run(self, self.blackboard)
 
@@ -248,6 +255,9 @@ class BaseAgent:
 
     def set_global_info_agents(self, agents_info):
         self.agents_info = agents_info
+
+    def set_decion_updated(self):
+        self.decision_updated = True
 
     def get_agents_nearby(self, radius = None):
         _communication_radius = self.communication_radius if radius is None else radius        

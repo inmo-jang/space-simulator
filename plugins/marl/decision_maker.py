@@ -1,4 +1,9 @@
-from plugins.marl.mappo.mappo_policy import get_policy
+from modules.utils import config
+
+if config['decision_making'] == 'mappo':
+    from plugins.marl.mappo.mappo_policy import get_policy
+else:
+    assert False, 'Not implemented yet'
 
 class DecisionMaker:
     def __init__(self, agent):

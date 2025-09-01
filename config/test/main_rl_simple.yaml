@@ -22,9 +22,9 @@ decision_making:
     gamma: 0.99  # Discount factor, commonly set between 0.95 and 0.99
     data_chunk_length: 10  # Sequence length for RNN, usually between 10 and 20
     episode_length: 100  # Episode length, depends on the environment
-    mode: train
+    mode: eval
     save_path: scenarios/simple/rl.pt  # Path to save the trained model
-    #load_path: scenarios/simple/rl.pt  # Path to load the trained model
+    load_path: scenarios/simple/rl.pt  # Path to load the trained model
     plot: False
     wandb: False
 

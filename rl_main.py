@@ -43,9 +43,9 @@ except AttributeError as e:
 Main simulation loop
 """
 async def game_loop():
-    max_train_step = 2
-    step = 0
-    while max_train_step > step:
+    max_iteration = config['decision_making']['MAPPO']['max_iteration']
+    iteration = 0
+    while max_iteration > iteration:
         while pzenv.is_running() and not pzenv.is_mission_completed():
             pzenv.handle_keyboard_events()
 
@@ -56,7 +56,7 @@ async def game_loop():
             if pzenv.is_recording():
                 pzenv.record_screen_frame()
         pzenv.reset()
-        step += 1
+        iteration += 1
 
     pzenv.close()
 
