@@ -5,14 +5,9 @@ from modules.utils import config
 SAMPLING_TIME = 1.0 / config['simulation']['sampling_freq']
 
 class AgentController:
-    """
-    PID 없이: 목표 각도까지 회전만 하고, 각도 오차가 충분히 작아지면 직진.
-    - 회전 속도는 agent.max_angular_speed로 클램프
-    - 직진 속도는 agent.max_speed
-    - 도착 조건 만족 시 target 해제 및 정지
-    """
+
     def __init__(self, agent,
-                 angle_align=0.08,     # 직진 시작 각도 오차(rad)
+                 angle_align=0.04,     # 직진 시작 각도 오차(rad)
                  arrive_dist=5.0):     # 도착 거리(px)
         self.agent = agent
         self.ANGLE_ALIGN = angle_align

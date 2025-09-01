@@ -7,9 +7,7 @@ from modules.utils import config, generate_positions
 from modules.base_agent import BaseAgent
 from scenarios.features.mona.task import task_colors
 from scenarios.features.mona.agent_controller import AgentController
-from scenarios.features.mona.mona_client import MonaClient
-
-sampling_time = 1.0 / config['simulation']['sampling_freq']
+from scenarios.features.mona.mona_client import MonaClient	
 
 # Load agent configuration (Scenario Specific)
 work_rate = config['agents']['work_rate']
