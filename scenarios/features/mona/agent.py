@@ -55,21 +55,9 @@ class Agent(BaseAgent):
         
         self._mona = MonaClient.from_config(self.agent_id, mona_cfg) if self.is_real_robot else None
 
-    def set_position(self, x: float, y: float, yaw: float | None = None, mirror_on_screen: bool | None = None):
-
-        mona_connected = bool(self.is_real_robot and self._mona and self._mona.is_connected)
-
-        # ── SIM 모드(미연결) → 마커 입력 무시 ──────────────────────────────────────
-        if not mona_connected:
-            return
-
-        # ── REAL 모드(연결됨) → (옵션) 화면 미러링만 수행 ──────────────────────────
-        if mirror_on_screen is None:
-            mirror_on_screen = True  # 연결된 경우에만 기본 미러링
-
-        if mirror_on_screen:
-            if yaw is not None:
-                self.rotation = float(yaw)
+    def set_position(self, x: float, y: float, yaw: float | None = None):
+        if yaw is not None:
+            self.rotation = float(yaw)
             self.position.x = float(x)
             self.position.y = float(y)
             
