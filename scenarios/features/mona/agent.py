@@ -58,8 +58,8 @@ class Agent(BaseAgent):
     def set_position(self, x: float, y: float, yaw: float | None = None):
         if yaw is not None:
             self.rotation = float(yaw)
-            self.position.x = float(x)
-            self.position.y = float(y)
+        self.position.x = float(x)
+        self.position.y = float(y)
             
     def set_target(self, pos_vec2):
         self.controller.set_target(pos_vec2)

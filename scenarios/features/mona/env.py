@@ -99,7 +99,7 @@ class Env(BaseEnv):
                 if not self.agents:
                     continue
                 click_pos = pygame.Vector2(event.pos)
-
+                '''
                 # 가장 가까운 agent 선택
                 nearest = min(
                     self.agents,
@@ -113,6 +113,16 @@ class Env(BaseEnv):
                 # nearest.reset_movement()
 
                 print(f"[{self.simulation_time:.2f}] Agent {nearest.agent_id} → {tuple(map(int, click_pos))}")
+                '''
+                
+                for ag in self.agents:
+                    if getattr(ag, "is_real_robot", False):
+                        ag.set_target(click_pos)
+                    # 필요시 즉시 출발 강제:
+                    # ag.reset_movement()
+                print(f"[{self.simulation_time:.2f}] All agents → {tuple(map(int, click_pos))}")
+
+
 
     def _listen_whycon_udp(self):
         udp_port = int(getattr(self, "config", {}).get("mona", {}).get("udp_port", 9999))
