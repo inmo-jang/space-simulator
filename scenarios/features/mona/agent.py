@@ -20,6 +20,7 @@ mouse_target_position = None
 class Agent(BaseAgent):
     def __init__(self, agent_id, position, tasks_info):
         super().__init__(agent_id, position, tasks_info)
+        self.agent_id = agent_id
         self.work_rate = work_rate
 
         
@@ -30,66 +31,29 @@ class Agent(BaseAgent):
         
         # --- MONA 연결 옵션 (mona.yaml 사용) ---
         mona_cfg = (config.get('mona') or {})
-        self.is_real_robot = bool(mona_cfg.get('enabled', False))
-        self._mona_host = mona_cfg.get('host', '127.0.0.1')
-        self._mona_port = int(mona_cfg.get('port', 8080))
-        self._mona = None
-        self._connect_attempted = False  # ← 추가
-        #self._last_try = 0.0
-        #self._reconnect_interval = float(mona_cfg.get('reconnect_interval_sec', 2.0))
-
-        self._marker_target = None  # pygame.Vector2 | None
-        self._marker_yaw = None  # float | None
+        robots_cfg = mona_cfg.get('robots')
+        my_cfg = None
+        if isinstance(robots_cfg, list) and robots_cfg:
+            # (1) robots 항목에 agent_id 키가 있으면 우선 매칭
+            for r in robots_cfg:
+                try:
+                    if int(r.get('agent_id')) == int(self.agent_id):
+                        my_cfg = r
+                        break
+                except Exception:
+                    pass
+            # (2) 없으면 인덱스로 폴백(0→첫번째, 1→두번째 ...)
+            if my_cfg is None and len(robots_cfg) > self.agent_id:
+                my_cfg = robots_cfg[self.agent_id]
+        # (3) robots가 없으면 단일 설정 그대로 사용
+        if my_cfg is None:
+            my_cfg = mona_cfg
         
-        # 픽셀-미터 스케일 (1000 px = 1 m → 1 px = 1 mm)
-        self._px_to_mm = 1.0  # 1 pixel == 1 mm
+        self.is_real_robot = bool(my_cfg.get('enabled', mona_cfg.get('enabled', False)))
+        self._mona_host = my_cfg.get('host', mona_cfg.get('host', '127.0.0.1'))
+        self._mona_port = int(my_cfg.get('port', mona_cfg.get('port', 8080)))
         
-    # ---- 유틸: (-π, π] 래핑
-    @staticmethod
-    def _wrap_pi(a: float) -> float:
-        while a <= -math.pi:
-            a += 2 * math.pi
-        while a > math.pi:
-            a -= 2 * math.pi
-        return a
-        
-    def _compute_g_command(self, target: pygame.Vector2) -> tuple[float, float]:
-        dx = float(target.x - self.position.x)
-        dy = float(target.y - self.position.y)
-
-        # 이 좌표계(+y 아래)에서는 atan2(dy, dx)가 "시계방향 +, 반시계 -" 규약과 정합
-        desired_heading = math.atan2(dy, dx)  # rad, cw+
-        curr = float(self.rotation)           # rad, cw+
-
-        delta_rad = self._wrap_pi(desired_heading - curr)  # rad, cw+/ccw-
-        delta_deg = math.degrees(delta_rad)                # deg
-
-        dist_px = math.hypot(dx, dy)
-        dist_mm = dist_px * self._px_to_mm                 # 1 px = 1 mm
-
-        return (delta_deg, dist_mm)
-
-    # ---- MONA로 G 명령 전송 (지속 연결 가정)
-    def _send_mona_g(self, target: pygame.Vector2) -> None:
-        if not (self._mona and self._mona.is_connected):
-            return
-        deg, mm = self._compute_g_command(target)
-        # 필요 시 아주 작은 명령 무시
-        if abs(deg) < 1.0 and mm < 5.0:
-            return
-        payload = f"G {deg:.3f} {mm:.1f}\n"
-        self._mona.send(payload)
-        print(f"[MONA] G sent: {payload.strip()}")
-
-    def _ensure_mona(self):
-        """주기적으로(기본 2초) 연결 시도. 성공 시 self._mona 유지."""
-        if not self.is_real_robot or self._connect_attempted:
-            return
-        self._connect_attempted = True  # ← 이번 프레임에 1회만 시도
-        self._mona = MonaClient(self._mona_host, self._mona_port, timeout=2.0)
-        ok = self._mona.connect()
-        if not ok:
-            self._mona = None
+        self._mona = MonaClient.from_config(self.agent_id, mona_cfg) if self.is_real_robot else None
 
     def set_marker_target(self, x: float, y: float, yaw: float | None = None, mirror_on_screen: bool | None = None):
 
@@ -112,20 +76,29 @@ class Agent(BaseAgent):
     def set_target(self, pos_vec2):
         self.controller.set_target(pos_vec2)
         if self.is_real_robot and self._mona and self._mona.is_connected:
-            self._send_mona_g(pygame.Vector2(pos_vec2))
-            
-    # ---- MONA 연결 시 주기 전송 없도록 비워둠(지속 연결 펌웨어는 G 한 번이면 수행)
-    def _mona_step(self):
-        return  # 움직임 명령은 클릭 시 1회 전송으로 충분
+            # 클릭 타겟 기억(주기 재전송 옵션용)
+            self._mona.remember_click_target((float(pos_vec2[0]), float(pos_vec2[1])))
+            # 즉시 1회 전송
+            self._mona.send_g_to(
+                (self.position.x, self.position.y),
+                float(self.rotation),
+                (float(pos_vec2[0]), float(pos_vec2[1])),
+            )
 
     def update(self):
         # 1) MONA 모드라면 먼저 연결 보장 시도
-        if self.is_real_robot:
-            self._ensure_mona()
+        if self.is_real_robot and self._mona:
+            self._mona.ensure_connected()
+            
         # 2) 실제 MONA가 '연결된 경우' → 모나로 명령만 전송하고 시뮬 물리는 건너뜀
         if self.is_real_robot and self._mona and self._mona.is_connected:
-            self._mona_step()
+            # 주기 G 전송 옵션(0이면 아무 것도 하지 않음)
+            self._mona.step_periodic_g(
+                (self.position.x, self.position.y),
+                float(self.rotation),
+            )
             return
+            
         # 3) 그 외(비활성/미연결) → 기존 시뮬레이터 흐름 유지
         if self.controller.has_target():
             self.controller.step()  # 속도/가속도 명령만 생성(시뮬 이동)
