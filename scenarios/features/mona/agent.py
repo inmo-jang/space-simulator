@@ -55,7 +55,7 @@ class Agent(BaseAgent):
         
         self._mona = MonaClient.from_config(self.agent_id, mona_cfg) if self.is_real_robot else None
 
-    def set_marker_target(self, x: float, y: float, yaw: float | None = None, mirror_on_screen: bool | None = None):
+    def set_position(self, x: float, y: float, yaw: float | None = None, mirror_on_screen: bool | None = None):
 
         mona_connected = bool(self.is_real_robot and self._mona and self._mona.is_connected)
 

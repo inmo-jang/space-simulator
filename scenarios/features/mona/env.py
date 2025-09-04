@@ -129,8 +129,8 @@ class Env(BaseEnv):
                 yaw = msg.get("yaw", None)
                 if 0 <= agent_id < len(self.agents):
                     ag = self.agents[agent_id]
-                    if hasattr(ag, "set_marker_target"):
-                        ag.set_marker_target(x, y, yaw)
+                    if hasattr(ag, "set_position"):
+                        ag.set_position(x, y, yaw)
             except Exception as e:
                 print(f"[WhyCon UDP Error] {e}")
                   
