@@ -10,8 +10,7 @@ CUSTOM_ACTION_NODES = [
 ]
 
 CUSTOM_CONDITION_NODES = [
-    'IsTaskCompleted',
-    'IsArrivedAtTarget',
+    'IsNearbyTarget',
 ]
 
 # BT Node List
@@ -19,59 +18,32 @@ BTNodeList.ACTION_NODES.extend(CUSTOM_ACTION_NODES)
 BTNodeList.CONDITION_NODES.extend(CUSTOM_CONDITION_NODES)
 
 
-# Scenario-specific Action/Condition Nodes
-from modules.utils import config
-target_arrive_threshold = config['tasks']['threshold_done_by_arrival']
-task_locations = config['tasks']['locations']
-sampling_freq = config['simulation']['sampling_freq']
-sampling_time = 1.0 / sampling_freq  # in seconds
-agent_max_random_movement_duration = config.get('agents', {}).get('random_exploration_duration', None)
+from turtlesim.msg import Pose as TPose
+from std_srvs.srv import SetBool
+from scenarios.features.ros.base_bt_nodes_ros import ROSConditionBTNode, ROSServiceBTNode
 
 
-class IsTaskCompleted(_IsTaskCompleted): 
-    def __init__(self, name, agent):
-        super().__init__(name, agent)   
+class IsNearbyTarget(ROSConditionBTNode):
+    def __init__(self, name, agent, default_thresh=0.5):
+        ns = agent.ros_namespace or ""  # 네임스페이스 없으면 루트
+        super().__init__(name, agent, [
+            (TPose, f"{ns}/pose", 'self'),
+            (TPose, "/turtle_target/pose", 'target'),
+        ])
+        self.default_thresh = default_thresh
 
-    def _update(self, agent, blackboard): 
-        result = super()._update(agent, blackboard, task_id_key='assigned_task_id')
-        if result is Status.SUCCESS:
-            blackboard['assigned_task_id'] = None
-        return result
+
+    def _predicate(self, agent, blackboard):
+        cache = self._cache  # 베이스 설계대로 내부 캐시 사용
+        if "self" not in cache or "target" not in cache:
+            return False
+
+        a = cache["self"]
+        b = cache["target"]
+
+        thresh = blackboard.get("nearby_threshold", self.default_thresh)
+        dist = math.hypot(a.x - b.x, a.y - b.y)
+        blackboard["distance_to_target"] = dist
+        return dist <= float(thresh)
 
 
-class IsArrivedAtTarget(_IsArrivedAtTask): 
-    def __init__(self, name, agent):
-        super().__init__(name, agent)   
-
-    def _update(self, agent, blackboard): 
-        result = super()._update(agent, blackboard, task_id_key='assigned_task_id', arrive_threshold=target_arrive_threshold)
-        if result is Status.SUCCESS:
-            pass
-        return result
-    
-    
-class MoveToTarget(_MoveToTask): 
-    def __init__(self, name, agent):
-        super().__init__(name, agent)   
-
-    def _update(self, agent, blackboard): 
-        result = super()._update(agent, blackboard, task_id_key='assigned_task_id')
-        return result
-        
-class ExecuteTask(_ExecuteTaskWhileFollowing): 
-    def __init__(self, name, agent):
-        super().__init__(name, agent)   
-
-    def _update(self, agent, blackboard): 
-        result = super()._update(agent, blackboard, task_id_key='assigned_task_id')
-        return result
-                
-
-class Explore(_ExploreArea): 
-    def __init__(self, name, agent):
-        super().__init__(name, agent)   
-
-    def _update(self, agent, blackboard): 
-        result = super()._update(agent, blackboard, agent_max_random_movement_duration=agent_max_random_movement_duration, exploration_area=task_locations, sampling_time=sampling_time)
-        return result
-        
