@@ -3,6 +3,7 @@
   <BehaviorTree ID="space-simulator">
     <ReactiveFallback>
       <IsNearbyTarget/>
+      <MoveToTarget/>
     </ReactiveFallback>
   </BehaviorTree>
 
@@ -10,6 +11,8 @@
   <TreeNodesModel>
     <Condition ID="IsNearbyTarget"
                editable="true"/>
+    <Action ID="MoveToTarget"
+            editable="true"/>
   </TreeNodesModel>
 
 </root>
