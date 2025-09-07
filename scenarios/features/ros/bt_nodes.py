@@ -5,12 +5,14 @@ from modules.base_bt_nodes import _IsTaskCompleted, _IsArrivedAtTask, _MoveToTas
 # BT Node List
 CUSTOM_ACTION_NODES = [
     'MoveToTarget',
+    'KillTarget',
     'ExecuteTask',
     'Explore'
 ]
 
 CUSTOM_CONDITION_NODES = [
     'IsNearbyTarget',
+    'IsTargetClear',
 ]
 
 # BT Node List
@@ -20,10 +22,10 @@ BTNodeList.CONDITION_NODES.extend(CUSTOM_CONDITION_NODES)
 
 from turtlesim.msg import Pose as TPose
 from std_srvs.srv import SetBool
-from scenarios.features.ros.base_bt_nodes_ros import ROSConditionBTNode, ROSActionBTNode
+from scenarios.features.ros.base_bt_nodes_ros import ConditionWithROSTopics, ActionWithROSAction, ActionWithROSService
 
 
-class IsNearbyTarget(ROSConditionBTNode):
+class IsNearbyTarget(ConditionWithROSTopics):
     def __init__(self, name, agent, default_thresh=0.1):
         ns = agent.ros_namespace or ""  # 네임스페이스 없으면 루트
         super().__init__(name, agent, [
@@ -52,7 +54,7 @@ from action_msgs.msg import GoalStatus
 from geometry_msgs.msg import PoseStamped
 from nav2_msgs.action import NavigateToPose
 
-class MoveToTarget(ROSActionBTNode):
+class MoveToTarget(ActionWithROSAction):
     def __init__(self, name, agent):
         ns = agent.ros_namespace or ""  # 네임스페이스 없으면 루트
         super().__init__(name, agent, 
@@ -112,3 +114,53 @@ class MoveToTarget(ROSActionBTNode):
             # STATUS_ABORTED 등 기타 코드
             bb['nav_result'] = 'aborted'
             return Status.FAILURE
+
+
+from turtlesim.srv import Kill  # turtlesim 표준 서비스
+
+class KillTarget(ActionWithROSService):
+    """
+    turtlesim의 /kill 서비스를 호출해 target 거북이를 제거.
+    - 기본 대상 이름: 'turtle_target'
+    - blackboard['target_name'] 가 있으면 그 값을 사용
+    """
+    def __init__(self, name, agent):
+        # turtlesim의 kill 서비스 이름은 전역 '/kill'
+        super().__init__(name, agent, (Kill, '/kill'))
+
+    def _build_request(self, agent, blackboard):
+        req = Kill.Request()
+        req.name = str('turtle_target')
+        return req
+
+    def _interpret_response(self, response, agent, blackboard):
+        # Kill.srv 응답은 비어 있음(성공 기준으로 간주)
+        blackboard['kill_result'] = 'succeeded'
+        return Status.SUCCESS
+
+
+class IsTargetClear(ConditionWithROSTopics):
+    """
+    Post-Condition:
+      - /turtle_target/pose 토픽의 '퍼블리셔'가 0개면 SUCCESS (= target이 사라짐)
+      - 퍼블리셔가 있으면 FAILURE
+    """
+    def __init__(self, name, agent, pose_topic="/turtle_target/pose"):
+        # 구독 없이 그래프 조회만 할 것이라 구독 목록 비움
+        super().__init__(name, agent, msg_types_topics=[])
+        # _cache 비어있으면 RUNNING이므로 더미 플래그로 즉시 판정
+        self._cache["ready"] = True
+        self.pose_topic = pose_topic
+
+    def _predicate(self, agent, blackboard) -> bool:
+        # 퍼블리셔 목록만 확인 (구독자 존재 여부와 무관)
+        pubs = self.ros.node.get_publishers_info_by_topic(self.pose_topic)
+        target_gone = (len(pubs) == 0)
+
+        if target_gone:
+            # 타깃이 사라졌다면 블랙보드의 target도 정리
+            blackboard["target"] = None
+
+        return target_gone
+
+

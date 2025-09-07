@@ -2,8 +2,14 @@
 <root BTCPP_format="4">
   <BehaviorTree ID="space-simulator">
     <ReactiveFallback>
-      <IsNearbyTarget/>
-      <MoveToTarget/>
+      <IsTargetClear/>
+      <ReactiveSequence>
+        <ReactiveFallback>
+          <IsNearbyTarget/>
+          <MoveToTarget/>
+        </ReactiveFallback>
+        <KillTarget/>
+      </ReactiveSequence>
     </ReactiveFallback>
   </BehaviorTree>
 
@@ -11,6 +17,10 @@
   <TreeNodesModel>
     <Condition ID="IsNearbyTarget"
                editable="true"/>
+    <Condition ID="IsTargetClear"
+               editable="true"/>
+    <Action ID="KillTarget"
+            editable="true"/>
     <Action ID="MoveToTarget"
             editable="true"/>
   </TreeNodesModel>

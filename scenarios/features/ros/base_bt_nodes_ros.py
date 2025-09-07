@@ -2,7 +2,7 @@ from modules.base_bt_nodes import Node, Status
 from rclpy.action import ActionClient
 
 
-class ROSConditionBTNode(Node):
+class ConditionWithROSTopics(Node):
     def __init__(self, name, agent, msg_types_topics):
         super().__init__(name)
         self.ros = agent.ros_bridge
@@ -13,6 +13,9 @@ class ROSConditionBTNode(Node):
                 lambda m, k=key: self._cache.__setitem__(k, m),
                 1
             )
+        # For PA-BT
+        self.is_expanded = False
+        self.type = "Condition"
 
     async def run(self, agent, blackboard):
         if not self._cache:
@@ -21,13 +24,20 @@ class ROSConditionBTNode(Node):
             self.status = Status.SUCCESS
         else:
             self.status = Status.FAILURE
+        
+        # For PA-BT
+        blackboard[self.name] = {'status': self.status, 'is_expanded': self.is_expanded} 
+
         return self.status
 
     def _predicate(self, agent, blackboard) -> bool: # 내 조건이 만족했는가?"를 판단하는 코드 구현
         raise NotImplementedError
 
+    def set_expanded(self): # For PA-BT
+        self.is_expanded = True
 
-class ROSActionBTNode(Node):
+
+class ActionWithROSAction(Node):
     """
     심플 ROS Action 클라이언트 베이스.
       - action_spec: (ActionType, action_name)
@@ -44,6 +54,9 @@ class ROSActionBTNode(Node):
         self._goal_handle = None
         self._result_future = None
         self._phase = 'idle'       # 'idle' -> 'sending' -> 'running'
+
+        # For PA-BT
+        self.type = "Action"
 
     def _build_goal(self, agent, blackboard):
         # 하위 클래스에서 구현
@@ -111,3 +124,61 @@ class ROSActionBTNode(Node):
         self._phase = 'idle'
 
 
+class ActionWithROSService(Node):
+    """
+    심플 ROS Service 클라이언트 베이스.
+      - service_spec: (SrvType, service_name)
+      - _build_request(): 서비스 요청 메시지 생성
+      - _interpret_response(): 응답을 SUCCESS/FAILURE로 매핑
+    """
+    def __init__(self, name, agent, service_spec):
+        super().__init__(name)
+        self.ros = agent.ros_bridge
+        srv_type, srv_name = service_spec
+        self.client = self.ros.node.create_client(srv_type, srv_name)
+
+        self._future = None
+        self._sent = False
+
+        # For PA-BT
+        self.type = "Action"
+
+    def _build_request(self, agent, blackboard):
+        # 하위 클래스에서 구현
+        raise NotImplementedError
+
+    def _interpret_response(self, response, agent, blackboard):
+        # 하위 클래스에서 필요 시 오버라이드
+        return Status.SUCCESS
+
+    async def run(self, agent, blackboard):
+        # 서비스가 아직 준비 안 되었으면 다음 틱에 재시도
+        if not self.client.wait_for_service(timeout_sec=0.0):
+            self.status = Status.RUNNING
+            return self.status
+
+        # 최초 1회 호출
+        if not self._sent:
+            req = self._build_request(agent, blackboard)
+            if req is None:
+                self.status = Status.FAILURE
+                return self.status
+            self._future = self.client.call_async(req)
+            self._sent = True
+            self.status = Status.RUNNING
+            return self.status
+
+        # 응답 도착 확인
+        if self._future and self._future.done():
+            resp = self._future.result()
+            self.status = self._interpret_response(resp, agent, blackboard)
+            self._sent = False
+            return self.status
+
+        # 아직 응답 대기 중
+        self.status = Status.RUNNING
+        return self.status
+
+    def halt(self):
+        # 서비스는 취소 개념이 없으므로 플래그만 초기화
+        self._sent = False
