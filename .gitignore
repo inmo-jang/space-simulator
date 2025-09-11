@@ -7,3 +7,30 @@ monte_carlo_analysis/
 
 # Ignore BT-related auto-generated file
 *.btproj
+# Virtual env
+venv/
+.venv/
+
+# Python junk
+__pycache__/
+*.py[cod]
+*.egg-info/
+.dist-info/
+.build/
+dist/
+build/
+.cache/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+
+# (옵션) ROS2/colcon 워크스페이스가 섞여있다면
+build/
+install/
+log/
