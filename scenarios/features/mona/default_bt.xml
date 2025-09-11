@@ -6,7 +6,6 @@
       <ReactiveSequence>
         <ReactiveFallback>
           <AssignTask/>
-          <Explore/>
         </ReactiveFallback>
         <ReactiveFallback>
           <IsTaskCompleted/>

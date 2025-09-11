@@ -1,8 +1,8 @@
 mona:
   enabled: true              # 모드 ON → 연결되면 모나로 명령 전송, 아니면 시뮬레이터로 폴백
   udp_port: 9999
-  g_interval_sec: 1.50       # G 전송 주기(초). 0.05~0.20 권장
-  arrive_threshold_mm: 100.0     # 도착 거리(mm) - (BT 도착은 px 기준, G 보정은 mm/deg 기준으로도 병행 가능)
+  g_interval_sec: 2.00       # G 전송 주기(초). 0.05~0.20 권장
+  arrive_threshold_mm: 50.0     # 도착 거리(mm) - (BT 도착은 px 기준, G 보정은 mm/deg 기준으로도 병행 가능)
   arrive_heading_deg: 180.0       # 도착 헤딩(도)
   
   robots:
@@ -11,6 +11,9 @@ mona:
     port: 8080           # MONA #1 포트
   - agent_id: 1
     host: 192.168.0.52   # MONA #2 IP
+    port: 8080           # MONA #2 포트
+  - agent_id: 2
+    host: 192.168.0.59   # MONA #2 IP
     port: 8080           # MONA #2 포트
 
 scenario: 
@@ -42,10 +45,10 @@ decision_making: # Case 2
 
 agents:
   behavior_tree_xml: default_bt.xml 
-  quantity: 2
+  quantity: 3
   locations:
     x_min: 0
-    x_max: 1400
+    x_max: 1300
     y_min: 0
     y_max: 800
     non_overlap_radius: 0 
@@ -59,14 +62,14 @@ agents:
   random_exploration_duration: 1000.0 # sec
 
 tasks:
-  quantity: 10
+  quantity: 0
   locations:
     x_min: 0
-    x_max: 1400
+    x_max: 1300
     y_min: 0
     y_max: 800
     non_overlap_radius: 0
-  threshold_done_by_arrival: 100.0
+  threshold_done_by_arrival: 50.0
   amounts:  # Added amounts range for tasks
     min: 6.0
     max: 60.0      
@@ -74,7 +77,7 @@ tasks:
     enabled: True
     interval_seconds: 2000
     max_generations: 3
-    tasks_per_generation: 10
+    tasks_per_generation: 0
 
 simulation:
   random_seed: 1  # Random seed (integer ≥ 1), or None to disable seeding
@@ -82,7 +85,7 @@ simulation:
   speed_up_factor: 0 # 0 mean max booster; 1 means normal; 10 means 10-times faster
   max_simulation_time: 0 # 0 means no limit
   agent_track_size: 400  
-  screen_width: 1400 
+  screen_width: 1300 
   screen_height: 800 
   gif_recording_fps: 0.05  
   task_visualisation_factor: 3  # visualization factor for tasks : 10 means converting 10 amount to 1 pixel

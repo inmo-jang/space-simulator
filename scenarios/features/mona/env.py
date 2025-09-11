@@ -1,6 +1,6 @@
 from modules.base_env import BaseEnv
 from modules.utils import ResultSaver
-from scenarios.features.mona.task import generate_tasks
+from scenarios.features.mona.task import generate_tasks, Task
 from scenarios.features.mona.agent import generate_agents
 import pygame
 import socket, json, threading
@@ -115,11 +115,15 @@ class Env(BaseEnv):
                 print(f"[{self.simulation_time:.2f}] Agent {nearest.agent_id} → {tuple(map(int, click_pos))}")
                 '''
                 
-                for ag in self.agents:
-                    if getattr(ag, "is_real_robot", False):
-                        ag.set_target(click_pos)
+                #for ag in self.agents:
+                #    if getattr(ag, "is_real_robot", False):
+                #        ag.set_target(click_pos)
                     # 필요시 즉시 출발 강제:
                     # ag.reset_movement()
+                # 마우스 클릭시 이동 x, task 생성 
+                new_id = len(self.tasks)  # 연속 ID 부여
+                self.tasks.append(Task(new_id, click_pos))
+                print(f"[{self.simulation_time:.2f}] Spawned Task {new_id} at {tuple(map(int, click_pos))}")
                 print(f"[{self.simulation_time:.2f}] All agents → {tuple(map(int, click_pos))}")
 
 

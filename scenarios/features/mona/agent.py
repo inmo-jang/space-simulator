@@ -72,6 +72,13 @@ class Agent(BaseAgent):
                 float(self.rotation),
                 (float(pos_vec2[0]), float(pos_vec2[1])),
             )
+            
+        # BT에서 호출하는 이동 명령: 컨트롤만 적용(적분은 BaseAgent.update가 수행)
+    def follow(self, target):
+        # 목표 세팅
+        self.controller.set_target(target)
+        # 힘(가속)만 생성, 적분은 BaseAgent.update()
+        self.controller.apply_control(integrate=False)
 
     def update(self):
         # 1) MONA 모드라면 먼저 연결 보장 시도
@@ -88,10 +95,16 @@ class Agent(BaseAgent):
             return
             
         # 3) 그 외(비활성/미연결) → 기존 시뮬레이터 흐름 유지
-        if self.controller.has_target():
-            self.controller.step()  # 속도/가속도 명령만 생성(시뮬 이동)
-        else:
-            super().update()
+        #if self.controller.has_target():
+        #    self.controller.step()  # 속도/가속도 명령만 생성(시뮬 이동)
+        #else:
+        #    super().update()
+        
+        # 3) SIM(혹은 미연결) → 적분은 BaseAgent.update가 일괄 수행
+        #    (follow()에서 가속만 설정됨; 목표 없으면 정지 유지)
+        if not self.controller.has_target():
+            self.reset_movement()
+        super().update()
 
     def draw(self, screen):
         size = 10
