@@ -4,7 +4,7 @@ from scenarios.features.pa_bt.task import generate_tasks
 from scenarios.features.pa_bt.agent import generate_agents
 
 from modules.base_bt_nodes import Status
-from modules.ppa_bt_constructor import load_library, expand_behavior_tree
+from modules.ppa_bt_constructor import load_library, expand_behavior_tree, find_failed_conditions
 
 
 class Env(BaseEnv):
@@ -80,11 +80,11 @@ class Env(BaseEnv):
             result = await agent.run_tree()
             
             if result == Status.FAILURE:  # Check if the result is FAILURE
-                failed_conditions = agent.find_failed_conditions()  # Identify failed conditions
+                failed_conditions = find_failed_conditions(agent.blackboard)  # Identify failed conditions
                 
                 for failed_condition in failed_conditions:
                     # Expand the behavior tree based on the failed condition
-                    agent.tree = expand_behavior_tree(agent.tree, failed_condition, self.ppa_library)
+                    agent.tree = expand_behavior_tree(agent.tree, failed_condition, self.ppa_library, agent)
 
             agent.update()
         # 필요 시, 디버그 추가, agent.blackboard 활용. (대신 last agent인 경우만)
