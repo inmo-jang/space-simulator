@@ -2,10 +2,16 @@ from modules.base_env import BaseEnv
 from modules.utils import ResultSaver
 from scenarios.features.ros.agent import generate_agents
 from scenarios.features.ros.ros_bridge import ROSBridge
+from modules.base_bt_nodes import Status
+from modules.ppa_bt_constructor import load_library, expand_behavior_tree, find_failed_conditions
 
 class Env(BaseEnv):
     def __init__(self, config):
         super().__init__(config)
+
+        # Load PPA Library
+        ppa_library_path = config['simulation'].get('ppa_library_path', 'ppa_library.csv')
+        self.ppa_library = load_library(ppa_library_path)
 
         # Set data recording
         self.result_saver = ResultSaver(config)
@@ -74,3 +80,14 @@ class Env(BaseEnv):
         #     tasks_total_amount_left
         # ])        
                   
+    async def step(self):
+        for agent in self.agents:
+            result = await agent.run_tree()
+
+            if result == Status.FAILURE:
+                failed_conditions = find_failed_conditions(agent.blackboard)
+
+                for failed_condition in failed_conditions:
+                    agent.tree = expand_behavior_tree(agent.tree, failed_condition, self.ppa_library, agent)
+            
+            agent.update()
