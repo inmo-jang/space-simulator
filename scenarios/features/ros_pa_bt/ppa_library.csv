@@ -1,0 +1,3 @@
+Post_condition,Action,Pre_conditions
+IsTargetClear,KillTarget,IsNearbyTarget
+IsNearbyTarget,MoveToTarget
