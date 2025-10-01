@@ -1,13 +1,23 @@
 # ppa_bt_expansion.py
-from modules.base_bt_nodes import config, ReactiveFallback, ReactiveSequence, BTNodeList
+from modules.base_bt_nodes import Status, config, ReactiveFallback, ReactiveSequence, BTNodeList
 from modules.utils import ResultSaver
 from xml.dom import minidom
 import xml.etree.ElementTree as ET
 import csv
 import os
+import datetime
 import importlib
 bt_module = importlib.import_module(config.get('scenario').get('environment') + ".bt_nodes")
 result_saver = ResultSaver(config)  
+
+Simulation_start_time = None
+
+# 추후 main.py 또는 utils.py에 구현 고려
+def initialize_simulation_time():
+    """ Initialize simulation start time only once """
+    global Simulation_start_time
+    if Simulation_start_time is None:
+        Simulation_start_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
 # Algorithm 2: LoadLibrary Function
 def load_library(csv_file_path):
@@ -32,25 +42,28 @@ def load_library(csv_file_path):
 
 
 # Algorithm 3: ExpandBehaviorTree Function
-def expand_behavior_tree(tree, failed_condition, ppa_library):
+def expand_behavior_tree(tree, failed_condition, ppa_library, agent):
+    global Simulation_start_time
+    initialize_simulation_time()
+
     if failed_condition in ppa_library:
         ppa_fail_entry = ppa_library[failed_condition]
         print(f"[DEBUG] Expanding BT for failed condition: {failed_condition}")
-        ppa_bt = generate_ppa_bt(failed_condition, ppa_fail_entry)
+        ppa_bt = generate_ppa_bt(failed_condition, ppa_fail_entry, agent)
         tree = replace_node_with_ppa_bt(tree, failed_condition, ppa_bt)
 
         # Generate file path
         file_path = result_saver.generate_output_filename(extension="xml")
-
-        # Get the plugin class name from config
-        decision_plugin_path = config['decision_making']['plugin']
-        plugin_class_name = decision_plugin_path.rsplit('.', 1)[-1]
-
-        # Remove the plugin class name from the file name
         directory, filename = os.path.split(file_path)
-        filename = filename.replace(f"{plugin_class_name}_", "")  # Remove the plugin name prefix
-        filename = f"PA_BT_{filename}"
-        file_path = os.path.join(directory, filename)
+        parts = filename.split('_')
+        timestamp = f"{parts[-2]}_{parts[-1]}"
+
+        # Simulation 실행 시간을 폴더로 추가 (inside the date folder)
+        simulation_folder = os.path.join(directory, Simulation_start_time)
+        os.makedirs(simulation_folder, exist_ok=True)
+
+        filename = f"{getattr(agent, 'group', '')}_{getattr(agent, 'name', '')}_{timestamp}"
+        file_path = os.path.join(simulation_folder, filename)
 
         # Save the updated BT as an XML file
         save_tree_as_xml(tree, file_path)
@@ -58,44 +71,44 @@ def expand_behavior_tree(tree, failed_condition, ppa_library):
 
 
 # Algorithm 4: GeneratePPA_BT Function
-def generate_ppa_bt(post_condition, ppa_fail_entry):
+def generate_ppa_bt(post_condition, ppa_fail_entry, agent):
     print(f"[DEBUG] Generating PPA-BT for Post_condition: {post_condition}")
 
     # Create ReactiveFallback Node
-    fallback = ReactiveFallback("ReactiveFallback", children=[])
+    reactive_fallback = ReactiveFallback("ReactiveFallback", children=[])
 
     # Initialize Seqeunce Node
-    sequence = None
+    reactive_sequence = None
 
     # Check if Pre-conditions exist
     if ppa_fail_entry["action"]:
         if ppa_fail_entry["pre_conditions"]:
-            sequence = ReactiveSequence("ReactiveSequence", [])
+            reactive_sequence = ReactiveSequence("ReactiveSequence", [])
             # Add Pre-conditions as ReactiveSequence Node
             for pre_condition in ppa_fail_entry["pre_conditions"]:
                 condition_class = getattr(bt_module, pre_condition)
-                condition_node = condition_class(pre_condition, None)
-                sequence.children.append(condition_node)
+                condition_node = condition_class(pre_condition, agent)
+                reactive_sequence.children.append(condition_node)
 
             # Add Action Node
             action_class = getattr(bt_module, ppa_fail_entry["action"])
-            action_node = action_class(ppa_fail_entry["action"], None)
-            sequence.children.append(action_node)
+            action_node = action_class(ppa_fail_entry["action"], agent)
+            reactive_sequence.children.append(action_node)
         else:
             # If no Pre-conditions, directly use Action Node
             action_class = getattr(bt_module, ppa_fail_entry["action"])
-            sequence = action_class(ppa_fail_entry["action"], None)
+            reactive_sequence = action_class(ppa_fail_entry["action"], agent)
 
     # Add Post-condition Node to ReactiveFallback
     condition_class = getattr(bt_module, post_condition)
-    condition_node = condition_class(post_condition, None)
+    condition_node = condition_class(post_condition, agent)
     condition_node.set_expanded()
-    fallback.children.append(condition_node)
-    # Add ReactiveSequence only if it exists (not None)
-    if sequence:
-        fallback.children.append(sequence)
+    reactive_fallback.children.append(condition_node)
+    # Add Sequence only if it exists (not None)
+    if reactive_sequence:
+        reactive_fallback.children.append(reactive_sequence)
 
-    return fallback
+    return reactive_fallback
 
 
 # Algorithm 5: ReplaceNodeWithPPA_BT Function
@@ -116,6 +129,7 @@ def replace_node_with_ppa_bt(tree, failed_condition, ppa_bt):
 
 # Utility: SaveTreeAsXML Function
 def save_tree_as_xml(tree, file_path):
+    file_path = os.path.normpath(file_path) # Adjust for OS
     action_nodes = set()
     condition_nodes = set()
     collect_node_definitions(tree, action_nodes, condition_nodes)
@@ -205,3 +219,18 @@ def indent(elem, level=0):
         if level and (not elem.tail or not elem.tail.strip()):
             elem.tail = i
 
+# Find failed condition
+def find_failed_conditions(blackboard):
+    """
+    Find failed conditions from the agent's behavior tree blackboard.
+    """
+    failed_conditions = []
+    for node_name, info in blackboard.items():
+        # info가 딕셔너리인지 확인
+        if isinstance(info, dict):
+            # 키가 없을 때 기본값을 반환하도록 get() 메서드 사용
+            status = info.get('status', None)
+            is_expanded = info.get('is_expanded', None)  # 기본값은 True로 설정
+            if status == Status.FAILURE and is_expanded == False:
+                failed_conditions.append(node_name)
+    return failed_conditions
