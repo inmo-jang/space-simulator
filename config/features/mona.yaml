@@ -1,20 +1,34 @@
 mona:
   enabled: true              # 모드 ON → 연결되면 모나로 명령 전송, 아니면 시뮬레이터로 폴백
   udp_port: 9999
-  g_interval_sec: 2.00       # G 전송 주기(초). 0.05~0.20 권장
-  arrive_threshold_mm: 50.0     # 도착 거리(mm) - (BT 도착은 px 기준, G 보정은 mm/deg 기준으로도 병행 가능)
-  arrive_heading_deg: 180.0       # 도착 헤딩(도)
+  g_interval_sec: 0.00       # G 전송 주기(초). 0.05~0.20 권장
+  deadband_deg: 0.0            # 작은 회전 지령 무시
+  deadband_mm: 0.0            # 작은 전진 지령 무시
+  arrive_threshold_mm: 40.0     # 도착 거리(mm) - (BT 도착은 px 기준, G 보정은 mm/deg 기준으로도 병행 가능)
+  arrive_heading_deg: 360.0       # 도착 헤딩(도)
+  distance_scale: 0.95
   
   robots:
   - agent_id: 0
-    host: 192.168.0.44   # MONA #1 IP
+    host: 10.122.98.30   # MONA #1 IP
     port: 8080           # MONA #1 포트
   - agent_id: 1
-    host: 192.168.0.52   # MONA #2 IP
+    host: 10.122.98.217   # MONA #2 IP
     port: 8080           # MONA #2 포트
   - agent_id: 2
-    host: 192.168.0.59   # MONA #2 IP
+    host: 10.122.98.229   # MONA #2 IP
     port: 8080           # MONA #2 포트
+
+#  robots:
+#  - agent_id: 0
+#    host: 192.168.0.54   # MONA #1 IP
+#    port: 8080           # MONA #1 포트
+#  - agent_id: 1
+#    host: 192.168.0.53   # MONA #2 IP
+#    port: 8080           # MONA #2 포트
+#  - agent_id: 2
+#    host: 192.168.0.52   # MONA #2 IP
+#    port: 8080           # MONA #2 포트
 
 scenario: 
   environment: scenarios.features.mona
@@ -48,9 +62,9 @@ agents:
   quantity: 3
   locations:
     x_min: 0
-    x_max: 1300
+    x_max: 1340
     y_min: 0
-    y_max: 800
+    y_max: 740
     non_overlap_radius: 0 
   max_speed: 0.25  
   max_accel: 0.05
@@ -65,11 +79,11 @@ tasks:
   quantity: 0
   locations:
     x_min: 0
-    x_max: 1300
+    x_max: 1340
     y_min: 0
-    y_max: 800
+    y_max: 740
     non_overlap_radius: 0
-  threshold_done_by_arrival: 50.0
+  threshold_done_by_arrival: 40.0
   amounts:  # Added amounts range for tasks
     min: 6.0
     max: 60.0      
@@ -85,8 +99,8 @@ simulation:
   speed_up_factor: 0 # 0 mean max booster; 1 means normal; 10 means 10-times faster
   max_simulation_time: 0 # 0 means no limit
   agent_track_size: 400  
-  screen_width: 1300 
-  screen_height: 800 
+  screen_width: 1340 
+  screen_height: 740 
   gif_recording_fps: 0.05  
   task_visualisation_factor: 3  # visualization factor for tasks : 10 means converting 10 amount to 1 pixel
   profiling_mode: False
