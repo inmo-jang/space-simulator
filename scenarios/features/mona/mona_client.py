@@ -23,7 +23,6 @@ class MonaClient:
         deadband_mm: float = 5.0,
         reconnect_interval_sec: float = 2.0,
         g_interval_sec: float = 0.0,
-        arrive_threshold_mm: float = 0.0,
     ):
         self.host = host
         self.port = port
@@ -45,7 +44,6 @@ class MonaClient:
         self._g_interval = float(g_interval_sec)
         self._last_g_ts: float = 0.0
         self._last_click_target: Optional[Tuple[float, float]] = None
-        self.arrive_threshold_mm = float(arrive_threshold_mm)
 
     @property
     def is_connected(self) -> bool:
@@ -127,7 +125,7 @@ class MonaClient:
             a -= 2 * math.pi
         return a
 
-    def compute_g(self, curr_xy: Tuple[float, float], curr_heading_rad: float, target_xy: Tuple[float, float]) -> Tuple[float, float]:
+    def calculate_turn_and_distance(self, curr_xy: Tuple[float, float], curr_heading_rad: float, target_xy: Tuple[float, float]) -> Tuple[float, float]:
         """
         Returns (delta_deg, dist_mm) for the simulator's screen coordinate system.
         """
@@ -172,7 +170,7 @@ class MonaClient:
         curr_heading_rad: float,
         target_xy: Tuple[float, float],
     ) -> bool:
-        deg, mm = self.compute_g(curr_xy, curr_heading_rad, target_xy)
+        deg, mm = self.calculate_turn_and_distance(curr_xy, curr_heading_rad, target_xy)
         return self.send_g(deg, mm)
 
     def remember_click_target(self, target_xy: Tuple[float, float]):
@@ -183,18 +181,12 @@ class MonaClient:
         curr_xy: Tuple[float, float],
         curr_heading_rad: float,
     ):
-        """
-        If g_interval_sec > 0, re-send G to the last click target at that interval
-        until within arrive_threshold_mm.
-        """
         if self._g_interval <= 0.0 or self._last_click_target is None:
             return
         now = time.monotonic()
         if now - self._last_g_ts < self._g_interval:
             return
-        deg, mm = self.compute_g(curr_xy, curr_heading_rad, self._last_click_target)
-        if self.arrive_threshold_mm and mm <= self.arrive_threshold_mm:
-            return
+        deg, mm = self.calculate_turn_and_distance(curr_xy, curr_heading_rad, self._last_click_target)
         self.send_g(deg, mm)
     
     @classmethod
@@ -220,5 +212,4 @@ class MonaClient:
             deadband_mm=float(mona_cfg.get('deadband_mm', 5.0)),
             reconnect_interval_sec=float(mona_cfg.get('reconnect_interval_sec', 2.0)),
             g_interval_sec=float(mona_cfg.get('g_interval_sec', 0.0)),
-            arrive_threshold_mm=float(mona_cfg.get('arrive_threshold_mm', 0.0)),
         )
