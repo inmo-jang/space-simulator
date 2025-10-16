@@ -25,8 +25,6 @@ BTNodeList.CONDITION_NODES.extend(CUSTOM_CONDITION_NODES)
 from modules.utils import config
 mona_cfg = (config.get('mona') or {})
 G_INTERVAL_SEC = float(mona_cfg.get('g_interval_sec', 0.10))      # G 전송 주기(초)
-ARRIVE_MM      = float(mona_cfg.get('arrive_threshold_mm', 30.0)) # 도착 거리(mm)
-ARRIVE_DEG     = float(mona_cfg.get('arrive_heading_deg', 8.0))   # 도착 헤딩(도)
 target_arrive_threshold = config['tasks']['threshold_done_by_arrival']
 task_locations = config['tasks']['locations']
 sampling_freq = config['simulation']['sampling_freq']
@@ -58,86 +56,54 @@ class IsArrivedAtTarget(_IsArrivedAtTask):
     
 class MoveToTarget(_MoveToTask): 
     def __init__(self, name, agent):
-        super().__init__(name, agent) 
-        self._last_g_ts = 0.0  
+        super().__init__(name, agent)
+        self._last_g_ts = 0.0
 
-    def _update(self, agent, blackboard): 
-        # 1) 기반 동작(타깃 세팅/도착 판정)은 그대로 사용
-        base_status = super()._update(agent, blackboard, task_id_key='assigned_task_id')
+    def _update(self, agent, blackboard):
+        mona_connected = bool(
+            getattr(agent, "is_real_robot", False)
+            and getattr(agent, "_mona", None)
+            and agent._mona.is_connected
+        )
 
-        mona_connected = bool(agent.is_real_robot and agent._mona and agent._mona.is_connected)
+        # 1) SIM(미연결) → 기존 기반 동작(follow)만 수행하고 바로 반환
         if not mona_connected:
-            # 시뮬만 돌리는 경우엔 기존 동작 그대로
-            return base_status
+            return super()._update(agent, blackboard, task_id_key='assigned_task_id')
 
-        # 2) MONA 연결: 도착이면 성공 리턴
-        if base_status is Status.SUCCESS:
-            return Status.SUCCESS
+        # 2) MONA(연결) → 시뮬 물리 이동은 건너뛰고, 목표 갱신 + 주기적 G 전송
+        task_id = blackboard.get('assigned_task_id')
+        if task_id is not None and (0 <= int(task_id) < len(agent.tasks_info)):
+            task = agent.tasks_info[int(task_id)]
+            pos = task.position  # pygame.Vector2 또는 (x, y)
 
-        # 3) 주기적으로 G 전송 (controller.target 기준 폐루프 보정)
-        #interval = getattr(agent, '_g_interval', G_INTERVAL_SEC)
-        interval = G_INTERVAL_SEC
-        if agent.controller.has_target():
-            # 추가: 현재 목표 대비 오차 계산
-            #deg, mm = agent._compute_g_command(agent.controller.target)
-            t = agent.controller.target
-            deg, mm = agent._mona.compute_g(
-                (agent.position.x, agent.position.y),
-                float(agent.rotation),
-                (float(t[0]), float(t[1])),
-            )
+            # 컨트롤러 타깃을 매 틱 동기화 (실기/시뮬 모두 동일 기준 사용)
+            if hasattr(pos, "x"):
+                tx, ty = float(pos.x), float(pos.y)
+            else:
+                tx, ty = float(pos[0]), float(pos[1])
+            agent.controller.set_target((tx, ty))
 
-            # 추가: 도착 임계치 이내면 '전송하지 않음' (=멈춤)
-            # 180도면 각도는 무시되는 셈이니 mm만 체크해도 충분
-            if mm < ARRIVE_MM:
-                return Status.RUNNING
-
+            # 주기적으로 G 전송
+            interval = G_INTERVAL_SEC
             now = time.monotonic()
             if (now - self._last_g_ts) >= interval:
-                #agent._send_mona_g(agent.controller.target)
                 agent._mona.send_g_to(
                     (agent.position.x, agent.position.y),
                     float(agent.rotation),
-                    (float(t[0]), float(t[1])),
+                    (tx, ty),
                 )
                 self._last_g_ts = now
 
         return Status.RUNNING
 
+
+
 class ExecuteTask(_ExecuteTaskWhileFollowing): 
     def __init__(self, name, agent):
-        super().__init__(name, agent)  
-        self._last_g_ts = 0.0 
+        super().__init__(name, agent)   
 
     def _update(self, agent, blackboard): 
         result = super()._update(agent, blackboard, task_id_key='assigned_task_id')
-        
-        mona_connected = bool(agent.is_real_robot and agent._mona and agent._mona.is_connected)
-        if mona_connected and agent.controller.has_target():
-            # 추가: 도착 임계치 이내면 전송하지 않음
-            #deg, mm = agent._compute_g_command(agent.controller.target)
-            # 도착 임계치 이내면 전송하지 않음 (MonaClient 사용)
-            t = agent.controller.target
-            deg, mm = agent._mona.compute_g(
-                (agent.position.x, agent.position.y),
-                float(agent.rotation),
-                (float(t[0]), float(t[1])),
-            )
-            if mm < ARRIVE_MM:
-                return result
-
-            #interval = getattr(agent, '_g_interval', G_INTERVAL_SEC)
-            interval = G_INTERVAL_SEC
-            now = time.monotonic()
-            if (now - self._last_g_ts) >= interval:
-                #agent._send_mona_g(agent.controller.target)
-                agent._mona.send_g_to(
-                    (agent.position.x, agent.position.y),
-                    float(agent.rotation),
-                    (float(t[0]), float(t[1])),
-                )
-                self._last_g_ts = now
-
         return result
                 
 
