@@ -66,7 +66,7 @@ class Agent(BaseAgent):
         if self.is_real_robot and self._mona and self._mona.is_connected:
             # 클릭 타겟 기억(주기 재전송 옵션용)
             self._mona.remember_click_target((float(pos_vec2[0]), float(pos_vec2[1])))
-            # 즉시 1회 전송
+            #즉시 1회 전송
             self._mona.send_g_to(
                 (self.position.x, self.position.y),
                 float(self.rotation),
@@ -107,13 +107,19 @@ class Agent(BaseAgent):
         super().update()
 
     def draw(self, screen):
-        size = 10
-        angle = self.rotation
+        tri_r = 10      # 삼각형 "size" 그대로
+        circle_r = 40   # 반지름 40px(= 40mm; 1mm=1px)
 
-        # Calculate the triangle points based on the current position and angle
-        p1 = pygame.Vector2(self.position.x + size * math.cos(angle), self.position.y + size * math.sin(angle))
-        p2 = pygame.Vector2(self.position.x + size * math.cos(angle + 2.5), self.position.y + size * math.sin(angle + 2.5))
-        p3 = pygame.Vector2(self.position.x + size * math.cos(angle - 2.5), self.position.y + size * math.sin(angle - 2.5))
+        angle = self.rotation
+        cx, cy = float(self.position.x), float(self.position.y)
+
+        # 1) 원(지름 80mm) 그리기: 연한 회색 테두리
+        pygame.draw.circle(screen, (0, 0, 0), (int(cx), int(cy)), int(circle_r), width=4)
+
+        # 2) 기존 삼각형 그리기 (반지름 tri_r 원 위의 3점) — 원 안에 자연스럽게 들어감
+        p1 = pygame.Vector2(cx + tri_r * math.cos(angle),          cy + tri_r * math.sin(angle))
+        p2 = pygame.Vector2(cx + tri_r * math.cos(angle + 2.5),    cy + tri_r * math.sin(angle + 2.5))
+        p3 = pygame.Vector2(cx + tri_r * math.cos(angle - 2.5),    cy + tri_r * math.sin(angle - 2.5))
 
         self.update_color()
         pygame.draw.polygon(screen, self.color, [p1, p2, p3])
