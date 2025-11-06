@@ -2,11 +2,16 @@ from modules.base_env import BaseEnv
 from modules.utils import ResultSaver
 from scenarios.features.mona.task import generate_tasks
 from scenarios.features.mona.agent import generate_agents
+from scenarios.features.mona.mona_controller import Mona_comm
 import pygame
 
 class Env(BaseEnv):
     def __init__(self, config):
         super().__init__(config)
+
+        # MONA initialization + Communication setup (configuration, communication)
+        self.mona_cfg = config.get("mona", {"enabled": False, "robots": []})
+        self.mona_comm = Mona_comm(self.mona_cfg)  
 
         # Set `generate_tasks` function for dynamic task generation
         self.generate_tasks = generate_tasks
@@ -26,6 +31,10 @@ class Env(BaseEnv):
         
         # Initialize data recording
         self.data_records = []
+
+        # --- Mona_comm 주입 ---
+        for agent in self.agents:
+            agent.mona_comm = self.mona_comm
 
     def save_results(self):
         # Save gif
