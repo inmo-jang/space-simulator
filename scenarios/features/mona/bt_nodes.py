@@ -66,13 +66,6 @@ class IsArrivedAtTarget(_IsArrivedAtTask):
             if not self._arrived_latched:
                 if hasattr(agent, "controller"):
                     agent.controller.clear_target()
-
-                mona = getattr(agent, "_mona", None)
-                if bool(getattr(agent, "is_real_robot", False) and mona and mona.is_connected):
-                    try:
-                        mona.cancel_all(send_stop=True)   # ← 여기서만 STOP 1회
-                    except Exception:
-                        pass
                 self._arrived_latched = True
         else:
             # 실패가 되면 래치 해제 → 다음 번 성공 때만 다시 1회 실행
@@ -121,7 +114,6 @@ class MoveToTarget(_MoveToTask):
                 need_preempt = True
 
         if need_preempt:
-            # 1) 모나 즉시 정지/큐 비움
             try:
                 mona.cancel_all(send_stop=True)
             except Exception:
@@ -141,7 +133,10 @@ class MoveToTarget(_MoveToTask):
                 float(agent.rotation),
                 self._last_target,
             )
-            mona.try_flush_queue()
+            # mona.try_flush_queue()   # 타깃이 있을 때만 큐 플러시
+        else:
+            # 타깃이 사라졌다면(작업 완료/제거) 남아있던 큐 G는 폐기
+            mona.cancel_all(send_stop=False)
 
         return Status.RUNNING
 
@@ -163,12 +158,6 @@ class ExecuteTask(_ExecuteTaskWhileFollowing):
             self._in_work = True
             if hasattr(agent, "controller"):
                 agent.controller.clear_target()
-            mona = getattr(agent, "_mona", None)
-            if bool(agent.is_real_robot and mona and mona.is_connected):
-                try:
-                    mona.cancel_all(send_stop=True)
-                except Exception:
-                    pass
 
         if status is not Status.RUNNING:
             # 종료/중단 시 플래그 리셋
