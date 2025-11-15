@@ -16,7 +16,6 @@ class MonaClient:
         port: int,
         timeout: float = 2.0,
         px_to_mm: float = 1.0,
-        deadband_deg: float = 0.0,
         deadband_mm: float = 0.0,
         reconnect_interval_sec: float = 2.0,
         g_interval_sec: float = 0.0,
@@ -34,7 +33,6 @@ class MonaClient:
         # motion / gating
         self.px_to_mm = float(px_to_mm)
         self.distance_scale = float(distance_scale)
-        self.deadband_deg = float(deadband_deg)
         self.deadband_mm = float(deadband_mm)
         self.arrive_threshold_mm = float(arrive_threshold_mm)
 
@@ -48,7 +46,6 @@ class MonaClient:
 
         # state
         self._busy = False                 # True after send_g(), False on "OK G" or "INFO: Avoidance complete"
-        self._queued: Optional[Tuple[float, float]] = None   # latest queued (deg, mm)
         self._last_click_target: Optional[Tuple[float, float]] = None
 
         # rx buffer
@@ -171,19 +168,17 @@ class MonaClient:
     # ---------- Public API ----------
     def send_g(self, delta_deg: float, dist_mm: float) -> bool:
         # deadband: ignore tiny corrections near target
-        if abs(delta_deg) < self.deadband_deg and dist_mm < self.deadband_mm:
+        if dist_mm <= (self.deadband_mm):  # 5mm 마진
             return False
 
         now = time.monotonic()
         # interval gate (optional)
         if self._g_interval > 0.0 and (now - self._last_g_ts) < self._g_interval:
-            # throttle by queuing latest command
-            self._queued = (float(delta_deg), float(dist_mm))
             return False
 
         if self._busy:
             # do not interrupt ongoing motion; keep only the latest
-            self._queued = (float(delta_deg), float(dist_mm))
+            # self._queued = (float(delta_deg), float(dist_mm))
             return False
 
         payload = f"G {delta_deg:.3f} {dist_mm:.1f}\n"
@@ -195,7 +190,7 @@ class MonaClient:
         return ok
 
     def try_flush_queue(self):
-        """Try to send queued G if we're not busy and interval elapsed."""
+        '''
         if self._queued is None:
             return
         if self._busy:
@@ -206,6 +201,9 @@ class MonaClient:
         deg, mm = self._queued
         self._queued = None
         self.send_g(deg, mm)
+        '''
+        return False
+        
 
     def send_g_to(self, curr_xy: Tuple[float, float], curr_heading_rad: float, target_xy: Tuple[float, float]) -> bool:
         deg, mm = self.compute_g(curr_xy, curr_heading_rad, target_xy)
@@ -222,7 +220,6 @@ class MonaClient:
         
     def cancel_all(self, send_stop: bool = True):
         """Drop any queued G and mark as not busy. Optionally send STOP to MONA."""
-        self._queued = None
         self._busy = False
         if send_stop:
             try:
@@ -269,7 +266,6 @@ class MonaClient:
             host, port,
             timeout=float(mona_cfg.get('timeout_sec', 2.0)),
             px_to_mm=float(mona_cfg.get('px_to_mm', 1.0)),
-            deadband_deg=float(mona_cfg.get('deadband_deg', 0.0)),
             deadband_mm=float(mona_cfg.get('deadband_mm', 0.0)),
             reconnect_interval_sec=float(mona_cfg.get('reconnect_interval_sec', 2.0)),
             g_interval_sec=float(mona_cfg.get('g_interval_sec', 0.0)),
