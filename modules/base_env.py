@@ -100,15 +100,20 @@ class BaseEnv:
             self.last_frame_time = self.simulation_time
             print("Recording started...") 
 
-
-
-    async def step(self):
-        # Main simulation loop logic
+    async def actions(self):
         for agent in self.agents:
             await agent.run_tree()
+    
+    async def update(self):
+        for agent in self.agents:
             agent.update()
 
         self.update_simulation()
+
+    async def step(self):
+        # Main simulation loop logic
+        await self.actions()
+        await self.update()
 
     def update_simulation(self):
         # Status retrieval
@@ -267,4 +272,4 @@ class BaseEnv:
         if self.simulation_time - self.last_frame_time > 1.0/self.gif_recording_fps: # Capture frame if 0.5 seconds elapsed
             frame = pygame.surfarray.array3d(self.screen)
             self.frames.append(frame)            
-            self.last_frame_time = self.simulation_time                    
+            self.last_frame_time = self.simulation_time

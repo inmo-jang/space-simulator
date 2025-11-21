@@ -1,0 +1,96 @@
+scenario: 
+  environment: scenarios.simple
+
+decision_making:
+  plugin: plugins.marl.mappo.decision_maker.DecisionMaker
+  MAPPO:  
+    device: cpu  # Use "cuda" if GPU is available
+    clip_param: 0.2  # PPO clipping coefficient, typically in the range of 0.1–0.3
+    ppo_epoch: 5  # Number of epochs per batch update, usually 3–10
+    num_mini_batch: 4  # Number of mini-batches for advantage normalization and batch update, recommended 4–8
+    value_loss_coef: 0.5  # Weight of critic loss, generally set between 0.5 and 1.0
+    entropy_coef: 0.015  # Coefficient for exploration encouragement, recommended 0.01–0.02
+    max_grad_norm: 0.5  # Gradient clipping threshold, typically set between 0.5 and 1.0
+    lr: 0.0003  # Learning rate, typically between 0.0001 and 0.0007 (for Adam optimizer)
+    critic_lr: 0.00025  # Learning rate for critic, usually the same as lr
+    epsilon: 0.2  # PPO clipping range, commonly set between 0.1 and 0.2
+    weight_decay: 0  # L2 regularization weight, generally 0 (if used, set between 1e-5 and 1e-4)
+    lr_decay_step: 100000  # Learning rate decay step, usually 1e5–1e6, 0 means no decay
+    hidden_size: 64  # Number of hidden units in the neural network, recommended 64–128
+    layer_N: 3  # Number of MLP layers, usually 2–3
+    recurrent_N: 1  # Number of recurrent layers in RNN, typically 1–2
+    gamma: 0.99  # Discount factor, commonly set between 0.95 and 0.99
+    data_chunk_length: 10  # Sequence length for RNN, usually between 10 and 20
+    episode_length: 100  # Episode length, depends on the environment
+    mode: eval
+    save_path: scenarios/simple/rl.pt  # Path to save the trained model
+    load_path: scenarios/simple/rl.pt  # Path to load the trained model
+    plot: False
+    wandb: False
+
+agents:
+  behavior_tree_xml: no_reactive_bt.xml 
+  quantity: 10
+  locations:
+    x_min: 0
+    x_max: 1400
+    y_min: 0
+    y_max: 1000
+    non_overlap_radius: 0 
+  max_speed: 0.25  
+  max_accel: 0.05
+  max_angular_speed: 0.25
+  target_approaching_radius: 50
+  work_rate: 1  # work rate for each agent (per 1.0/simulation.sampling_freq)
+  communication_radius: 0 # 0 represents "global", meaning that each agent can access to the information of all the other agents
+  situation_awareness_radius: 0 # 0 represents "global", meaning that each agent can access to the information of all the tasks
+  random_exploration_duration: 1000.0 # sec
+  nearby_agent_max_num: 10
+  nearby_task_max_num: 10
+
+
+tasks:
+  quantity: 100
+  locations:
+    x_min: 0
+    x_max: 1400
+    y_min: 0
+    y_max: 1000
+    non_overlap_radius: 0
+  threshold_done_by_arrival: 10.0
+  amounts:  # Added amounts range for tasks
+    min: 6.0
+    max: 60.0      
+  dynamic_task_generation:
+    enabled: False
+    interval_seconds: 2000
+    max_generations: 3
+    tasks_per_generation: 25
+
+simulation:
+  sampling_freq: 1.0 
+  speed_up_factor: 0 # 0 mean max booster; 1 means normal; 10 means 10-times faster
+  max_simulation_time: 0 # 0 means no limit
+  agent_track_size: 400  
+  screen_width: 1400 
+  screen_height: 1000 
+  gif_recording_fps: 0.05  
+  task_visualisation_factor: 3  # visualization factor for tasks : 10 means converting 10 amount to 1 pixel
+  profiling_mode: False
+  rendering_mode: Terminal  # Options: Screen; Terminal; None
+  rendering_options: # Only works if `rendering_mode` is `Screen`
+    agent_tail: True
+    agent_communication_topology: True
+    agent_situation_awareness_circle: False
+    agent_id: True
+    agent_work_done: True
+    agent_assigned_task_id: True
+    agent_path_to_assigned_tasks: True
+    task_id: False
+  saving_options:
+    output_folder: output
+    with_date_subfolder: True
+    save_gif: False  # Only works if `rendering_mode` is `Screen`
+    save_timewise_result_csv: True    
+    save_agentwise_result_csv: True
+    save_config_yaml: True

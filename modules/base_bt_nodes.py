@@ -245,13 +245,6 @@ class SyncCondition(Node):
     def set_expanded(self):
         self.is_expanded = True
 
-# Load additional configuration and import decision-making class dynamically
-import importlib
-from modules.utils import config
-decision_making_module_path = config['decision_making']['plugin']
-module_path, class_name = decision_making_module_path.rsplit('.', 1)
-decision_making_module = importlib.import_module(module_path)
-decision_making_class = getattr(decision_making_module, class_name)
 
 # Local Sensing node
 class LocalSensingNode(SyncAction):
@@ -268,10 +261,9 @@ class LocalSensingNode(SyncAction):
 class DecisionMakingNode(SyncAction):
     def __init__(self, name, agent):
         super().__init__(name, self._decide)
-        self.decision_maker = decision_making_class(agent)
 
     def _decide(self, agent, blackboard):
-        assigned_task_id = self.decision_maker.decide(blackboard)      
+        assigned_task_id = agent.decision_maker.decide(blackboard)      
         agent.set_assigned_task_id(assigned_task_id)  
         blackboard['assigned_task_id'] = assigned_task_id
         if assigned_task_id is None:            

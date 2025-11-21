@@ -10,3 +10,12 @@ monte_carlo_analysis/
 
 # Ignore MacOS specific files
 .DS_Store
+
+# Ignore saved weight files
+*.pt
+
+# Ignore log specific files
+wandb/*
+
+# Ignore vscode relative files
+.vscode/*
