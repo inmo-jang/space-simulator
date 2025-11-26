@@ -1,7 +1,7 @@
 // MONA_ESPNow_Bridge.ino  (ESP32 / Arduino Core 3.3.2, IDF 5.x)
 // - TCP(한 줄 JSON) ←→ selfMessageDoc
 // - ESP-NOW 브로드캐스트: [sender_id_len][sender_id][json_bytes]
-// - ESP-NOW 수신: 위 포맷 파싱 → receivedMap 업데이트
+// - ESP-NOW 수신: 위 포맷 파싱 → receivedJSON_MAP 업데이트
 // - TCP 모니터 출력: {file_name, self_message, received_messages}\n (다중 클라이언트 허용)
 // - Serial Monitor 보기 좋은 출력(요청 포맷)
 //
@@ -22,13 +22,19 @@ const char* SSID       = "SSID";
 const char* PASSWORD   = "PW";
 const String SELF_ID   = "A";         // 보드 고유 ID (예: "A","B"...)
 const uint16_t SERVER_PORT = 8080;    // 보드 TCP 서버 포트
-const uint32_t BROADCAST_INTERVAL_MS = 2000;
+
+const size_t JSON_SIZE = 2048;
+const uint32_t Broadcast_TX_MS = 20; // 송신 0.02초
+const uint32_t Peer_LinkDrop_MS = 400;  // 이웃 연결 끊김 시간 판단 0.4초
 // =========================
 
 WiFiServer server(SERVER_PORT);
 std::vector<WiFiClient> clients;                 // 다중 클라이언트 허용
-DynamicJsonDocument selfMessageDoc(512);         // PC(시뮬레이터) → set_message()로 들어온 JSON 저장
-std::map<String, DynamicJsonDocument*> receivedMap;  // 이웃 보드별 최신 JSON (포인터로 보관)
+
+// [이중 메모리 구조]
+DynamicJsonDocument selfMessageDoc(JSON_SIZE);           // JSON 메모리 : PC(시뮬레이터) → set_message()로 들어온 JSON 저장
+std::map<String, DynamicJsonDocument*> receivedJSON_MAP; // 이웃 보드별 최신 JSON (포인터로 보관) - Stable Buffer
+std::map<String, unsigned long> CommRecvTime_MAP;        // ESP-NOW Broadcast 수신시각
 
 unsigned long lastBroadcast = 0;
 
@@ -36,21 +42,31 @@ unsigned long lastBroadcast = 0;
 bool dirtySelf = false;
 bool dirtyNeighbors = false;
 
-// ---------- 이웃 JSON upsert ----------
-bool upsertReceivedJson(const String& senderID, const char* jsonBuf, size_t jsonLen) {
-  DynamicJsonDocument* doc = new DynamicJsonDocument(512);
+// ---------- Broadcast 메세지 최신 상태 유지 ----------
+// 1. ESP-NOW 수신 메세지 JSON 변환 (데이터 깨지면, err 반환 및 메모리 삭제)
+// 2. receivedJSON_MAP 관리 -> 기존 ID면 옛날 데이터 지우고, 받은 데이터로 덮어쓰기 / 아니면 목록 새로 추가
+// 3. CommRecvTime_MAP 관리 -> 수신한 시각 확인 -> sendMonitorToClients 함수 확인하여 통신 연결 판단 로직
+
+bool update_Broadcast_recv_JSON_MAP(const String& senderID, const char* jsonBuf, size_t jsonLen) {
+  DynamicJsonDocument* doc = new DynamicJsonDocument(JSON_SIZE);
   DeserializationError err = deserializeJson(*doc, jsonBuf, jsonLen);
   if (err) {
     delete doc;
     return false;
   }
-  auto it = receivedMap.find(senderID);
-  if (it != receivedMap.end()) {
+  
+  // 1. 데이터 갱신 (덮어쓰기)
+  auto it = receivedJSON_MAP.find(senderID);
+  if (it != receivedJSON_MAP.end()) {
     delete it->second;
     it->second = doc;
   } else {
-    receivedMap[senderID] = doc;
+    receivedJSON_MAP[senderID] = doc;
   }
+  
+  // 2. 수신 시각 갱신
+  CommRecvTime_MAP[senderID] = millis();
+  
   return true;
 }
 
@@ -69,10 +85,10 @@ void printMonitorToSerial() {
   Serial.println();
   Serial.println("---- Broadcast 수신 메세지 ---- ");
 
-  if (receivedMap.empty()) {
+  if (receivedJSON_MAP.empty()) {
     Serial.println("(수신된 이웃 메시지 없음)");
   } else {
-    for (auto const& kv : receivedMap) {
+    for (auto const& kv : receivedJSON_MAP) {
       const String& neighborID = kv.first;
       DynamicJsonDocument* doc = kv.second;
 
@@ -113,8 +129,8 @@ void onEspNowRecv(const esp_now_recv_info* info, const uint8_t* incoming, int le
   // JSON payload (NUL 종결 가정 없음, 길이 기반 파싱)
   const char* jsonPtr = (const char*)(&incoming[1 + idLen]);
 
-  if (upsertReceivedJson(senderID, jsonPtr, jsonLen)) {
-    Serial.printf("[ESP-NOW RX] from %s, %d bytes\n", senderID.c_str(), jsonLen);
+  if (update_Broadcast_recv_JSON_MAP(senderID, jsonPtr, jsonLen)) {
+    // Serial.printf("[ESP-NOW RX] from %s, %d bytes\n", senderID.c_str(), jsonLen);
     dirtyNeighbors = true;
   } else {
     Serial.println("[ESP-NOW RX] JSON parse failed");
@@ -123,7 +139,7 @@ void onEspNowRecv(const esp_now_recv_info* info, const uint8_t* incoming, int le
 
 // ---------- ESP-NOW 브로드캐스트 ----------
 void broadcastSelfMessageIfDue() {
-  if (millis() - lastBroadcast < BROADCAST_INTERVAL_MS) return;
+  if (millis() - lastBroadcast < Broadcast_TX_MS) return;
   lastBroadcast = millis();
 
   if (selfMessageDoc.isNull()) return; // self_message 없으면 스킵
@@ -139,7 +155,7 @@ void broadcastSelfMessageIfDue() {
   }
 
   // self_message 직렬화 (NUL 미포함)
-  char jsonBuf[512];
+  char jsonBuf[JSON_SIZE];
   size_t jsonLen = serializeJson(selfMessageDoc, jsonBuf, sizeof(jsonBuf));
 
   uint8_t idLen = SELF_ID.length();
@@ -152,7 +168,7 @@ void broadcastSelfMessageIfDue() {
 
   esp_err_t rc = esp_now_send(bcast, pkt, total);
   if (rc == ESP_OK) {
-    Serial.printf("[ESP-NOW TX] %u bytes\n", (unsigned)total);
+    // Serial.printf("[ESP-NOW TX] %u bytes\n", (unsigned)total);
   } else {
     Serial.printf("[ESP-NOW TX] send failed: %d\n", (int)rc);
   }
@@ -199,7 +215,7 @@ void readFromClients() {
 
       DeserializationError err = deserializeJson(selfMessageDoc, line);
       if (!err) {
-        Serial.printf("[TCP RX] self_message updated (%u bytes)\n", (unsigned)line.length());
+        // Serial.printf("[TCP RX] self_message updated (%u bytes)\n", (unsigned)line.length());
         dirtySelf = true;
       } else {
         Serial.println("[TCP RX] JSON parse failed");
@@ -210,7 +226,8 @@ void readFromClients() {
 
 // ---------- TCP: 모니터 JSON(self + neighbors) 송신 ----------
 void sendMonitorToClients() {
-  DynamicJsonDocument monitor(1024);
+  DynamicJsonDocument monitor(JSON_SIZE*4); // 전체 패킷용 큰 버퍼
+  unsigned long now = millis();
 
   if (!selfMessageDoc.isNull()) {
     String ag = selfMessageDoc["agent_id"] | String("UNKNOWN");
@@ -223,10 +240,17 @@ void sendMonitorToClients() {
   }
 
   JsonObject rx = monitor.createNestedObject("received_messages");
-  for (auto const &kv : receivedMap) {
-    if (kv.second) {
-      rx[kv.first] = kv.second->as<JsonObject>();
+  for (auto const &kv : receivedJSON_MAP) {
+    String nid = kv.first;
+    unsigned long lastSeen = CommRecvTime_MAP[nid];
+
+    // CommRecvTime_MAP 이내에 수신된 데이터만 포함
+    if (now - lastSeen <= Peer_LinkDrop_MS) {
+      if (kv.second) {
+        rx[nid] = kv.second->as<JsonObject>();
+      }
     }
+    // CommRecvTime_MAP 지난 데이터는 rx에 넣지 않음 -> PC는 "끊김"으로 인식
   }
 
   String out;
@@ -278,7 +302,7 @@ void loop() {
   pruneClients();
   readFromClients();            // PC→보드: self_message 갱신
   broadcastSelfMessageIfDue();  // 보드→이웃: ESP-NOW 브로드캐스트
-  sendMonitorToClients();       // 보드→PC: 모니터 JSON 스트리밍
+  sendMonitorToClients();       // 보드→PC: 모니터 JSON 스트리밍 (여기서 워치독 체크 수행)
 
   // 새 데이터가 들어왔을 때만 출력하도록함
   if (dirtySelf || dirtyNeighbors) {
@@ -287,5 +311,5 @@ void loop() {
     dirtyNeighbors = false;
   }
 
-  delay(100);
+  delay(10); // 루프 지연 최소화
 }

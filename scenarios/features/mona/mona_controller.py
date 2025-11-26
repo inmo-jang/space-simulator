@@ -1,7 +1,8 @@
-# scenarios/features/mona/mona_client.py
+# scenarios/features/mona/mona_controller.py
 # -*- coding: utf-8 -*-
 """
-Mona_comm: Space-simulator <-> MONA(ESP32) TCP 브리지 (최소 구현)
+Mona_comm: Space-simulator <-> MONA(ESP32) TCP 브리지
+- 역할: 통신 관리 + 데이터 전처리(JSON -> Space 포맷 변환) 담당
 - set_message(agent): agent.message_to_share(dict) 를 대상 MONA 보드로 JSON 한 줄 전송
 - get_message(agent_id): 대상 MONA 보드로부터 모니터 JSON 한 줄을 읽어 dict로 반환(None 가능)
 - close(): 열린 소켓 정리
@@ -15,12 +16,12 @@ Mona_comm: Space-simulator <-> MONA(ESP32) TCP 브리지 (최소 구현)
 import json
 import socket
 import time
+import errno
+import select
 from typing import Dict, Tuple, Optional
-from threading import Thread, Lock  # 디버그 API/캐시용
+from threading import Thread, Lock # confirm.py 와 연동
 
 _NEWLINE = b"\n"
-_DEFAULT_TIMEOUT = 0.2  # keep_connection에 가까운 짧은 대기
-
 
 class Mona_comm:
     def __init__(self, mona_cfg: Dict):
@@ -47,16 +48,8 @@ class Mona_comm:
         self._socks: Dict[int, socket.socket] = {}
         self._buffers: Dict[int, bytearray] = {}
 
-        # --------------------------------------------------------
-        # 최근 송/수신 캐시 + 디버그 API(127.0.0.1)
-        #   - confirm.py가 space-simulator가 실제 "보낸/받은" 내용을 조회할 수 있도록
-        #   - mona.yaml 에서:
-        #       mona:
-        #         debug_api:
-        #           enabled: true
-        #           host: 127.0.0.1
-        #           port: 8765
-        # --------------------------------------------------------
+        # confirm.py가 내용 조회 용도 (debug용)
+        self._pending_socks: Dict[int, socket.socket] = {}
         self._last_set: Dict[int, dict] = {}
         self._last_get: Dict[int, dict] = {}
         self._cache_lock = Lock()
@@ -70,152 +63,172 @@ class Mona_comm:
             self._dbg_thread = Thread(target=self._run_debug_server, daemon=True)
             self._dbg_thread.start()
 
-    # ---- 내부 유틸 ----
-    def _ensure_conn(self, agent_id: int) -> Optional[socket.socket]:
+    # --- 데이터 전처리 함수---
+    def _convert_data_JSON_to_Space(self, msg_dict):
+        """ 
+        MONA(JSON) 데이터를 Space 시뮬레이터 포맷으로 변환
+        1. Key: string '0' -> int 0
+        2. Value: None -> 0 (기본값)
         """
-        주어진 agent_id 보드와 TCP 연결 여부 확인
-        -> 연결 X = 재연결함.
-        -> 연결 성공 시 소켓 반환, 실패 시 None.
-        """
+        if not isinstance(msg_dict, dict):
+            return msg_dict
+        
+        clean_dict = {}
+        try:
+            for k, v in msg_dict.items():
+                key = int(k) # Key를 정수형으로 변환
+                value = v if v is not None else 0 # None 방지
+                clean_dict[key] = value
+            return clean_dict
+        except (ValueError, TypeError):
+            return msg_dict
+    
+    def _recv_comm_Transform(self, recv_mona_comm_data: dict) -> dict:
+        """ 수신된 전체 모니터 데이터 내부를 순회하며 정제 """
+        if not recv_mona_comm_data:
+            return recv_mona_comm_data
+            
+        recv_msgs = recv_mona_comm_data.get("received_messages", {})
+        if not recv_msgs:
+            return recv_mona_comm_data
+            
+        # 이웃 데이터 하나하나를 꺼내서 변환
+        for neighbor_id, payload in recv_msgs.items():
+            if isinstance(payload, dict):
+                # 변환이 필요한 주요 필드들을 처리
+                payload['winning_agents'] = self._convert_data_JSON_to_Space(payload.get('winning_agents', {}))
+                payload['winning_bids'] = self._convert_data_JSON_to_Space(payload.get('winning_bids', {}))
+                payload['message_received_time_stamp'] = self._convert_data_JSON_to_Space(payload.get('message_received_time_stamp', {}))
+        
+        return recv_mona_comm_data
+    # -------------------------------------------
+
+    def _manage_mona_connection(self, agent_id: int) -> Optional[socket.socket]:
         if agent_id not in self.robot_map or not self.enabled:
             return None
 
-        # 이미 연결되어 있으면 반환
-        s = self._socks.get(agent_id)
-        if s is not None:
+        # 지속적인 연결되는지 확인
+        if agent_id in self._socks:
+            s = self._socks[agent_id]
             try:
-                # 간단한 연결 검증: keep_connection recv(0 bytes)
-                s.settimeout(0.0)
-                s.recv(0)
-            except BlockingIOError:
-                pass
+                s.setblocking(False) # non-blocking으로 수신여부 기다리지 않고 다음코드 실행
+                data = s.recv(1, socket.MSG_PEEK)
+                if data == b'': raise OSError("Connection closed")
+                return s
+            except BlockingIOError: return s
             except Exception:
-                # 죽은 소켓이면 정리 후 재연결
-                try:
-                    s.close()
-                except Exception:
-                    pass
-                s = None
+                try: s.close()
+                except: pass
                 self._socks.pop(agent_id, None)
+                if agent_id in self._buffers: del self._buffers[agent_id]
 
-        if s is None:
-            host, port = self.robot_map[agent_id]
-            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            s.settimeout(_DEFAULT_TIMEOUT)
+        # 연결 시도 중인 mona 확인
+        if agent_id in self._pending_socks:
+            s = self._pending_socks[agent_id]
             try:
-                s.connect((host, port))
+                _, writable, in_error = select.select([], [s], [s], 0)
+                if s in writable:
+                    err = s.getsockopt(socket.SOL_SOCKET, socket.SO_ERROR)
+                    if err == 0:
+                        s.setblocking(False)
+                        self._socks[agent_id] = s
+                        self._buffers[agent_id] = bytearray()
+                        del self._pending_socks[agent_id]
+                        return s
+                    else: raise OSError(err)
+                elif s in in_error: raise OSError("Socket error")
+                else: return None
             except Exception:
-                # 연결 실패 시 조용히 None
-                try:
-                    s.close()
-                except Exception:
-                    pass
+                try: s.close()
+                except: pass
+                del self._pending_socks[agent_id]
                 return None
-            # keep_connection 수신을 위해 timeout 짧게
-            s.settimeout(_DEFAULT_TIMEOUT)
-            self._socks[agent_id] = s
-            self._buffers.setdefault(agent_id, bytearray())
-        return s
+
+        host, port = self.robot_map[agent_id]
+        # mona와의 연결 새로 시도
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.setblocking(False)
+            err = s.connect_ex((host, port))
+            if err == 0:
+                self._socks[agent_id] = s
+                self._buffers[agent_id] = bytearray()
+                return s
+            elif err == errno.EINPROGRESS or err == errno.EWOULDBLOCK or err == 10035:
+                self._pending_socks[agent_id] = s
+                return None
+            else:
+                s.close()
+                return None
+        except Exception:
+            return None
 
     def _transform_Json_to_dict(self, agent_id: int) -> Optional[dict]:
-        """
-        개행 단위로 한 줄 JSON을 읽어서 dict로 반환.
-        새 데이터가 없거나 파싱 실패하면 None.
-        """
-        s = self._ensure_conn(agent_id)
-        if s is None:
-            return None
+        s = self._manage_mona_connection(agent_id)
+        if s is None: return None
 
         buf = self._buffers[agent_id]
         # 수신 시도
         try:
             chunk = s.recv(4096)
-            if chunk:
-                buf.extend(chunk)
-        except socket.timeout:
-            pass
-        except BlockingIOError:
-            pass
+            if chunk: buf.extend(chunk)
+            else:
+                try: s.close()
+                except: pass
+                self._socks.pop(agent_id, None)
+                return None
+        except BlockingIOError: pass
         except Exception:
-            # 소켓 에러 -> 연결 종료
-            try:
-                s.close()
-            except Exception:
-                pass
+            try: s.close()
+            except: pass
             self._socks.pop(agent_id, None)
             return None
 
         # 개행 기준으로 한 줄 파싱
         nl_idx = buf.find(_NEWLINE)
-        if nl_idx < 0:
-            return None
+        if nl_idx < 0: return None
 
         line = bytes(buf[:nl_idx]).decode("utf-8", "ignore").strip()
         # 버퍼에서 제거
         del buf[:nl_idx + 1]
 
-        if not line:
-            return None
-        try:
-            return json.loads(line)
-        except Exception:
-            return None
+        if not line: return None
+        try: return json.loads(line)
+        except: return None
 
     # ---- 공개 API ----
     def set_message(self, agent) -> None:
-        """
-        Agent.update()에서 호출.
-        - agent.agent_id (int)
-        - agent.message_to_share (dict)  # 없거나 비어 있으면 전송 생략
-        """
-        if not self.enabled:
-            return
-        try:
-            agent_id = int(getattr(agent, "agent_id"))
-        except Exception:
-            return
-
-        s = self._ensure_conn(agent_id)
-        if s is None:
-            return
-        """
-        dict -> JSON 한줄로 만들어 개행하여 UTF-8 인코딩을 통해 모든 바이트 끝까지 보냄(sendall)
-        """
+        if not self.enabled: return
+        try: agent_id = int(getattr(agent, "agent_id"))
+        except: return
+        s = self._manage_mona_connection(agent_id)
+        if s is None: return
         msg = getattr(agent, "message_to_share", None)
-        if not isinstance(msg, dict) or not msg:
-            return
-
-        # JSON 한 줄로 전송
+        if not isinstance(msg, dict) or not msg: return
         try:
             line = (json.dumps(msg, ensure_ascii=False) + "\n").encode("utf-8")
             s.sendall(line)
-            # 보낸 원본을 캐시에 기록 (confirm.py 위함)
-            with self._cache_lock:
-                self._last_set[agent_id] = msg
+            with self._cache_lock: self._last_set[agent_id] = msg
+        except BlockingIOError: pass
         except Exception:
-            # 전송 실패 시 연결을 끊고 다음 틱에서 재시도
-            try:
-                s.close()
-            except Exception:
-                pass
+            try: s.close()
+            except: pass
             self._socks.pop(agent_id, None)
 
     def get_message(self, agent_id: int) -> Optional[dict]:
         """
-        GatherLocalInfo(local_message_receive)에서 호출.
-        - 대상 보드로부터 최신 '모니터 JSON 한 줄'을 읽어 dict로 반환.
-        - 새 데이터가 없으면 None.
+        데이터를 받아서 _recv_comm_Transform로 전처리 후 리턴
         """
-        if not self.enabled:
-            return None
-        try:
-            agent_id = int(agent_id)
-        except Exception:
-            return None
+        if not self.enabled: return None
+        try: agent_id = int(agent_id)
+        except: return None
 
         parsed = self._transform_Json_to_dict(agent_id)
+        
         if parsed is not None:
-            # 받은 최종본을 캐시에 기록 (confrim.py 위함)
+            # ---데이터 전처리 과정---
+            parsed = self._recv_comm_Transform(parsed)
+            
             with self._cache_lock:
                 self._last_get[agent_id] = parsed
         return parsed
@@ -223,11 +236,13 @@ class Mona_comm:
     def close(self) -> None:
         """열린 소켓 정리(프로세스 종료 시 호출 권장)."""
         for k, s in list(self._socks.items()):
-            try:
-                s.close()
-            except Exception:
-                pass
+            try: s.close()
+            except: pass
             self._socks.pop(k, None)
+        for k, s in list(self._pending_socks.items()):
+            try: s.close()
+            except: pass
+            self._pending_socks.pop(k, None)
         self._buffers.clear()
 
     # --------------------------------------------------------

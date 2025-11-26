@@ -65,16 +65,25 @@ class Agent(BaseAgent):
         """
         now = time.time()
         peer_ids = set()
+        self.reset_messages_received() # 과거 messages_received data 제거
 
         # 1) 실제 수신 시도 (있으면 peer_ids 채움)
         mc = getattr(self, "mona_comm", None)
         monitor = mc.get_message(self.agent_id) if mc is not None else None
         if isinstance(monitor, dict):
             recv = monitor.get("received_messages") or {}
-            for k, v in recv.items():
+            for k, v in recv.items(): 
                 aid = None
                 if isinstance(v, dict) and "agent_id" in v:
                     aid = v.get("agent_id")
+                    
+                    # mona_controller의 변환된 Space용 data 사용
+                    # why? MONA에서 주는 data와 Space 사용 data 형식이 서로 다르기 때문
+                    converted_msg = v
+                    self.receive_message(converted_msg) 
+                    
+                    # [log]
+                    # print(f"🔴 [RX] Agent {self.agent_id}가 이웃에게서 데이터 수신: {converted_msg}")
                 else:
                     aid = k
                 try:
@@ -109,11 +118,6 @@ class Agent(BaseAgent):
             self.communication_radius = min(observed, cfg_cap) if cfg_cap > 0 else observed
         else:
             self.communication_radius = 0
-
-        # BT 노드의 협업 결정에서 messages_received 입력으로 사용하므로 유지
-        self.reset_messages_received()
-        for other in self.agents_nearby:
-            self.receive_message(other.message_to_share)
 
         return self.agents_nearby
 
