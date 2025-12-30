@@ -38,12 +38,23 @@ The official documentation of the SPACE simulator is available at [http://space-
     cd space-simulator
     ```
 
-2. Install the required dependencies:
+
+
+2. Create a virtual environment:
+    ```sh
+    python -m venv .venv
+    ```
+
+3. Activate virtual environment:
+    ```sh
+    source .venv/bin/activate
+    ```
+4. Install the required dependencies:
     ```sh
     pip install -r requirements.txt
     ```
 
-3. Run the simulator:
+5. Run the simulator:
     ```sh
     python main.py
     ```
