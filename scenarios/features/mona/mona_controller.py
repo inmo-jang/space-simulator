@@ -129,10 +129,8 @@ class MonaComm:
             latest = parsed
         
         if latest is not None:
-            latest = self._transform_received_data(latest)
             with self._cache_lock:
                 self._last_get[agent_id] = latest
-        
         return latest
 
     def close(self) -> None:
@@ -299,44 +297,6 @@ class MonaComm:
             return json.loads(line)
         except json.JSONDecodeError:
             return None
-
-    # ==================== Data Transformation ====================
-
-    def _transform_received_data(self, data: dict) -> dict:
-        """Transform received monitor data to Space format."""
-        if not data:
-            return data
-        
-        recv_msgs = data.get("received_messages", {})
-        if not recv_msgs:
-            return data
-        
-        for payload in recv_msgs.values():
-            if isinstance(payload, dict):
-                payload["winning_agents"] = self._convert_keys_to_int(
-                    payload.get("winning_agents", {}), none_to=None
-                )
-                payload["winning_bids"] = self._convert_keys_to_int(
-                    payload.get("winning_bids", {}), none_to=0.0
-                )
-                payload["message_received_time_stamp"] = self._convert_keys_to_int(
-                    payload.get("message_received_time_stamp", {}), none_to=0
-                )
-        
-        return data
-
-    def _convert_keys_to_int(self, data: dict, none_to=None) -> dict:
-        """Convert string keys to integers in dict."""
-        if not isinstance(data, dict):
-            return data
-        
-        try:
-            return {
-                int(k): (v if v is not None else none_to)
-                for k, v in data.items()
-            }
-        except (ValueError, TypeError):
-            return data
 
     # ==================== Debug Server ====================
 
