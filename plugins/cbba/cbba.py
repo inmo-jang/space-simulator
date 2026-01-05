@@ -392,7 +392,8 @@ class CBBA:
             next_position = pygame.Vector2(task.position)
             distance_to_next_task_from_start += current_position.distance_to(next_position)
             # Time-discounted reward
-            expected_reward_from_task += LAMBDA**(distance_to_next_task_from_start/self.agent.max_speed + task.amount/self.agent.work_rate)*task.amount            
+            # expected_reward_from_task += LAMBDA**(distance_to_next_task_from_start/self.agent.max_speed + task.amount/self.agent.work_rate)*task.amount            
+            expected_reward_from_task += LAMBDA**(distance_to_next_task_from_start+ task.amount/self.agent.work_rate)          
             # expected_reward_from_task += (task.amount - (distance_to_next_task_from_start/self.agent.max_speed + task.amount/self.agent.work_rate))
             current_position = next_position
 
