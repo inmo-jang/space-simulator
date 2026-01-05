@@ -1,3 +1,16 @@
+mona:
+  enabled: true
+  robots:
+  - agent_id: 0
+    host: Your MONA IP Address   # MONA #IP
+    port: Your MONA Port           # MONA #Port
+
+  # confirm.py를 통한 set_message, get_message 내용 확인 용도
+  debug_api:
+    enabled: False
+    host: 127.0.0.1
+    port: 8765
+
 scenario: 
   environment: scenarios.features.mona
 
