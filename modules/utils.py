@@ -118,8 +118,13 @@ class ResultSaver:
     def generate_output_filename(self, extension = "csv", additional_keyword = None):
         agent_quantity = config['agents'].get('quantity', 0)
         task_quantity = config['tasks'].get('quantity', 0)
-        decision_making_module_path = config['decision_making']['plugin']
-        module_path, class_name = decision_making_module_path.rsplit('.', 1)
+        decision_making_cfg = config.get('decision_making', {})
+        if 'plugin' in decision_making_cfg:
+            decision_making_module_path = decision_making_cfg['plugin']
+            _, class_name = decision_making_module_path.rsplit('.', 1)
+        else:
+            class_name = "OnboardCBBA"  # Default for onboard mode
+        
         datetime_now = datetime.datetime.now()
         current_time_string = datetime_now.strftime("%Y-%m-%d_%H-%M-%S")        
         
