@@ -103,11 +103,6 @@ class BaseEnv:
 
 
     async def step(self):
-        # Main simulation loop logic
-        for agent in self.agents:
-            await agent.run_tree()
-            agent.update()
-
         self.update_simulation()
 
     def update_simulation(self):
