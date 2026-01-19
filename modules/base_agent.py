@@ -1,8 +1,6 @@
 import pygame
 import math
-from modules.utils import config, parse_behavior_tree
-import importlib
-bt_module = importlib.import_module(config.get('scenario').get('environment') + ".bt_nodes")
+from modules.utils import config
 
 # Load agent configuration
 agent_max_speed = config['agents']['max_speed']
@@ -27,7 +25,6 @@ class BaseAgent:
         self.memory_location = []  # To draw track
         self.rotation = 0  # Initial rotation
         self.color = (0, 0, 255)  # Blue color
-        self.blackboard = {}
 
         self.tasks_info = tasks_info # global info
         self.agents_info = None # global info
@@ -43,48 +40,9 @@ class BaseAgent:
         self.assigned_task_id = None         # Local decision-making result.
         self.planned_tasks = []              # Local decision-making result.
 
-
-    def create_behavior_tree(self, behavior_tree_xml):        
-        xml_root = parse_behavior_tree(behavior_tree_xml)        
-        self.tree = self._create_behavior_tree(xml_root)
-
-    # Agent's Behavior Tree
-    def _create_behavior_tree(self, xml_root):
-        behavior_tree = self._parse_xml_to_bt(xml_root.find('BehaviorTree'))
-        return behavior_tree        
-    
-    def _parse_xml_to_bt(self, xml_node):
-        node_type = xml_node.tag
-        children = []
-
-        for child in xml_node:
-            children.append(self._parse_xml_to_bt(child))
-
-        BTNodeList = getattr(bt_module, "BTNodeList")        
-        if node_type in BTNodeList.CONTROL_NODES:
-            # control_class = globals()[node_type]  # Control class should be globally available
-            control_class = getattr(bt_module, node_type)
-            return control_class(node_type, children=children)
-        elif node_type in BTNodeList.ACTION_NODES + BTNodeList.CONDITION_NODES:
-            # action_class = globals()[node_type]  # Action class should be globally available
-            action_class = getattr(bt_module, node_type)
-            return action_class(node_type, self)
-        elif node_type == "BehaviorTree": # Root
-            return children[0]
-        else:
-            raise ValueError(f"[ERROR] Unknown behavior node type: {node_type}")    
-
-    def _reset_bt_action_node_status(self):
-        self.tree.reset()
-        BTNodeList = getattr(bt_module, "BTNodeList")        
-        action_nodes = BTNodeList.ACTION_NODES
-        self.blackboard = {key: None if key in action_nodes else value for key, value in self.blackboard.items()}
-
-
-
-    async def run_tree(self):
-        self._reset_bt_action_node_status()
-        return await self.tree.run(self, self.blackboard)
+        # [MONA] For real robot tracking
+        self._last_position = pygame.Vector2(position)
+        self.is_real_robot = False
 
     def follow(self, target):
         # Calculate desired velocity
@@ -309,3 +267,21 @@ class BaseAgent:
 
     def update_task_amount_done(self, amount):
         self.task_amount_done += amount
+
+    # ==================== [MONA] Added Methods ====================
+    
+    def set_position(self, x: float, y: float, yaw: float = None):
+        """Set position from external source (e.g., WhyCon tracking)."""
+        new_pos = pygame.Vector2(x, y)
+        self.distance_moved += (new_pos - self._last_position).length()
+        self._last_position = new_pos.copy()
+        
+        self.position.x = float(x)
+        self.position.y = float(y)
+        if yaw is not None:
+            self.rotation = float(yaw)
+        
+        # Update track
+        self.memory_location.append((self.position.x, self.position.y))
+        if len(self.memory_location) > agent_track_size:
+            self.memory_location.pop(0)
