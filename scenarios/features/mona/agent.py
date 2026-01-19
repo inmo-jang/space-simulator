@@ -30,64 +30,50 @@ class Agent(BaseAgent):
                 return
 
     def process_work(self, tasks: list) -> dict:
-        """
-        Process work on nearby tasks.
-        
-        Work condition: agent is within (task.radius + threshold_done_by_arrival) of task center
-        This uses the task radius as the work boundary.
-        
-        Args:
-            tasks: List of all tasks
-            
-        Returns:
-            dict with 'task_id' and 'work_done' if work was performed, None otherwise
-        """
         # Only real robots can do work
         if not self.is_real_robot:
+            return None
+    
+        # Must have an assigned task
+        if self.assigned_task_id is None:
+            return None
+    
+        # Find the assigned task
+        assigned_task = None
+        for task in tasks:
+            if task.task_id == self.assigned_task_id:
+                assigned_task = task
+                break
+    
+        # If assigned task not found or already completed
+        if assigned_task is None or assigned_task.completed:
             return None
         
         # Get threshold from config
         arrive_threshold = config['tasks'].get('threshold_done_by_arrival', 10.0)
         work_per_step = self.work_rate * sampling_time
-        
-        # Find the closest incomplete task within work range
-        closest_task = None
-        closest_distance = float('inf')
-        
-        for task in tasks:
-            if task.completed:
-                continue
-            
-            # Calculate distance from agent to task
-            distance = (self.position - task.position).length()
-            
-            # Work condition: distance < task.radius + threshold (task 반경 기준!)
-            work_range = task.radius + arrive_threshold
-            
-            if distance <= work_range and distance < closest_distance:
-                closest_task = task
-                closest_distance = distance
-        
-        # If agent is within range of a task, do work
-        if closest_task is not None:
-            # Calculate actual work done (cannot exceed remaining amount)
-            work_done = min(work_per_step, closest_task.amount)
-            
-            # Reduce task amount
-            closest_task.amount -= work_done
-            if closest_task.amount <= 0:
-                closest_task.set_done()
-            
-            # Update agent statistics
-            self.update_task_amount_done(work_done)
-            
-            return {
-                'task_id': closest_task.task_id,
-                'work_done': work_done,
-                'task_completed': closest_task.completed
-            }
-        
-        return None
+    
+        # Check if agent is within work range of assigned task
+        distance = (self.position - assigned_task.position).length()
+        work_range = assigned_task.radius + arrive_threshold
+    
+        if distance > work_range:
+            return None  # Not close enough to work
+    
+        # Do work on assigned task
+        work_done = min(work_per_step, assigned_task.amount)
+        assigned_task.amount -= work_done
+        if assigned_task.amount <= 0:
+            assigned_task.set_done()
+    
+        # Update agent statistics
+        self.update_task_amount_done(work_done)
+    
+        return {
+            'task_id': assigned_task.task_id,
+            'work_done': work_done,
+            'task_completed': assigned_task.completed
+        }
 
     def set_planned_tasks_from_ids(self, task_ids: list, all_tasks: list):
         """Set planned_tasks from task ID list."""
