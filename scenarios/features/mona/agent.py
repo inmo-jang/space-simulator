@@ -63,10 +63,13 @@ class Agent(BaseAgent):
 
         mc = getattr(self, "mona_comm", None)
         if mc is not None:
+            # 1. 먼저 수신 (이전 tick에서 전파된 메시지)
+            self.local_message_receive()
+        
+            # 2. 그 다음 전송 (다음 tick에서 처리될 메시지)
             compressed_msg = self._build_compressed_cbba_message()
             mc.set_message(self, msg_override=compressed_msg)
 
-        self.local_message_receive()
         return result
         
     def _build_compressed_cbba_message(self) -> dict:

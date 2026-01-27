@@ -120,19 +120,64 @@ class MonaComm:
         if not self.enabled:
             return None
         
-        # Drain buffer and return latest message
-        latest = None
+        # 모든 메시지를 수집하고 병합
+        all_messages = []
         while True:
             parsed = self._receive_json(agent_id)
             if parsed is None:
                 break
-            latest = parsed
+            all_messages.append(parsed)
         
-        if latest is not None:
-            latest = self._transform_received_data(latest)
+        if not all_messages:
+            return None
+        
+        # 마지막 메시지를 기준으로 하되, received_messages는 병합
+        merged = all_messages[-1].copy()
+        merged_recv = {}
+        
+        for msg in all_messages:
+            recv = msg.get("received_messages", {})
+            if not recv:  # recv가 None이거나 빈 딕셔너리인 경우 스킵
+                continue
+            for peer_id, data in recv.items():
+                # data가 None이거나 dict가 아닌 경우 스킵
+                if not isinstance(data, dict):
+                    continue
+                
+                # 더 최신 타임스탬프를 가진 데이터 유지
+                if peer_id not in merged_recv:
+                    merged_recv[peer_id] = data
+                else:
+                    existing_ts = merged_recv[peer_id].get("s", {}) if merged_recv[peer_id] else {}
+                    new_ts = data.get("s", {}) if data else {}
+                    # 타임스탬프 비교 후 더 최신 것 선택
+                    if self._is_newer(new_ts, existing_ts):
+                        merged_recv[peer_id] = data
+        
+        merged["received_messages"] = merged_recv
+        
+        if merged is not None:
+            merged = self._transform_received_data(merged)
             with self._cache_lock:
-                self._last_get[agent_id] = latest
-        return latest
+                self._last_get[agent_id] = merged
+        
+        return merged
+
+    def _is_newer(self, new_ts: dict, old_ts: dict) -> bool:
+        """Compare timestamps to determine which is newer."""
+        if not new_ts:
+            return False
+        if not old_ts:
+            return True
+        
+        # None 값을 필터링하고 유효한 숫자만 비교
+        new_values = [v for v in new_ts.values() if isinstance(v, (int, float))]
+        old_values = [v for v in old_ts.values() if isinstance(v, (int, float))]
+        
+        new_max = max(new_values) if new_values else 0
+        old_max = max(old_values) if old_values else 0
+        
+        return new_max > old_max
 
     def close(self) -> None:
         """Close all open connections."""
