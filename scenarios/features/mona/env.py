@@ -72,22 +72,22 @@ class Env(BaseEnv):
         
     def handle_keyboard_events(self):
         for event in pygame.event.get():
-            # 1. Window Close Button (Required to exit app)
             if event.type == pygame.QUIT:
                 self.running = False
+        
+            # Q 키로 종료
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_q or event.key == pygame.K_ESCAPE:
+                    self.running = False
 
-            # 2. Mouse Click -> Spawn Task
+            # 마우스 클릭으로 태스크 생성
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 if not self.agents:
                     continue
                 click_pos = pygame.Vector2(event.pos)
-                
-                # Fix: Define new_id before usage
                 new_id = len(self.tasks)
                 self.tasks.append(Task(new_id, click_pos))
-                
                 print(f"[{self.simulation_time:.2f}] Spawned Task {new_id} at ({int(click_pos.x)}, {int(click_pos.y)})")
-                # print(f"[{self.simulation_time:.2f}] All agents → {tuple(map(int, click_pos))}")
 
 
 
