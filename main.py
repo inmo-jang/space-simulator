@@ -37,9 +37,6 @@ async def game_loop():
         if env.recording:
             env.record_screen_frame()
 
-    env.close()
-
-
 
 def main():
     bt_viz_cfg = config['simulation'].get('bt_visualiser', {})
@@ -56,10 +53,28 @@ def main():
         else:
             print(f"[Warning] BT visualiser: agent_id {agent_id} is out of range!")
     
-    asyncio.run(game_loop())
+    try:
+        asyncio.run(game_loop())
+    finally:
+        # 어떤 에러가 발생해도 결과 저장 보장
+        try:
+            env.save_results()
+            print("[Info] Results saved successfully.")
+        except Exception as e:
+            print(f"[Warning] Error saving results: {e}")
+        
+        try:
+            env.close()
+        except Exception as e:
+            print(f"[Info] Cleanup completed with: {e}")
 
 if __name__ == "__main__":
     if config['simulation']['profiling_mode']:
         cProfile.run('main()', sort='cumulative')
     else:
-        main()
+        try:
+            main()
+        except KeyboardInterrupt:
+            print("\n[Info] Interrupted by user")
+        except Exception as e:
+            print(f"[Info] Application closed: {e}")
