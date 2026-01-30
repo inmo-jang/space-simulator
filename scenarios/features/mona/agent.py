@@ -57,10 +57,19 @@ class Agent(BaseAgent):
 
     def set_position(self, x: float, y: float, yaw: float = None):
         """Set agent position (called by WhyCon tracker)."""
+        old_pos = pygame.Vector2(self.position.x, self.position.y)
+
         self.position.x = float(x)
         self.position.y = float(y)
         if yaw is not None:
             self.rotation = float(yaw)
+
+        # 이동 거리 계산 (실제 로봇용) - 노이즈 필터링 추가
+        if self.is_real_robot:
+            distance = (self.position - old_pos).length()
+            # 2픽셀 미만의 이동은 노이즈로 간주하여 무시
+            if distance > 1.7:
+                self.distance_moved += distance
 
     def follow(self, target):
         """
