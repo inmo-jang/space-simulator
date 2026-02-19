@@ -1,3 +1,13 @@
+mona:
+  enabled: True
+  robots:
+  - agent_id: 0
+    host: 192.168.0.8    # MONA #1 IP
+    port: 8080           # MONA #1 포트
+  - agent_id: 1
+    host: 192.168.0.6    # MONA #2 IP
+    port: 8080           # MONA #2 포트
+
 scenario: 
   environment: scenarios.features.mona
 
