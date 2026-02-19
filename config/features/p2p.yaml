@@ -7,9 +7,12 @@ mona:
   - agent_id: 1
     host: 192.168.0.6    # MONA #2 IP
     port: 8080           # MONA #2 포트
+  - agent_id: 2
+    host: 192.168.0.3   # MONA #3 IP
+    port: 8080           # MONA #3 포트
 
 scenario: 
-  environment: scenarios.features.mona
+  environment: scenarios.features.mona.p2p
 
 # decision_making: # Case 1
 #   plugin: plugins.grape.grape.GRAPE
