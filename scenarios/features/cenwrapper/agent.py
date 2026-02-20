@@ -79,7 +79,7 @@ def generate_agents(tasks_info, seed=None):
         agent.set_agent_type(agent_type)
 
         # config 내 모든 key:value를 Agent의 attribute로 붙여줌
-        type_config = agent_types_cfg[agent_type]   # 예: {"behavior_tree_xml": "bt_enemy.xml", "quantity": 1, "threat_radius": 100}
+        type_config = agent_types_cfg[agent_type]
         for key, value in type_config.items():
             if key not in exclude_keys:
                 setattr(agent, key, value)    
