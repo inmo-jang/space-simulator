@@ -3,26 +3,32 @@ import copy
 from modules.utils import config, pre_render_text
 
 KEEP_MOVING_DURING_CONVERGENCE = config['decision_making']['GRAPE'].get('execute_movements_during_convergence', False) # TODO: Remove later as this is just for backward compatibility
-LOCAL_CONVERGENCE = config['decision_making']['GRAPE'].get('local_convergence', False)
+LOCAL_CONVERGENCE = config['decision_making']['GRAPE']['local_convergence']
 INITIALIZE_PARTITION = config['decision_making']['GRAPE']['initialize_partition']
 REINITIALIZE_PARTITION = config['decision_making']['GRAPE']['reinitialize_partition_on_completion']
 COST_WEIGHT_FACTOR = config['decision_making']['GRAPE']['cost_weight_factor']
 SOCIAL_INHIBITION_FACTOR = config['decision_making']['GRAPE']['social_inhibition_factor']
 
 class GRAPE:
-    def __init__(self, agent):
+    def __init__(self, agent, blackboard):
         self.agent = agent        
         self.satisfied = False
         self.evolution_number = 0  # Initialize evolution_number
         self.time_stamp = 0  # Initialize time_stamp            
         self.partition = {task.task_id: set() for task in self.agent.tasks_info}  # Initialize partition with emptysets        
         self.assigned_task = None
-        _local_tasks_info = self.agent.get_tasks_nearby()
-        _local_agents_info = self.agent.get_agents_nearby()
+        _local_tasks_info = blackboard['local_tasks_info']
+        _local_agents_info = blackboard['local_agents_info']
         if INITIALIZE_PARTITION == "Distance": 
             if _local_tasks_info and _local_agents_info:                                
                 self.partition = self.initialize_partition_by_distance(_local_agents_info, _local_tasks_info, self.partition)
                 self.assigned_task = self.get_assigned_task_from_partition(self.partition)                 
+                # 초기 할당이 있으면 시각화/플래닝용으로 등록
+                if self.assigned_task is not None:
+                    try:
+                        self.agent.set_planned_tasks([self.assigned_task])
+                    except Exception:
+                        pass
 
         self.current_utilities = {}
         self.agent.message_to_share = { # Message Initialization
@@ -55,13 +61,22 @@ class GRAPE:
 
         previous_assigned_task_id = self.assigned_task.task_id if self.assigned_task is not None else None  # For Debug
 
+        _local_tasks_info = blackboard['local_tasks_info']
+        _local_messages_received = blackboard['messages_received']
+        
         # D-Mutex (Phase 1)            
-        self.evolution_number, self.time_stamp, self.partition, self.satisfied = self.distributed_mutex(self.agent.messages_received)                
+        self.evolution_number, self.time_stamp, self.partition, self.satisfied = self.distributed_mutex(_local_messages_received)                
         self.agent.reset_messages_received()
         self.assigned_task = self.get_assigned_task_from_partition(self.partition)
+        # 분산 합의로 assigned_task가 갱신되면 플래닝 정보도 갱신
+        try:
+            if self.assigned_task is not None:
+                self.agent.set_planned_tasks([self.assigned_task])
+            else:
+                self.agent.set_planned_tasks([])
+        except Exception:
+            pass
 
-
-        _local_tasks_info = blackboard['local_tasks_info']
         
         # Check if the existing task is done        
         if self.assigned_task is not None and self.assigned_task.completed:           
@@ -74,11 +89,24 @@ class GRAPE:
             self.partition[self.assigned_task.task_id] = set()  # Empty the previous task's coalition                  
             self.assigned_task = None
             self.satisfied = False
+            # 완료된 작업 제거 시 플래닝 정보 초기화
+            try:
+                self.agent.set_planned_tasks([])
+            except Exception:
+                pass
             
             # Special routine
             if REINITIALIZE_PARTITION == "Distance":                                    
                 self.partition = self.initialize_partition_by_distance(_neighbor_agents_info, _local_tasks_info, self.partition)   
-                self.assigned_task = self.get_assigned_task_from_partition(self.partition)                         
+                self.assigned_task = self.get_assigned_task_from_partition(self.partition)
+                # 재초기화 후 플래닝 정보 갱신
+                try:
+                    if self.assigned_task is not None:
+                        self.agent.set_planned_tasks([self.assigned_task])
+                    else:
+                        self.agent.set_planned_tasks([])
+                except Exception:
+                    pass
 
         # Give up the decision-making process if there is no task nearby 
         if len(_local_tasks_info) == 0: 
@@ -98,7 +126,14 @@ class GRAPE:
             self.time_stamp = random.uniform(0, 1)      
             self.assigned_task = self.get_assigned_task_from_partition(self.partition) # New assignment
             self.satisfied = True
-
+            # 할당이 변경되었으므로 플래닝 정보 업데이트
+            try:
+                if self.assigned_task is not None:
+                    self.agent.set_planned_tasks([self.assigned_task])
+                else:
+                    self.agent.set_planned_tasks([])
+            except Exception:
+                pass
             # Broadcasting # NOTE: Implemented separately
             self.agent.message_to_share = {
                 'agent_id': self.agent.agent_id,
@@ -167,6 +202,8 @@ class GRAPE:
         _time_stamp = self.time_stamp
         
         for message in messages_received:
+            if not all(k in message for k in ('evolution_number','time_stamp','partition')):
+                continue
             if message['evolution_number'] > _evolution_number or (message['evolution_number'] == _evolution_number and message['time_stamp'] > _time_stamp):
                 _evolution_number = message['evolution_number']
                 _time_stamp = message['time_stamp']
