@@ -3,6 +3,27 @@
 ## [Unreleased]
 
 ### Added
+- **New Scenario: Turtle Catcher (`scenarios/features/turtle_catcher/`)**
+  - Added as a direct counterpart to `py_bt_ros/scenarios/example_turtlesim`, enabling the same BT logic to be tested in simulation before porting to ROS.
+  - BT nodes implemented: `IsNearby`, `MoveTo`, `KillTarget`, `IsTargetClear` — node names and `default_bt.xml` structure are identical to the py_bt_ros version.
+  - `TargetTurtle`: keyboard-controlled orange triangle (WASD / arrow keys); catcher (blue triangle) autonomously chases via BT.
+  - Added `README.md` with run command, keyboard control table, and relation-to-py_bt_ros mapping.
+
+- **Base Agent (`base_agent.py`)**
+  - Added default `update_color()` no-op method. Previously, `BaseAgent.draw()` called `self.update_color()` but the method was not defined in `BaseAgent`, requiring every subclass to override `draw()` just to avoid a runtime error. Subclasses that need dynamic coloring can now override only `update_color()`.
+
+### Changed
+- **Config: `bt_runner` section introduced (turtle_catcher)**
+  - Moved `bt_visualiser` and `profiling_mode` out of `simulation` into a new top-level `bt_runner` section, mirroring the config style of `py_bt_ros`.
+  - Added `bt_runner.bt_tick_rate` as a documentation placeholder (currently a dummy — space-sim runs BT and physics in the same loop).
+  - **TODO**: separate `bt_runner.bt_tick_rate` from `simulation.sampling_freq` to allow independent BT/physics update rates.
+  - Removed `tasks.dynamic_task_generation` from turtle_catcher config (not used; `BaseEnv` already handles its absence gracefully via `.get()` defaults).
+
+- **`main.py`**
+  - `bt_visualiser` and `profiling_mode` are now read from `bt_runner` first, with fallback to `simulation` for backward compatibility with existing scenario configs.
+  - **TODO**: once all scenario configs are migrated to the `bt_runner` section, remove the `simulation` fallback from `main.py`.
+
+
 - **TacView Interface (`tacview_interface/`)**
   - Added support for TacView visualisation via `TacViewInterface` and `TacviewServer`. Thanks to @9iant from UNIST, Korea. 
 

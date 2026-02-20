@@ -152,6 +152,9 @@ class BaseAgent:
     def receive_message(self, message):
         self.messages_received.append(message)            
 
+    def update_color(self):
+        pass  # Default: keep self.color as-is; override in subclass for dynamic coloring
+
     def draw(self, screen):
         size = 10
         angle = self.rotation

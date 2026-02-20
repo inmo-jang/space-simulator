@@ -245,13 +245,16 @@ class SyncCondition(Node):
     def set_expanded(self):
         self.is_expanded = True
 
-# Load additional configuration and import decision-making class dynamically
+# Load decision-making class lazily: only if 'decision_making.plugin' is set in config.
+# Scenarios that do not use DecisionMakingNode / AssignTask can omit this config key.
 import importlib
 from modules.utils import config
-decision_making_module_path = config['decision_making']['plugin']
-module_path, class_name = decision_making_module_path.rsplit('.', 1)
-decision_making_module = importlib.import_module(module_path)
-decision_making_class = getattr(decision_making_module, class_name)
+_dm_plugin_path = config.get('decision_making', {}).get('plugin')
+if _dm_plugin_path:
+    _module_path, _class_name = _dm_plugin_path.rsplit('.', 1)
+    decision_making_class = getattr(importlib.import_module(_module_path), _class_name)
+else:
+    decision_making_class = None
 
 # Local Sensing node
 class LocalSensingNode(SyncAction):
@@ -268,6 +271,8 @@ class LocalSensingNode(SyncAction):
 class DecisionMakingNode(SyncAction):
     def __init__(self, name, agent):
         super().__init__(name, self._decide)
+        if decision_making_class is None:
+            raise RuntimeError("[DecisionMakingNode] 'decision_making.plugin' is not set in config.")
         self.decision_maker = decision_making_class(agent)
 
     def _decide(self, agent, blackboard):
@@ -294,6 +299,8 @@ class GatherLocalInfo(SyncAction):
 class AssignTask(SyncAction):
     def __init__(self, name, agent):
         super().__init__(name, self._decide)
+        if decision_making_class is None:
+            raise RuntimeError("[AssignTask] 'decision_making.plugin' is not set in config.")
         self.decision_maker = decision_making_class(agent)
 
     def _decide(self, agent, blackboard):
