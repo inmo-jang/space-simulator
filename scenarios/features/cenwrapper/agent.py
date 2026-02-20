@@ -1,7 +1,7 @@
 import pygame
 import math
 import os
-from modules.utils import config, generate_positions 
+from modules.utils import config, generate_agent_positions 
 from modules.base_agent import BaseAgent
 from scenarios.features.cenwrapper.task import task_colors
 
@@ -15,8 +15,6 @@ class Agent(BaseAgent):
     def __init__(self, agent_id, position, tasks_info):
         super().__init__(agent_id, position, tasks_info)
         self.work_rate = work_rate
-
-        
         self.task_amount_done = 0.0        
 
     def draw(self, screen):
@@ -37,10 +35,30 @@ class Agent(BaseAgent):
 
 
 def generate_agents(tasks_info, seed=None):
-    agent_quantity = config['agents']['quantity']
+    agent_types_cfg = config['agents']['types']
     agent_locations = config['agents']['locations']
+    
+    # Build sequences from types: agent_type list and per-agent BT xml list
+    agent_types_sequence = []
+    behavior_tree_xml_sequence = []
+    
+    for agent_type, type_cfg in agent_types_cfg.items():
+        if agent_type != 'Leader':
+            count = int(type_cfg['quantity'])
+            bt_xml = type_cfg['behavior_tree_xml']
+            agent_types_sequence.extend([str(agent_type)] * count)
+            behavior_tree_xml_sequence.extend([bt_xml] * count)
+    
+    if 'Leader' in agent_types_cfg:
+        leader_cfg = agent_types_cfg['Leader']
+        count = int(leader_cfg['quantity'])
+        bt_xml = leader_cfg['behavior_tree_xml']
+        agent_types_sequence.extend(['Leader'] * count)
+        behavior_tree_xml_sequence.extend([bt_xml] * count)
+    
+    total_quantity = len(agent_types_sequence)
 
-    agents_positions = generate_positions(agent_quantity,
+    agents_positions = generate_agent_positions(total_quantity,
                                       agent_locations['x_min'],
                                       agent_locations['x_max'],
                                       agent_locations['y_min'],
@@ -51,9 +69,28 @@ def generate_agents(tasks_info, seed=None):
     # Initialize agents
     agents = [Agent(idx, pos, tasks_info) for idx, pos in enumerate(agents_positions)]
 
-    # Provide the global info and create behavior tree
+    # 제외할 key 목록 지정
+    exclude_keys = ["behavior_tree_xml",
+                    "quantity",                    
+                    ]   
+
+    # Assign agent_type before building trees
+    for agent, agent_type in zip(agents, agent_types_sequence):
+        agent.set_agent_type(agent_type)
+
+        # config 내 모든 key:value를 Agent의 attribute로 붙여줌
+        type_config = agent_types_cfg[agent_type]   # 예: {"behavior_tree_xml": "bt_enemy.xml", "quantity": 1, "threat_radius": 100}
+        for key, value in type_config.items():
+            if key not in exclude_keys:
+                setattr(agent, key, value)    
+
+    # Provide the global info
     for agent in agents:
         agent.set_global_info_agents(agents)
+
+    # Create per-agent behavior tree from its type config
+    for agent, bt_xml in zip(agents, behavior_tree_xml_sequence):
+        behavior_tree_xml = f"{os.path.dirname(os.path.abspath(__file__))}/{bt_xml}"
         agent.create_behavior_tree(behavior_tree_xml)
 
     return agents
