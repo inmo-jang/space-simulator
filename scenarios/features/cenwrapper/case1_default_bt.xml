@@ -4,13 +4,10 @@
     <Parallel failure_count="None"
               success_count="None">
       <GatherLocalInfo/>
-      <ReactiveFallback>
-        <ReactiveSequence>
-          <IsConnectedWithLeader/>
-          <AssignCenTask/>
-        </ReactiveSequence>
-        <AssignTask/>
-      </ReactiveFallback>
+      <ReactiveSequence>
+        <IsConnectedWithLeader/>
+        <AssignCenTask/>
+      </ReactiveSequence>
       <ReactiveSequence>
         <ReactiveFallback>
           <IsTaskAssigned/>
@@ -33,8 +30,6 @@
   <!-- Description of Node Models (used by Groot) -->
   <TreeNodesModel>
     <Action ID="AssignCenTask"
-            editable="true"/>
-    <Action ID="AssignTask"
             editable="true"/>
     <Action ID="ExecuteTask"
             editable="true"/>

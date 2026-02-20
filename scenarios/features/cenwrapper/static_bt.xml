@@ -11,22 +11,10 @@
         </ReactiveSequence>
         <AssignTask/>
       </ReactiveFallback>
-      <ReactiveSequence>
-        <ReactiveFallback>
-          <IsTaskAssigned/>
-          <Halt/>
-        </ReactiveFallback>
-        <ReactiveFallback>
-          <IsTaskCompleted/>
-          <ReactiveSequence>
-            <ReactiveFallback>
-              <IsArrivedAtTarget/>
-              <MoveToTarget/>
-            </ReactiveFallback>
-            <ExecuteTask/>
-          </ReactiveSequence>
-        </ReactiveFallback>
-      </ReactiveSequence>
+      <Sequence>
+        <IsTaskAssigned/>
+        <Halt/>
+      </Sequence>
     </Parallel>
   </BehaviorTree>
 
@@ -36,22 +24,14 @@
             editable="true"/>
     <Action ID="AssignTask"
             editable="true"/>
-    <Action ID="ExecuteTask"
-            editable="true"/>
     <Action ID="GatherLocalInfo"
             editable="true"/>
     <Action ID="Halt"
             editable="true"/>
-    <Condition ID="IsArrivedAtTarget"
-               editable="true"/>
     <Condition ID="IsConnectedWithLeader"
                editable="true"/>
     <Condition ID="IsTaskAssigned"
                editable="true"/>
-    <Condition ID="IsTaskCompleted"
-               editable="true"/>
-    <Action ID="MoveToTarget"
-            editable="true"/>
   </TreeNodesModel>
 
 </root>
