@@ -44,6 +44,13 @@ def generate_positions(quantity, x_min, x_max, y_min, y_max, radius=10, seed=Non
             positions.append(pos)
     return positions
 
+def generate_agent_positions(quantity, x_min, x_max, y_min, y_max, radius=10, seed=None):
+    return generate_positions(quantity, x_min, x_max, y_min, y_max, radius=radius, seed=seed)
+    
+def generate_task_positions(quantity, x_min, x_max, y_min, y_max, radius=10, seed=None):
+    task_seed = seed + 1000 if seed is not None else None
+    return generate_positions(quantity, x_min, x_max, y_min, y_max, radius=radius, seed=task_seed)
+
 def generate_random_values(quantity, min, max, seed=None):
     if seed is not None:
         random.seed(seed)

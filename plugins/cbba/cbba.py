@@ -20,7 +20,7 @@ class Phase(Enum):
     ASSIGNMENT_CONSENSUS = 2
 
 class CBBA:  
-    def __init__(self, agent):
+    def __init__(self, agent, blackboard):
         self.agent = agent        
 
         self.z = {} # Winning agent list (key: task_id; value: agent_id)
@@ -49,7 +49,10 @@ class CBBA:
             - `task_id`, if task allocation works well
             - `None`, otherwise
         '''        
-        local_tasks_info = blackboard['local_tasks_info']
+        _local_tasks_info = blackboard['local_tasks_info']
+        _local_agents_info = blackboard['local_agents_info']
+        _local_messages_received = blackboard['messages_received']
+        # self.agent.messages_received = blackboard['messages_received']
 
         # Check if the existing task is done
         if self.assigned_task is not None and self.assigned_task.completed:
@@ -62,8 +65,12 @@ class CBBA:
         if len(self.bundle) == 0:
             self.phase = Phase.BUILD_BUNDLE
 
+        # Check if new tasks appear
+        if self.has_missing_tasks(_local_tasks_info):
+            self.phase = Phase.BUILD_BUNDLE
+
         # Give up the decision-making process if there is no task nearby 
-        if len(local_tasks_info) == 0 and len(self.bundle) == 0: 
+        if len(_local_tasks_info) == 0 and len(self.bundle) == 0: 
             return None
         
         # Neutralize all the winning bid information if there are local tasks nearby but the agent cannot choose any of them for a certain period
@@ -82,7 +89,7 @@ class CBBA:
         # if self.assigned_task is None:
         if self.phase == Phase.BUILD_BUNDLE:
             # Phase 1 Build Bundle 
-            self.build_bundle(local_tasks_info)            
+            self.build_bundle(_local_tasks_info)            
             # Broadcasting
             self.agent.message_to_share = { 
                 'agent_id': self.agent.agent_id,
@@ -97,10 +104,12 @@ class CBBA:
             return None
         
         if self.phase == Phase.ASSIGNMENT_CONSENSUS:
-            self.update_time_stamp()
+            self.update_time_stamp(_local_agents_info, _local_messages_received)
             # Phase 2 Consensus
-            for task in local_tasks_info: 
-                for other_agent_message in self.agent.messages_received:
+            for task in _local_tasks_info: 
+                for other_agent_message in _local_messages_received:
+                    if not all(k in other_agent_message for k in ('agent_id','winning_agents','winning_bids','message_received_time_stamp')):
+                        continue
                     k_agent_id = other_agent_message.get('agent_id')
                     if k_agent_id == self.agent.agent_id:
                         continue
@@ -266,7 +275,7 @@ class CBBA:
         
 
 
-    def build_bundle(self, local_tasks_info):
+    def build_bundle(self, _local_tasks_info):
         """
         Construct bundle and path list with local information.
         Algorithm 3 in CBBA paper
@@ -274,12 +283,12 @@ class CBBA:
         # J = list(range(self.task_num))
         
 
-        while len(self.bundle) < min(MAX_TASKS_PER_AGENT, len(local_tasks_info)):
+        while len(self.bundle) < min(MAX_TASKS_PER_AGENT, len(_local_tasks_info)) or self.has_missing_tasks(_local_tasks_info):
             # Calculate S_p for the constructed path list
             
 
             # Line 7
-            my_bid_list, best_insertion_idx_list = self.get_my_bid_value_list(local_tasks_info) 
+            my_bid_list, best_insertion_idx_list = self.get_my_bid_value_list(_local_tasks_info) 
 
             # Line 8~9
             task_to_add = self.get_best_task(my_bid_list)
@@ -298,22 +307,37 @@ class CBBA:
             # LIne 14
             self.z[task_to_add.task_id] = self.agent.agent_id
 
+
+            # Reset Winning bid value after best_insertion_idx
+            for _task_id in self.bundle[best_insertion_idx+1:]:
+                self.y[_task_id] = float('-inf')        
+
+
+            # Truncated by MAX_TASKS_PER_AGENT
+            if len(self.bundle) > MAX_TASKS_PER_AGENT:
+                last_end_task_id = self.bundle[-1]
+                self._reset(last_end_task_id)
+                self.bundle = self.bundle[0:MAX_TASKS_PER_AGENT]
+                self.path = self.path[0:MAX_TASKS_PER_AGENT]
+
+
+
     
-    def update_time_stamp(self):
+    def update_time_stamp(self, _local_agents_info, _local_messages_received):
         """
         Eqn (5)
         """
 
         # For neighbor agents
         current_timestamp = int(time.time())
-        for other_agent in self.agent.agents_nearby:            
+        for other_agent in _local_agents_info:            
             self.s[other_agent.agent_id] = current_timestamp
 
         
         # For two-hop neighbor agents
         max_timestamp = {}     
-        for other_agent_message in self.agent.messages_received:
-            time_stamp = other_agent_message.get("message_received_time_stamp")
+        for other_agent_message in _local_messages_received:
+            time_stamp = other_agent_message.get("message_received_time_stamp", {})
             max_timestamp = merge_dicts(max_timestamp, time_stamp)
 
         # Finally merge
@@ -322,14 +346,14 @@ class CBBA:
 
 
 
-    def get_my_bid_value_list(self, local_tasks_info):
+    def get_my_bid_value_list(self, _local_tasks_info):
         # Calculate S_p for the constructed path list
         S_p = self.calculate_score_along_path(self.agent.position, self.path)
 
         my_bid_list = {} # My new bid list (key: task_id; value: bid value), denoted by 'c' in the paper (Algorithm 3 Line 3)
         best_insertion_idx_list = {} # (key: task_id; value: bundle insertion position)
         
-        for task in local_tasks_info:
+        for task in _local_tasks_info:
             _marginal_score_by_new_task = []
             if task in self.path: # TODO: This might take longer computation
                 continue
@@ -392,10 +416,22 @@ class CBBA:
             next_position = pygame.Vector2(task.position)
             distance_to_next_task_from_start += current_position.distance_to(next_position)
             # Time-discounted reward
-            expected_reward_from_task += LAMBDA**(distance_to_next_task_from_start/self.agent.max_speed + task.amount/self.agent.work_rate)*task.amount            
+            expected_reward_from_task += LAMBDA**(distance_to_next_task_from_start/self.agent.max_speed + task.amount/self.agent.work_rate)#*task.amount            
             # expected_reward_from_task += (task.amount - (distance_to_next_task_from_start/self.agent.max_speed + task.amount/self.agent.work_rate))
             current_position = next_position
 
         return expected_reward_from_task
 
-        
+    def has_missing_tasks(self, local_tasks_info):
+        """
+        Return True if there exists a task in local_tasks_info whose task_id 
+        is not present in y (dict of winning bid values).
+        """
+        y_task_ids = set(self.y.keys())
+
+        for task in local_tasks_info:
+            if task.task_id not in y_task_ids:
+                self._reset(task.task_id)
+                return True
+
+        return False        
