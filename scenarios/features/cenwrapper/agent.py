@@ -8,9 +8,6 @@ from scenarios.features.cenwrapper.task import task_colors
 # Load agent configuration (Scenario Specific)
 work_rate = config['agents']['work_rate']
 
-# Load behavior tree
-behavior_tree_xml = f"{os.path.dirname(os.path.abspath(__file__))}/{config['agents']['behavior_tree_xml']}"
-
 class Agent(BaseAgent):
     def __init__(self, agent_id, position, tasks_info):
         super().__init__(agent_id, position, tasks_info)
@@ -31,6 +28,26 @@ class Agent(BaseAgent):
 
     def update_color(self):        
         self.color = task_colors.get(self.assigned_task_id, (20, 20, 20))  # Default to Dark Grey if no task is assigned
+    
+    def draw_communication_radius_circle(self, screen):
+        # Draw the communication radius circle
+        if self.communication_radius > 0:
+            pygame.draw.circle(screen, self.color, (self.position[0], self.position[1]), self.communication_radius, 1)
+            
+    def draw_leader_communication_radius_circle(self, screen):
+         if self.communication_radius > 0:
+            circle_color = (255, 0, 0) 
+            line_width = 3
+            pygame.draw.circle(screen, circle_color, (int(self.position.x), int(self.position.y)), self.communication_radius, line_width)
+            
+    def draw_leader_communication_topology(self, screen, agents):
+     # Draw lines from leader to neighbor agents
+        if self.type == "Leader":
+            neighbor_agents = self.agents_nearby
+            for neighbor_agent in neighbor_agents:
+                neighbor_position = agents[neighbor_agent.agent_id].position
+                pygame.draw.line(screen, (255, 0, 0), (int(self.position.x), int(self.position.y)), (int(neighbor_position.x), int(neighbor_position.y)))
+
 
 
 
