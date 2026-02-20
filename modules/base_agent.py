@@ -14,7 +14,7 @@ agent_max_accel = config['agents']['max_accel']
 max_angular_speed = config['agents']['max_angular_speed']
 agent_approaching_to_target_radius = config['agents']['target_approaching_radius']
 agent_track_size = config['simulation']['agent_track_size']
-agent_communication_radius = config['agents']['communication_radius']
+agent_communication_radius = config.get('agents', {}).get('communication_radius', 0)
 agent_situation_awareness_radius = config.get('agents', {}).get('situation_awareness_radius', 0)
 sampling_time = 1.0 / config['simulation']['sampling_freq']  # in seconds
 
