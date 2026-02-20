@@ -65,4 +65,17 @@ class Env(BaseEnv):
             remaining_tasks,
             tasks_total_amount_left
         ])        
+    
+    def draw_agents_info(self):
+        super().draw_agents_info()
+        
+        if self.rendering_options.get('leader_communication_topology'):
+            for agent in self.agents:
+                agent.draw_leader_communication_topology(self.screen, self.agents)
+        
+        for agent in self.agents:
+            if agent.type == 'Leader' and self.rendering_options.get('leader_communication_radius_circle'): # Draw leader agent's communication radius circle
+                agent.draw_leader_communication_radius_circle(self.screen)
+            if agent.type != 'Leader' and self.rendering_options.get('agent_communication_radius_circle'): # Draw each follower's communication radius circle
+                agent.draw_communication_radius_circle(self.screen)
                   
