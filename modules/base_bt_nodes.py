@@ -287,6 +287,7 @@ class GatherLocalInfo(SyncAction):
     def _local_sensing(self, agent, blackboard):        
         blackboard['local_tasks_info'] = agent.get_tasks_nearby(with_completed_task = False)
         blackboard['local_agents_info'] = agent.local_message_receive()
+        blackboard['messages_received'] = agent.messages_received 
 
         return Status.SUCCESS
     
@@ -294,16 +295,18 @@ class GatherLocalInfo(SyncAction):
 class AssignTask(SyncAction):
     def __init__(self, name, agent):
         super().__init__(name, self._decide)
-        self.decision_maker = decision_making_class(agent)
+        # self.decision_maker = decision_making_class(agent)
 
     def _decide(self, agent, blackboard):
-        assigned_task_id = self.decision_maker.decide(blackboard)      
-        agent.set_assigned_task_id(assigned_task_id)  
+        if not hasattr(agent, 'decision_maker') or agent.decision_maker is None:
+            agent.decision_maker = decision_making_class(agent, blackboard)
+        assigned_task_id = agent.decision_maker.decide(blackboard)
+        agent.assigned_task_id = assigned_task_id
         blackboard['assigned_task_id'] = assigned_task_id
         if assigned_task_id is None:            
             return Status.FAILURE        
         else:                        
-            return Status.SUCCESS    
+            return Status.SUCCESS        
 
 # ---- Helper: AlwaysFailure & AlwaysSuccess -----------------------
 class AlwaysFailure(SyncCondition):
