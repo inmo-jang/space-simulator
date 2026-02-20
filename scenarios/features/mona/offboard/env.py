@@ -1,6 +1,6 @@
 from modules.base_env import BaseEnv
 from modules.utils import ResultSaver
-from scenarios.features.mona.offboard.task import generate_tasks
+from scenarios.features.mona.offboard.task import generate_tasks, Task
 from scenarios.features.mona.offboard.agent import generate_agents
 from scenarios.features.mona.offboard.mona_controller import Mona_comm
 import pygame
