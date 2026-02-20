@@ -1,15 +1,23 @@
 mona:
-  enabled: True
+  enabled: True              # 모드 ON → 연결되면 모나로 명령 전송, 아니면 시뮬레이터로 폴백
+  udp_port: 9999
+  distance_scale: 1.0
   robots:
   - agent_id: 0
-    host: 192.168.0.8    # MONA #1 IP
+    host: 192.168.0.18   # MONA #1 IP
     port: 8080           # MONA #1 포트
   - agent_id: 1
-    host: 192.168.0.6    # MONA #2 IP
+    host: 192.168.0.15   # MONA #2 IP
     port: 8080           # MONA #2 포트
+  - agent_id: 2
+    host: 192.168.0.41   # MONA #3 IP
+    port: 8080           # MONA #3 포트
+  - agent_id: 3
+    host: 192.168.0.21   # MONA #4 IP
+    port: 8080           # MONA #4 포트
 
 scenario: 
-  environment: scenarios.features.mona
+  environment: scenarios.features.mona.offboard
 
 # decision_making: # Case 1
 #   plugin: plugins.grape.grape.GRAPE
@@ -40,9 +48,9 @@ agents:
   quantity: 10
   locations:
     x_min: 0
-    x_max: 1400
+    x_max: 1340
     y_min: 0
-    y_max: 1000
+    y_max: 740
     non_overlap_radius: 0 
   max_speed: 0.25  
   max_accel: 0.05
@@ -56,12 +64,12 @@ agents:
 tasks:
   quantity: 100
   locations:
-    x_min: 0
-    x_max: 1400
-    y_min: 0
-    y_max: 1000
+    x_min: 40
+    x_max: 1300
+    y_min: 40
+    y_max: 700
     non_overlap_radius: 0
-  threshold_done_by_arrival: 10.0
+  threshold_done_by_arrival: 40.0
   amounts:  # Added amounts range for tasks
     min: 6.0
     max: 60.0      
@@ -73,12 +81,12 @@ tasks:
 
 simulation:
   random_seed: 1  # Random seed (integer ≥ 1), or None to disable seeding
-  sampling_freq: 1.0 
+  sampling_freq: 10 
   speed_up_factor: 0 # 0 mean max booster; 1 means normal; 10 means 10-times faster
   max_simulation_time: 0 # 0 means no limit
   agent_track_size: 400  
-  screen_width: 1400 
-  screen_height: 1000 
+  screen_width: 1340 
+  screen_height: 740 
   gif_recording_fps: 0.05  
   task_visualisation_factor: 3  # visualization factor for tasks : 10 means converting 10 amount to 1 pixel
   profiling_mode: False
