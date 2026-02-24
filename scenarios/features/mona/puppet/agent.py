@@ -64,11 +64,6 @@ class Agent(BaseAgent):
             self._last_update_time = time.time() # 초기화 시점 기록
             return
 
-        # 시간 차이 계산 (초 단위)
-        current_time = time.time()
-        dt = current_time - self._last_update_time
-        self._last_update_time = current_time
-
         old_pos = pygame.Vector2(self.position.x, self.position.y)
 
         self.position.x = float(x)
@@ -77,19 +72,10 @@ class Agent(BaseAgent):
             self.rotation = float(yaw)
 
         if self.is_real_robot:
-            # 이동 거리 더하기
+            NOISE_THRESHOLD = 1.0  # pixels
             distance = (self.position - old_pos).length()
-            if distance > 0.0:
+            if distance > NOISE_THRESHOLD:
                 self.distance_moved += distance
-            
-            # 3. 초당 17만큼 차감 로직 (이동 거리에서 뺌)
-            # dt(경과 시간)만큼 비례해서 차감
-            reduction = 2 * dt
-            self.distance_moved -= reduction
-            
-            # 거리가 음수가 되지 않도록 방지
-            if self.distance_moved < 0:
-                self.distance_moved = 0.0
 
     def follow(self, target):
         """
