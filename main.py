@@ -42,24 +42,28 @@ async def game_loop():
 
 
 def main():
-    bt_viz_cfg = config['simulation'].get('bt_visualiser', {})
+    # bt_runner takes priority; fall back to simulation for configs that predate the bt_runner section
+    _bt_runner_cfg = config.get('bt_runner', {})
+    bt_viz_cfg = _bt_runner_cfg.get('bt_visualiser', config['simulation'].get('bt_visualiser', {}))
     if bt_viz_cfg.get('enabled', False):
         agent_id = bt_viz_cfg.get('agent_id', 0)
         if agent_id < len(env.agents):
             from modules.bt_visualiser import visualise_bt
             agent = env.agents[agent_id]
             Thread(
-                target=visualise_bt, 
-                args=(agent.agent_id, agent.tree), 
+                target=visualise_bt,
+                args=(agent.agent_id, agent.tree),
                 daemon=True
             ).start()
         else:
             print(f"[Warning] BT visualiser: agent_id {agent_id} is out of range!")
-    
+
     asyncio.run(game_loop())
 
 if __name__ == "__main__":
-    if config['simulation']['profiling_mode']:
+    _bt_runner_cfg = config.get('bt_runner', {})
+    _profiling = _bt_runner_cfg.get('profiling_mode', config['simulation'].get('profiling_mode', False))
+    if _profiling:
         cProfile.run('main()', sort='cumulative')
     else:
         main()

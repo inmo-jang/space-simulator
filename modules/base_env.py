@@ -62,7 +62,7 @@ class BaseEnv:
         self.mission_completed_text = pre_render_text("MISSION COMPLETED", 72, (0, 0, 0))
 
         # Dynamic task generation variables
-        dynamic_task_generation = config['tasks'].get('dynamic_task_generation', {})
+        dynamic_task_generation = config.get('tasks', {}).get('dynamic_task_generation', {})
         self.generation_enabled = dynamic_task_generation.get('enabled', False)
         self.generation_interval = dynamic_task_generation.get('interval_seconds', 10)
         self.max_generations = dynamic_task_generation.get('max_generations', 5)

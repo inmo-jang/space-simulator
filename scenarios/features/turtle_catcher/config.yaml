@@ -1,0 +1,63 @@
+# Turtle Catcher scenario config
+# Usage: python3 main.py --config=scenarios/features/turtle_catcher/config.yaml
+#
+# Equivalent scenario in py_bt_ros: scenarios/example_turtlesim
+# BT structure is identical; only coordinate scale differs (pixels vs turtlesim units).
+
+scenario:
+  environment: scenarios.features.turtle_catcher
+
+# Keyboard-controlled target turtle
+target:
+  speed: 15  # pixels/sec  (arrow keys)
+
+agents:
+  behavior_tree_xml: default_bt.xml
+  locations:
+    x_min: 50
+    x_max: 200
+    y_min: 50
+    y_max: 200
+    non_overlap_radius: 0
+  max_speed: 10         # pixels/sec
+  max_accel: 1
+  max_angular_speed: 3.0
+  target_approaching_radius: 40
+  communication_radius: 0
+  situation_awareness_radius: 0
+
+bt_runner:
+  bt_tick_rate: 10.0    # [dummy] mirrors sampling_freq — space-sim runs BT and physics in the same loop
+                        # TODO: separate bt_tick_rate from simulation.sampling_freq for independent BT/physics rates
+  bt_visualiser:
+    enabled: True
+    agent_id: 0
+  profiling_mode: False
+
+simulation:
+  random_seed: None
+  sampling_freq: 60.0
+  speed_up_factor: 0      # 0 = max speed
+  max_simulation_time: 0  # 0 = no limit
+  agent_track_size: 300
+  screen_width: 800
+  screen_height: 800
+  gif_recording_fps: 10
+  task_visualisation_factor: 100
+  rendering_mode: Screen
+  rendering_options:
+    agent_tail: True
+    agent_communication_topology: False
+    agent_situation_awareness_circle: False
+    agent_id: False
+    agent_work_done: False
+    agent_assigned_task_id: False
+    agent_path_to_assigned_tasks: False
+    task_id: False
+  saving_options:
+    output_folder: output
+    with_date_subfolder: True
+    save_gif: False
+    save_timewise_result_csv: False
+    save_agentwise_result_csv: False
+    save_config_yaml: False
