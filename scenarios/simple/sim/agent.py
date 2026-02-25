@@ -1,7 +1,7 @@
 import pygame
 import math
 import os
-from modules.utils import config, generate_positions 
+from modules.utils import config
 from modules.base_agent import BaseAgent
 from scenarios.simple.sim.task import task_colors
 
@@ -35,20 +35,3 @@ class Agent(BaseAgent):
         self.color = task_colors.get(self.assigned_task_id, (20, 20, 20))  # Default to Dark Grey if no task is assigned
 
 
-
-def generate_agents(tasks_info, seed=None):
-    agent_quantity = config['agents']['quantity']
-    agent_locations = config['agents']['locations']
-
-    agents_positions = generate_positions(agent_quantity,
-                                      agent_locations['x_min'],
-                                      agent_locations['x_max'],
-                                      agent_locations['y_min'],
-                                      agent_locations['y_max'],
-                                      radius=agent_locations['non_overlap_radius'],
-                                      seed=seed)
-
-    # Initialize agents
-    agents = [Agent(idx, pos, tasks_info) for idx, pos in enumerate(agents_positions)]
-
-    return agents
