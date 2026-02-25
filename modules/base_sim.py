@@ -5,7 +5,7 @@ import importlib
 from modules.utils import pre_render_text, ResultSaver
 from modules.tacview_interface.tacview_interface import TacViewInterface
 
-class BaseEnv:
+class BaseSim:
     def __init__(self, config):
         self.config = config
         self.sampling_freq = config['simulation']['sampling_freq']
@@ -102,15 +102,10 @@ class BaseEnv:
 
 
 
-    async def step(self):
-        # Main simulation loop logic
-        for agent in self.agents:
-            await agent.run_tree()
-            agent.update()
-
-        self.update_simulation()
-
     def update_simulation(self):
+        # Agent status update
+        for agent in self.agents:
+            agent.update()
         # Status retrieval
         self.simulation_time += self.sampling_time
         self.tasks_left = sum(1 for task in self.tasks if not task.completed)

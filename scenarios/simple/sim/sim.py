@@ -1,10 +1,10 @@
-from modules.base_env import BaseEnv
+from modules.base_sim import BaseSim
 from modules.utils import ResultSaver
 from scenarios.simple.sim.task import generate_tasks
 from scenarios.simple.sim.agent import generate_agents
 import pygame
 
-class Env(BaseEnv):
+class Sim(BaseSim):
     def __init__(self, config):
         super().__init__(config)
 

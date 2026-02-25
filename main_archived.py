@@ -8,7 +8,7 @@ from modules.utils import set_config
 
 # Parse command line arguments
 parser = argparse.ArgumentParser(description='SPACE (Swarm Planning And Control Evaluation) Simulator')
-parser.add_argument('--config', type=str, default='scenarios/simple/configs/config.yaml', help='Path to the configuration file (default: --config=config.yaml)')
+parser.add_argument('--config', type=str, default='config.yaml', help='Path to the configuration file (default: --config=config.yaml)')
 args = parser.parse_args()
 
 # Load configuration and initialize the environment
@@ -17,32 +17,27 @@ from modules.utils import config
 
 
 # Dynamically import the environment module and Env class
-sim_module = importlib.import_module(config.get('scenario').get('environment') + ".sim.sim")
-Sim = getattr(sim_module, "Sim")
+env_module = importlib.import_module(config.get('scenario').get('environment') + ".env")
+Env = getattr(env_module, "Env")
 # Initialize Env instance
-sim = Sim(config)
-
-from modules.bt_runner import BTRunner
-bt_runner = BTRunner(config)
-bt_runner.initialize(sim.agents)
+env = Env(config)
 
 async def game_loop():
-    while sim.running:
-        sim.handle_keyboard_events()
+    while env.running:
+        env.handle_keyboard_events()
 
-        if not sim.game_paused and not sim.mission_completed:
-            await bt_runner.step()
-            sim.update_simulation()
+        if not env.game_paused and not env.mission_completed:
+            await env.step()
             # Record data if time recording mode is enabled
-            if sim.save_timewise_result_csv:
-                sim.record_timewise_result()
+            if env.save_timewise_result_csv:
+                env.record_timewise_result()
 
-        sim.render()
-        sim.update_display()
-        if sim.recording:
-            sim.record_screen_frame()
+        env.render()
+        env.update_display()
+        if env.recording:
+            env.record_screen_frame()
 
-    sim.close()
+    env.close()
 
 
 
@@ -52,9 +47,9 @@ def main():
     bt_viz_cfg = _bt_runner_cfg.get('bt_visualiser', config['simulation'].get('bt_visualiser', {}))
     if bt_viz_cfg.get('enabled', False):
         agent_id = bt_viz_cfg.get('agent_id', 0)
-        if agent_id < len(sim.agents):
+        if agent_id < len(env.agents):
             from modules.bt_visualiser import visualise_bt
-            agent = sim.agents[agent_id]
+            agent = env.agents[agent_id]
             Thread(
                 target=visualise_bt,
                 args=(agent.agent_id, agent.tree),

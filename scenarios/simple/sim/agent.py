@@ -51,9 +51,4 @@ def generate_agents(tasks_info, seed=None):
     # Initialize agents
     agents = [Agent(idx, pos, tasks_info) for idx, pos in enumerate(agents_positions)]
 
-    # Provide the global info and create behavior tree
-    for agent in agents:
-        agent.set_global_info_agents(agents)
-        agent.create_behavior_tree(behavior_tree_xml)
-
     return agents
