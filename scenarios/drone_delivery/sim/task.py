@@ -4,7 +4,7 @@ from modules.utils import config, generate_positions
 from modules.base_task import BaseTask
 import os
 
-PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__)) 
+PROJECT_ROOT = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
 ASSETS_DIR = os.path.join(PROJECT_ROOT, 'assets')
 POINT_DIR = os.path.join(ASSETS_DIR, 'point')
 

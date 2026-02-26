@@ -5,7 +5,7 @@ import os
 from modules.utils import config, generate_positions 
 from modules.base_agent import BaseAgent
 
-PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__)) 
+PROJECT_ROOT = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
 ASSETS_DIR = os.path.join(PROJECT_ROOT, 'assets')
 DRONE_DIR = os.path.join(ASSETS_DIR, 'drone')
 drone_image_path_1 = os.path.join(DRONE_DIR, 'drone_1.png')
@@ -20,7 +20,7 @@ drone_3_image = pygame.image.load(drone_image_path_3)
 work_rate = config['agents']['work_rate']
 
 # Load behavior tree
-behavior_tree_xml = f"{os.path.dirname(os.path.abspath(__file__))}/{config['agents']['behavior_tree_xml']}"
+behavior_tree_xml = f"{os.path.dirname(os.path.dirname(os.path.abspath(__file__)))}/{config['agents']['behavior_tree_xml']}"
 
 
 class Agent(BaseAgent):

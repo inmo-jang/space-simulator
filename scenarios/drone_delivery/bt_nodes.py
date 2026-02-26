@@ -1,4 +1,3 @@
-from enum import Enum
 import math
 import random
 import pygame

@@ -1,11 +1,11 @@
 import pygame
-from modules.base_env import BaseEnv
+from modules.base_sim import BaseSim
 import os
 from modules.utils import pre_render_text, ResultSaver, ObjectToRender
-from scenarios.drone_delivery.task import generate_tasks
-from scenarios.drone_delivery.agent import generate_agents
+from scenarios.drone_delivery.sim.task import generate_tasks
+from scenarios.drone_delivery.sim.agent import generate_agents
 
-class Env(BaseEnv):
+class Sim(BaseSim):
     def __init__(self, config):
         super().__init__(config)
         self.gathering_point = pygame.Vector2(700, 500)
@@ -40,7 +40,7 @@ class Env(BaseEnv):
 
 
     def set_background(self):
-        CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+        CURRENT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         ASSETS_DIR = os.path.join(CURRENT_DIR, 'assets')
         BACKGROUND_DIR = os.path.join(ASSETS_DIR, 'background')
         POINT_DIR = os.path.join(ASSETS_DIR, 'point')
@@ -54,7 +54,7 @@ class Env(BaseEnv):
         self.final_point_image = pygame.transform.scale(final_point_image, (80, 80)) #size
 
     async def step(self):
-        await super().step() # Execution of `step()` in `BaseEnv`
+        await super().step() # Execution of `step()` in `BaseSim`
 
         for agent in self.agents:
             agent.update_mission_status(self.gathering_point, self.target_arrive_threshold)
