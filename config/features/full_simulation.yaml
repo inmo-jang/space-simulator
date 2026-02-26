@@ -27,18 +27,23 @@ decision_making: # Case 2
 
 agents:
   behavior_tree_xml: default_bt.xml 
-  quantity: 10
+  quantity: 4
+  fixed_positions:
+    - [40, 40]      # agent 0
+    - [40, 700]     # agent 1
+    - [1300, 700]   # agent 2
+    - [1300, 40]    # agent 3
   locations:
     x_min: 0
     x_max: 1340
     y_min: 0
     y_max: 740
     non_overlap_radius: 0 
-  max_speed: 0.25  
+  max_speed: 0.85  
   max_accel: 0.05
-  max_angular_speed: 0.25
+  max_angular_speed: 0.025
   target_approaching_radius: 50
-  work_rate: 20  # work rate for each agent (per 1.0/simulation.sampling_freq)
+  work_rate: 10  # work rate for each agent (per 1.0/simulation.sampling_freq)
   communication_radius: 500 # 0 represents "global", meaning that each agent can access to the information of all the other agents
   situation_awareness_radius: 500 # 0 represents "global", meaning that each agent can access to the information of all the tasks
   random_exploration_duration: 1000.0 # sec
@@ -63,7 +68,7 @@ tasks:
 
 simulation:
   random_seed: 1  # Random seed (integer ≥ 1), or None to disable seeding
-  sampling_freq: 10 
+  sampling_freq: 10.0 
   speed_up_factor: 0 # 0 mean max booster; 1 means normal; 10 means 10-times faster
   max_simulation_time: 0 # 0 means no limit
   agent_track_size: 400  

@@ -55,8 +55,16 @@ class MoveToTarget(_MoveToTask):
         super().__init__(name, agent)   
 
     def _update(self, agent, blackboard): 
-        result = super()._update(agent, blackboard, task_id_key='assigned_task_id')
-        return result
+        _task_id = blackboard.get('assigned_task_id')
+        if _task_id is None:
+            raise ValueError(f"[{self.name}] Error: No assigned_task_id found in the blackboard!")
+
+        task_position = agent.tasks_info[_task_id].position
+        # ── Rotation Shim Controller ──────────────────────────────
+        # Phase 1: rotate in place until facing the target
+        # Phase 2: move straight toward the target
+        agent.follow_rotation_shim(task_position)
+        return Status.RUNNING
         
 class ExecuteTask(_ExecuteTaskWhileFollowing): 
     def __init__(self, name, agent):
