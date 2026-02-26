@@ -5,13 +5,13 @@ import os
 import random
 from modules.utils import config, generate_positions 
 from modules.base_agent import BaseAgent
-from .path_planner.plugin_manager import planner_manager
+from scenarios.harbor_logistics.path_planner.plugin_manager import planner_manager
 
 # Load agent configuration (Scenario Specific)
 work_rate = config['agents']['work_rate']
 
 # Load behavior tree
-behavior_tree_xml = f"{os.path.dirname(os.path.abspath(__file__))}/{config['agents']['behavior_tree_xml']}"
+behavior_tree_xml = f"{os.path.dirname(os.path.dirname(os.path.abspath(__file__)))}/{config['agents']['behavior_tree_xml']}"
 
 class Agent(BaseAgent):
     def __init__(self, agent_id, position, tasks_info):

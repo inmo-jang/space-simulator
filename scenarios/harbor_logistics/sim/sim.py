@@ -1,11 +1,11 @@
 import pygame
-from modules.base_env import BaseEnv
+from modules.base_sim import BaseSim
 from modules.utils import ResultSaver, ObjectToRender
-from scenarios.harbor_logistics.task import generate_tasks
-from scenarios.harbor_logistics.agent import generate_agents
+from scenarios.harbor_logistics.sim.task import generate_tasks
+from scenarios.harbor_logistics.sim.agent import generate_agents
 from scenarios.harbor_logistics.grid_graph import GridGraph
 
-class Env(BaseEnv):
+class Sim(BaseSim):
     def __init__(self, config):
         super().__init__(config)
 
