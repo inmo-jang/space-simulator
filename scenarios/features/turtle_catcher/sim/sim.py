@@ -1,9 +1,9 @@
 import os
 import math
 import pygame
-from modules.base_env import BaseEnv
+from modules.base_sim import BaseSim
 from modules.utils import config, generate_positions
-from scenarios.features.turtle_catcher.agent import Agent
+from scenarios.features.turtle_catcher.sim.agent import Agent
 
 # ── TargetTurtle ──────────────────────────────────────────────────────────────
 # Analogous to turtle_target in turtlesim (py_bt_ros):
@@ -31,10 +31,14 @@ class TargetTurtle:
             return
         speed = _target_speed * sampling_time
         dx, dy = 0.0, 0.0
-        if keys[pygame.K_w] or keys[pygame.K_UP]:    dy -= speed
-        if keys[pygame.K_s] or keys[pygame.K_DOWN]:  dy += speed
-        if keys[pygame.K_a] or keys[pygame.K_LEFT]:  dx -= speed
-        if keys[pygame.K_d] or keys[pygame.K_RIGHT]: dx += speed
+        if keys[pygame.K_w] or keys[pygame.K_UP]:    
+            dy -= speed
+        if keys[pygame.K_s] or keys[pygame.K_DOWN]:  
+            dy += speed
+        if keys[pygame.K_a] or keys[pygame.K_LEFT]:  
+            dx -= speed
+        if keys[pygame.K_d] or keys[pygame.K_RIGHT]: 
+            dx += speed
         self.position.x = max(self.SIZE, min(_screen_w - self.SIZE, self.position.x + dx))
         self.position.y = max(self.SIZE, min(_screen_h - self.SIZE, self.position.y + dy))
         if dx != 0 or dy != 0:
@@ -49,19 +53,19 @@ class TargetTurtle:
         screen.blit(self._font.render("TARGET (WASD)", True, (80, 30, 0)), (cx + s + 4, cy - 8))
 
     def draw_task_id(self, _screen):
-        pass  # BaseEnv.draw_tasks_info() compatibility
+        pass  # BaseSim.draw_tasks_info() compatibility
 
 
-# ── Env ───────────────────────────────────────────────────────────────────────
+# ── Sim ───────────────────────────────────────────────────────────────────────
 
 _agent_locations = config['agents']['locations']
 _behavior_tree_xml = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)),
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
     config['agents']['behavior_tree_xml'],
 )
 
 
-class Env(BaseEnv):
+class Sim(BaseSim):
     def __init__(self, config):
         super().__init__(config)
         self.reset()
@@ -70,7 +74,7 @@ class Env(BaseEnv):
         super().reset()
         self.target = TargetTurtle((_screen_w // 2, _screen_h // 2))
         self.agents = self._generate_agents(seed=self.seed)
-        self.tasks = [self.target]  # BaseEnv.update_simulation() completion check
+        self.tasks = [self.target]  # BaseSim.update_simulation() completion check
 
     def _generate_agents(self, seed=None):
         positions = generate_positions(
@@ -86,13 +90,10 @@ class Env(BaseEnv):
             agent.create_behavior_tree(_behavior_tree_xml)
         return agents
 
-    async def step(self):
+    def update_simulation(self):
         keys = pygame.key.get_pressed()
         self.target.update(keys, self.sampling_time)
-        for agent in self.agents:
-            await agent.run_tree()
-            agent.update()
-        self.update_simulation()
+        super().update_simulation()
 
     def save_results(self):
         pass
