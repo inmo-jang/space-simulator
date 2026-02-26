@@ -21,7 +21,7 @@ The key difference lies in the structure of the Behaviour Tree (BT) used for age
 
 ```bash
 # Run the simple scenario
-python main.py --config=config/default/simple.yaml
+python main.py --config=scenarios/simple/configs/cbba.yaml
 
 # Run the parallel scenario
-python main.py --config=config/features/parallel.yaml
+python main.py --config=scenarios/features/parallel/config.yaml
