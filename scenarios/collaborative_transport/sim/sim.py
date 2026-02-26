@@ -1,9 +1,9 @@
-from modules.base_env import BaseEnv
+from modules.base_sim import BaseSim
 from modules.utils import ResultSaver
-from scenarios.collaborative_transport.task import generate_tasks
-from scenarios.collaborative_transport.agent import generate_agents
+from scenarios.collaborative_transport.sim.task import generate_tasks
+from scenarios.collaborative_transport.sim.agent import generate_agents
 
-class Env(BaseEnv):
+class Sim(BaseSim):
     def __init__(self, config):
         super().__init__(config)
 
@@ -26,8 +26,8 @@ class Env(BaseEnv):
         # Initialize data recording
         self.data_records = []
 
-    async def step(self): 
-        await super().step()
+    def update_simulation(self): 
+        super().update_simulation()
 
         for task in self.tasks:
             if task.task_type == "block" and task.completed and len(task.ready_agents) != 0:

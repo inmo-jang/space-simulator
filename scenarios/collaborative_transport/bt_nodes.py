@@ -1,7 +1,5 @@
-import math
 import random
-from modules.base_bt_nodes import BTNodeList, Status, Node, Sequence, Fallback, ReactiveSequence, ReactiveFallback, SyncAction, GatherLocalInfo, AssignTask
-from modules.base_bt_nodes import _IsTaskCompleted, _ExecuteTask, _ExploreArea, _IsArrivedAtTask, _MoveToTask
+from modules.base_bt_nodes import BTNodeList, Status, Node, Sequence, Fallback, ReactiveSequence, ReactiveFallback, SyncAction, SyncCondition, GatherLocalInfo, AssignTask
 from modules.base_bt_nodes import AssignTask as _AssignTask
 # BT Node List
 CUSTOM_ACTION_NODES = [
@@ -97,13 +95,26 @@ class GatherLocalInfo(SyncAction):
 
         return Status.SUCCESS
 
-class Explore(_ExploreArea): 
+class Explore(SyncAction):
     def __init__(self, name, agent):
-        super().__init__(name, agent)   
+        super().__init__(name, self._update)
+        self.random_move_time = float('inf')
+        self.random_waypoint = (0, 0)
 
-    def _update(self, agent, blackboard): 
-        result = super()._update(agent, blackboard, agent_max_random_movement_duration=agent_max_random_movement_duration, exploration_area=task_locations, sampling_time=sampling_time)
-        return result
+    def _update(self, agent, blackboard):
+        if self.random_move_time > agent_max_random_movement_duration:
+            self.random_waypoint = (
+                random.randint(task_locations['x_min'], task_locations['x_max']),
+                random.randint(task_locations['y_min'], task_locations['y_max'])
+            )
+            self.random_move_time = 0
+
+        self.random_move_time += sampling_time
+        agent.follow(self.random_waypoint)
+        return Status.RUNNING
+
+    def halt(self):
+        self.random_move_time = float('inf')
 
 class SelectVertex(SyncAction):
     def __init__(self, name, agent):
@@ -168,15 +179,15 @@ class AssignTask(_AssignTask):
         return result
         
 
-
-class IsArrivedAtBlockTask(_IsArrivedAtTask): 
+class IsArrivedAtBlockTask(SyncCondition):
     def __init__(self, name, agent):
-        super().__init__(name, agent)   
+        super().__init__(name, self._update)
 
-    def _update(self, agent, blackboard): 
-        result = super()._update(agent, blackboard, task_id_key='block_task_id', arrive_threshold = 0)
-
+    def _update(self, agent, blackboard):
         block_task_id = blackboard.get('block_task_id')
+        if block_task_id is None:
+            raise ValueError(f"[{self.name}] Error: No block_task_id found in the blackboard!")
+
         block_task = agent.tasks_info[block_task_id]
 
         # For Debug - # While this agent is moving towards to the task
@@ -184,21 +195,24 @@ class IsArrivedAtBlockTask(_IsArrivedAtTask):
             # Reset
             raise ValueError(f"[{self.name}] Error: This task should have not been selected in AssignTask!")
 
-        if result is Status.SUCCESS:
+        distance = (block_task.position - agent.position).length()
+        if distance < block_task.radius:  # arrive_threshold=0
             agent.reset_movement()
             block_task.include_to_ready_agents(agent.agent_id)
-        return result
+            return Status.SUCCESS
+        return Status.FAILURE
 
-class MoveToBlockTask(_MoveToTask):
+class MoveToBlockTask(SyncAction):
     def __init__(self, name, agent):
-        super().__init__(name, agent)   
+        super().__init__(name, self._update)
 
-    def _update(self, agent, blackboard): 
-        if blackboard.get('block_task_id', None) is None:
+    def _update(self, agent, blackboard):
+        block_task_id = blackboard.get('block_task_id')
+        if block_task_id is None:
             return Status.FAILURE
 
-        result = super()._update(agent, blackboard, task_id_key='block_task_id')
-        return result
+        agent.follow(agent.tasks_info[block_task_id].position)
+        return Status.RUNNING
 
 
 class IsArrivedAtVertex(_IsArrivedAtVertex): 
@@ -267,36 +281,52 @@ class WaitAgents(SyncAction):
         agent.update_cumulative_waiting_time(sampling_time)
         return Status.RUNNING
 
-class IsBlockTaskLifted(_IsTaskCompleted): 
+class IsBlockTaskLifted(SyncCondition):
     def __init__(self, name, agent):
-        super().__init__(name, agent)   
+        super().__init__(name, self._update)
 
-    def _update(self, agent, blackboard): 
-        result = super()._update(agent, blackboard, task_id_key='block_task_id')
-        return result
+    def _update(self, agent, blackboard):
+        block_task_id = blackboard.get('block_task_id')
+        if block_task_id is None:
+            return Status.RUNNING
 
-class LiftBlockTask(_ExecuteTask): 
+        task = agent.tasks_info[block_task_id]
+        if task.completed is True:
+            return Status.SUCCESS
+        return Status.FAILURE
+
+class LiftBlockTask(SyncAction):
     def __init__(self, name, agent):
-        super().__init__(name, agent)   
+        super().__init__(name, self._update)
 
-    def _update(self, agent, blackboard): 
-        result = super()._update(agent, blackboard, task_id_key='block_task_id')
-        return result
+    def _update(self, agent, blackboard):
+        block_task_id = blackboard.get('block_task_id')
+        if block_task_id is None:
+            raise ValueError(f"[{self.name}] Error: No block_task_id found in the blackboard!")
 
-    
-class IsSlotTaskCompleted(_IsTaskCompleted): 
+        agent.tasks_info[block_task_id].reduce_amount(agent.work_rate)
+        agent.update_task_amount_done(agent.work_rate)
+        return Status.RUNNING
+
+
+class IsSlotTaskCompleted(SyncCondition):
     def __init__(self, name, agent):
-        super().__init__(name, agent)   
+        super().__init__(name, self._update)
 
-    def _update(self, agent, blackboard): 
-        result = super()._update(agent, blackboard, task_id_key='slot_task_id')
-        if result is Status.SUCCESS:
+    def _update(self, agent, blackboard):
+        slot_task_id = blackboard.get('slot_task_id')
+        if slot_task_id is None:
+            return Status.RUNNING
+
+        task = agent.tasks_info[slot_task_id]
+        if task.completed is True:
             block_task_id = blackboard.get('block_task_id')
             block_task = agent.tasks_info[block_task_id]
             block_task.set_delivered()
             agent.set_assigned_task_id(None)
-            agent.set_color_id(None)            
-        return result
+            agent.set_color_id(None)
+            return Status.SUCCESS
+        return Status.FAILURE
 
 class IsArrivedAtSlotTask(_IsArrivedAtVertex): 
     def __init__(self, name, agent):
@@ -316,12 +346,15 @@ class MoveToSlotTask(_MoveToVertex):
         result = super()._update(agent, blackboard, task_id_key='slot_task_id')
         return result        
 
-class PlaceDownBlockTask(_ExecuteTask): 
+class PlaceDownBlockTask(SyncAction):
     def __init__(self, name, agent):
-        super().__init__(name, agent)   
+        super().__init__(name, self._update)
 
-    def _update(self, agent, blackboard): 
-        result = super()._update(agent, blackboard, task_id_key='slot_task_id')
-        return result    
+    def _update(self, agent, blackboard):
+        slot_task_id = blackboard.get('slot_task_id')
+        if slot_task_id is None:
+            raise ValueError(f"[{self.name}] Error: No slot_task_id found in the blackboard!")
 
-
+        agent.tasks_info[slot_task_id].reduce_amount(agent.work_rate)
+        agent.update_task_amount_done(agent.work_rate)
+        return Status.RUNNING
