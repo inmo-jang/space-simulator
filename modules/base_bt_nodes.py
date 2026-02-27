@@ -290,7 +290,7 @@ class GatherLocalInfo(SyncAction):
         super().__init__(name, self._local_sensing)
 
     def _local_sensing(self, agent, blackboard):        
-        blackboard['local_tasks_info'] = agent.get_tasks_nearby(with_completed_task = False)
+        blackboard['local_tasks_info'] = {task.task_id: task for task in agent.get_tasks_nearby(with_completed_task=False)}
         blackboard['local_agents_info'] = agent.local_message_receive()
 
         return Status.SUCCESS

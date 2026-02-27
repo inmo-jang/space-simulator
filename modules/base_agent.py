@@ -137,6 +137,7 @@ class BaseAgent:
                 other_agent.receive_message(self.message_to_share)        
 
     def local_message_receive(self):
+        self.reset_messages_received() # Clear previous messages
         self.agents_nearby = self.get_agents_nearby()
         for other_agent in self.agents_nearby:
             if other_agent.agent_id != self.agent_id:                         
