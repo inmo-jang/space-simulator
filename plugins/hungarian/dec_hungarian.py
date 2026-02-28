@@ -361,31 +361,28 @@ class DistributedHungarian:
         return 1.0 / expected_reward
 
     def _build_equality_edges(self):
-        self.Ey = set()
-        for i in range(self.r):
-            for j in range(self.p):
-                if abs(self.weights[i, j] - self.agent_label[i] - self.task_label[j]) < EPSILON:
-                    self.Ey.add((i, j))
+        slack = self.weights - self.agent_label[:, np.newaxis] - self.task_label[np.newaxis, :]
+        mask = (~np.isinf(self.weights)) & (np.abs(slack) <= EPSILON)
+        rows, cols = np.where(mask)
+        self.Ey = set(zip(rows.tolist(), cols.tolist()))
 
     def _step_1_a(self):
-        E_cand = set()
-        uncovered_rows = [i for i in range(self.r) if i not in self.Rc]
-        uncovered_cols = [j for j in range(self.p) if j not in self.Pc]
-        
-        if not uncovered_rows or not uncovered_cols: return E_cand
-        
-        min_slack = float('inf')
-        best_edges = []
-        
-        for i in uncovered_rows:
-            for j in uncovered_cols:
-                slack = self.weights[i, j] - self.agent_label[i] - self.task_label[j]
-                if slack < min_slack:
-                    min_slack = slack
-                    best_edges = [(i, j)]
-                elif slack == min_slack:
-                    best_edges.append((i, j))
-        return set(best_edges)
+        uncovered_rows = np.array([i for i in range(self.r) if i not in self.Rc], dtype=int)
+        uncovered_cols = np.array([j for j in range(self.p) if j not in self.Pc], dtype=int)
+
+        if len(uncovered_rows) == 0 or len(uncovered_cols) == 0:
+            return set()
+
+        sub_w = self.weights[np.ix_(uncovered_rows, uncovered_cols)]
+        sub_slack = sub_w - self.agent_label[uncovered_rows, np.newaxis] - self.task_label[np.newaxis, uncovered_cols]
+        sub_slack = np.where(np.isinf(sub_w), np.inf, sub_slack)
+
+        min_slack = sub_slack.min()
+        if np.isinf(min_slack):
+            return set()
+
+        local_rows, local_cols = np.where(sub_slack == min_slack)
+        return set(zip(uncovered_rows[local_rows].tolist(), uncovered_cols[local_cols].tolist()))
 
     def _step_1_b(self, E_cand):
         if not E_cand: return None
@@ -395,10 +392,12 @@ class DistributedHungarian:
             if slack < min_slack: min_slack = slack
             
         # Update labels
-        for i in self.Rc: self.agent_label[i] -= min_slack
-        for j in range(self.p):
-            if j not in self.Pc:
-                self.task_label[j] += min_slack
+        if self.Rc:
+            self.agent_label[list(self.Rc)] -= min_slack
+        uncovered_p_mask = np.ones(self.p, dtype=bool)
+        if self.Pc:
+            uncovered_p_mask[list(self.Pc)] = False
+        self.task_label[uncovered_p_mask] += min_slack
         return min_slack
 
     def _find_matching_and_cover(self, r_labels, p_labels):
