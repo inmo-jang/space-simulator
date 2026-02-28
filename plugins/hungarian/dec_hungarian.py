@@ -15,7 +15,7 @@ class Phase(Enum):
 
 class DistributedHungarian:
     
-    def __init__(self, agent, blackboard):
+    def __init__(self, agent):
         self.agent = agent
         
         # State
@@ -59,7 +59,7 @@ class DistributedHungarian:
         _local_agents_info = blackboard['local_agents_info']
         self.last_local_agents = _local_agents_info # Store for messaging
         _local_tasks_info = blackboard['local_tasks_info']
-        messages = blackboard['messages_received']
+        messages = self.agent.messages_received
         
         # Handle completed task
         if self.assigned_task and self.assigned_task.completed:
@@ -102,7 +102,7 @@ class DistributedHungarian:
 
     def _initialize(self, tasks):
         self.R = [self.agent]
-        self.P = sorted(tasks, key=lambda t: t.task_id)
+        self.P = sorted(tasks.values(), key=lambda t: t.task_id)
         self.initialised = True
 
     # ==============================================================
@@ -224,11 +224,11 @@ class DistributedHungarian:
                         self.completed_tasks.add(tid)
 
         # Update P
-        observed_task_ids = {t.task_id for t in local_tasks}
-        
+        observed_task_ids = {t.task_id for t in local_tasks.values()}
+
         # Collect tasks from all reachable neighbors
         current_p_map = {getattr(t, 'task_id', t.get('task_id') if isinstance(t, dict) else None): t for t in self.P}
-        for t in local_tasks:
+        for t in local_tasks.values():
             current_p_map[t.task_id] = t
             
         for msg in valid_msgs:
@@ -355,7 +355,9 @@ class DistributedHungarian:
         agent_position = agent.position
         task_position = pygame.Vector2(task.position)
         distance_to_task = agent_position.distance_to(task_position)
-        expected_reward = LAMBDA**(distance_to_task/agent.max_speed + task.amount/agent.work_rate) #* task.amount
+        AGENT_SPEED = 0.5
+        expected_reward = LAMBDA**(distance_to_task/AGENT_SPEED)         
+        # expected_reward = LAMBDA**(distance_to_task/agent.max_speed + task.amount/agent.work_rate) #* task.amount
         return 1.0 / expected_reward
 
     def _build_equality_edges(self):
