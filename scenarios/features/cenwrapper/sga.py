@@ -47,9 +47,11 @@ class SGA(SyncAction):
             agent_id = other_agent.agent_id
             assigned_task = self.assigned_tasks.get(agent_id, None)
             if assigned_task is not None and assigned_task.completed:
-                if len(self.paths[agent_id]) != 0 and self.paths[agent_id][0] == assigned_task:
-                    self.paths[agent_id].pop(0)
-                    self.bundles[agent_id].pop(0)
+                _done_task_id = assigned_task.task_id
+                if _done_task_id in self.bundles[agent_id]:
+                    self.bundles[agent_id].remove(_done_task_id)
+                if assigned_task in self.paths[agent_id]:
+                    self.paths[agent_id].remove(assigned_task)
                 self.assigned_tasks[agent_id] = None
                 
     def _init_agent_state(self, agents):
@@ -106,7 +108,7 @@ class SGA(SyncAction):
             self.winning_bids[best_task.task_id] = best_gain
             self.winning_agents[best_task.task_id] = best_agent.agent_id
             
-            self.bundles[best_agent.agent_id].insert(best_insertion_idx, best_task.task_id)
+            self.bundles[best_agent.agent_id].append(best_task.task_id)
             self.paths[best_agent.agent_id].insert(best_insertion_idx, best_task)
             
             # CBBA: update_bundle_and_path와 동일
@@ -117,17 +119,12 @@ class SGA(SyncAction):
                     if self.winning_agents[task_id] != existing_winning_agent_id:
                         _n_bar = idx
                         break
-                # CBBA: WINNING BID CANCEL과 동일
-                for _task_id in _bundle[_n_bar+1:]: # _n_bar + 1? 겹치면 안됨
+                _tasks_to_remove = set(_bundle[_n_bar:])
+                for _task_id in _bundle[_n_bar+1:]:
                     self.winning_bids[_task_id] = float('-inf')
                     self.winning_agents[_task_id] = None
-                self.bundles[existing_winning_agent_id] = self.bundles[existing_winning_agent_id][0:_n_bar]
-                self.paths[existing_winning_agent_id] = self.paths[existing_winning_agent_id][0:_n_bar]
-                
-            # Winning bid reset (just in case)
-            _winner_bundle = self.bundles[best_agent.agent_id]
-            for _task_id in _winner_bundle[best_insertion_idx+1:]:
-                self.winning_bids[_task_id] = float('-inf')
+                self.bundles[existing_winning_agent_id] = _bundle[0:_n_bar]
+                self.paths[existing_winning_agent_id] = [t for t in self.paths[existing_winning_agent_id] if t.task_id not in _tasks_to_remove]
 
 
             # 전역 후보에서 제거

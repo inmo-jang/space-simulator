@@ -56,11 +56,11 @@ class CBBA:
 
         # Check if the existing task is done
         if self.assigned_task is not None and self.assigned_task.completed:
-            if len(self.path) != 0 and self.path[0] == self.assigned_task:
-                self.path.pop(0)
-                self.bundle.pop(0)
-            self.assigned_task = None
-            self.phase = Phase.BUILD_BUNDLE
+            _done_task_id = self.assigned_task.task_id
+            if _done_task_id in self.bundle:
+                self.bundle.remove(_done_task_id)
+            if self.assigned_task in self.path:
+                self.path.remove(self.assigned_task)
 
         if len(self.bundle) == 0:
             self.phase = Phase.BUILD_BUNDLE
@@ -267,8 +267,13 @@ class CBBA:
                 _n_bar = idx
                 break
 
+        _tasks_to_remove = set(self.bundle[_n_bar:])
+        for _task_id in self.bundle[_n_bar+1:]:
+            self.y[_task_id] = float('-inf')
+            self.z[_task_id] = None
+
         _bundle = self.bundle[0:_n_bar]
-        _path = self.path[0:_n_bar]
+        _path = [t for t in self.path if t.task_id not in _tasks_to_remove]
 
         return _bundle, _path
 
@@ -284,11 +289,9 @@ class CBBA:
         
 
         while len(self.bundle) < min(MAX_TASKS_PER_AGENT, len(_local_tasks_info)) or self.has_missing_tasks(_local_tasks_info):
-            # Calculate S_p for the constructed path list
-            
 
             # Line 7
-            my_bid_list, best_insertion_idx_list = self.get_my_bid_value_list(_local_tasks_info) 
+            my_bid_list, best_insertion_idx_list = self.get_my_bid_value_list(_local_tasks_info)
 
             # Line 8~9
             task_to_add = self.get_best_task(my_bid_list)
@@ -298,27 +301,21 @@ class CBBA:
             # Line 10
             best_insertion_idx = best_insertion_idx_list[task_to_add.task_id]
 
-            # Line 11
-            self.bundle.insert(best_insertion_idx, task_to_add.task_id)
-            # Line 12
+            # Line 11: Bundle records selection order (append)
+            self.bundle.append(task_to_add.task_id)
+            # Line 12: Path records visit order (insert at best position)
             self.path.insert(best_insertion_idx, task_to_add)
             # Line 13
             self.y[task_to_add.task_id] = my_bid_list[task_to_add.task_id]
-            # LIne 14
+            # Line 14
             self.z[task_to_add.task_id] = self.agent.agent_id
-
-
-            # Reset Winning bid value after best_insertion_idx
-            for _task_id in self.bundle[best_insertion_idx+1:]:
-                self.y[_task_id] = float('-inf')        
-
 
             # Truncated by MAX_TASKS_PER_AGENT
             if len(self.bundle) > MAX_TASKS_PER_AGENT:
                 last_end_task_id = self.bundle[-1]
                 self._reset(last_end_task_id)
                 self.bundle = self.bundle[0:MAX_TASKS_PER_AGENT]
-                self.path = self.path[0:MAX_TASKS_PER_AGENT]
+                self.path = [t for t in self.path if t.task_id != last_end_task_id]
 
 
 
