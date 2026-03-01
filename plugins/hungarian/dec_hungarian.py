@@ -42,35 +42,34 @@ class DistributedHungarian:
 
         # Init message
         self.global_adjacency = {}
-        self._update_message([], [])
-    
+        self._update_message()
+
     # ==============================================================
     # Main Decision Logic
     # ==============================================================
     
     def decide(self, blackboard):
-        _local_agents_info = blackboard['local_agents_info']
-        _local_tasks_info = blackboard['local_tasks_info']
+        previous_assigned_task_id = self.assigned_task.task_id if self.assigned_task is not None else None  # For Debug        
+
+        _local_tasks_info = blackboard.get('local_tasks_info', {})
         messages = self.agent.messages_received
         
         # Handle completed task
-        if self.assigned_task and self.assigned_task.completed:
-            self._on_task_completed(self.assigned_task.task_id, _local_tasks_info)
+        self.assigned_task = _local_tasks_info.get(previous_assigned_task_id)        
+        if self.assigned_task is None and previous_assigned_task_id is not None: 
+            self._on_task_completed(previous_assigned_task_id)
         
-        # Initialize if needed
-        if not self.initialised:
-            self._initialize(_local_tasks_info)
         
         # Continuous Monitoring: Detect cluster changes
-        if self._detect_cluster_changes(messages, _local_agents_info):
+        if self._detect_cluster_changes(messages):
             self.assigned_task = None # Reset assignment on cluster change
             self._update_visualization()
         
 
             
         # Always Build/Sync Graph
-        self._build_latest_graph(messages, _local_agents_info, _local_tasks_info)
-        
+        self._build_latest_graph(messages, _local_tasks_info)
+
         # Run Hungarian (Phase 2 logic)
         assigned_task = self._run_centralized_hungarian()
         self.assigned_task = assigned_task
@@ -78,7 +77,7 @@ class DistributedHungarian:
 
         
         # Return result
-        self._update_message(_local_agents_info, _local_tasks_info)
+        self._update_message()
         self.agent.reset_messages_received()
         
         # Debug Log for Assignment
@@ -87,27 +86,26 @@ class DistributedHungarian:
         
         return self.assigned_task.task_id if self.assigned_task else None
     
-    def _on_task_completed(self, task_id, _local_tasks_info):
+    def _on_task_completed(self, task_id):
         self.completed_tasks.add(task_id)
-        self.assigned_task = None
         self._update_visualization()
 
-    def _initialize(self, tasks):
-        self.R = [self.agent]
-        self.P = sorted(tasks.values(), key=lambda t: t.task_id)
-        self.initialised = True
+    # def _initialize(self, tasks):
+    #     self.R = [self.agent]
+    #     self.P = sorted(tasks.values(), key=lambda t: t.task_id)
+    #     self.initialised = True
 
     # ==============================================================
     # Cluster Synchronization (R/P Logic)
     # ==============================================================
-    
-    def _detect_cluster_changes(self, messages, local_agents):
-        """군집 내 멤버 변경(유입/이탈) 감지 (Live Object Safe)"""
+
+    def _detect_cluster_changes(self, messages):
+        """군집 내 멤버 변경(유입/이탈) 감지"""
         current_r_ids = {getattr(a, 'agent_id', a.get('agent_id') if isinstance(a, dict) else None) for a in self.R}
         perceived_ids = {self.agent.agent_id}
         
-        for a in local_agents:
-            perceived_ids.add(a.agent_id)
+        for a in messages:
+            perceived_ids.add(a.get('agent_id'))
             
         for msg in messages:
             if msg:
@@ -129,14 +127,21 @@ class DistributedHungarian:
 
 
 
-    def _build_latest_graph(self, messages, local_agents, local_tasks):
+    def _build_latest_graph(self, messages, local_tasks):
         """Sync Graph"""
         valid_msgs = [m for m in messages if m and 'agent_id' in m]
         
         # 1. Collect Candidates
-        candidates = {self.agent.agent_id: self.agent}
-        for a in local_agents:
-            candidates[a.agent_id] = a
+        candidates = {self.agent.agent_id:
+                        {
+                            'agent_id': self.agent.agent_id,
+                            'position': self.agent.position
+                        }
+                    }
+        for msg in messages:
+            candidates[msg['agent_id']] = {
+                'agent_id': msg['agent_id'],
+                'position': msg.get('position', None)}
         for msg in valid_msgs:
             for agent in msg.get('agents_info', []):
                 aid = getattr(agent, 'agent_id', None)
@@ -154,7 +159,7 @@ class DistributedHungarian:
         _agent_id = self.agent.agent_id
         
         # 2.1 Update My Local View in Global Graph
-        my_neighbors = {a.agent_id for a in local_agents}
+        my_neighbors = {msg['agent_id'] for msg in messages if 'agent_id' in msg}
 
         # 2.2 Merge Neighbors' Views via Link State Advertisement
         new_global_adj = {_agent_id: my_neighbors}
@@ -230,17 +235,20 @@ class DistributedHungarian:
     # ==============================================================
     # Messaging
     # ==============================================================
-    def _update_message(self, _local_agents_info, _local_tasks_info):
+    def _update_message(self):
         # Prepare Graph to Send
         graph_to_send = self.global_adjacency.copy()
         # Ensure my fresh local view is in the message
         _agent_id = self.agent.agent_id
-        if _local_agents_info is not None:
-             graph_to_send[_agent_id] = {a.agent_id for a in _local_agents_info}
-        
+        graph_to_send[_agent_id] = {
+            msg.get('agent_id') for msg in self.agent.messages_received
+            if msg and 'agent_id' in msg
+        }
+
         self.agent.message_to_share = {
                                        'agent_id': _agent_id,
                                        'adjacency_graph': graph_to_send, # Send Full Graph
+                                       'position': self.agent.position,
                                        'agents_info': self.R, # Send Full Agent Objects (Data Payload)
                                        'tasks_info': self.P, # Send Full Task Objects (Data Payload)
                                        'completed_tasks': self.completed_tasks,
@@ -302,7 +310,7 @@ class DistributedHungarian:
 
         if num_agents > 0 and num_tasks > 0:
             AGENT_SPEED = 0.5
-            agent_pos = np.array([[a.position.x, a.position.y] for a in local_agents])
+            agent_pos = np.array([[a.get('position').x, a.get('position').y] for a in local_agents])
             task_pos  = np.array([[t.position.x, t.position.y] for t in local_tasks])
             diff = agent_pos[:, np.newaxis, :] - task_pos[np.newaxis, :, :]
             distances = np.sqrt((diff ** 2).sum(axis=2))
