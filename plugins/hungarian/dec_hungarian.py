@@ -1,13 +1,12 @@
 import numpy as np
-import pygame
-import random
+from collections import deque
+from scipy.optimize import linear_sum_assignment
 from modules.utils import config
 from enum import Enum
 
 # Configuration
 LAMBDA = config['decision_making']['Hungarian']['task_reward_discount_factor']
 DUMMY_COST = config['decision_making']['Hungarian']['dummy_cost']
-EPSILON = 1e-10
 
 class Phase(Enum):
     SYNC = 1
@@ -30,13 +29,6 @@ class DistributedHungarian:
         self.weights = np.array([])
         self.r = 0
         self.p = 0
-        self.agent_label = np.array([])
-        self.task_label = np.array([])
-        self.M = []
-        self.Ey = set()
-        self.Rc = set()
-        self.Pc = set()
-        self.E_cand = set()
         
         # Mappings
         self.agent_idx_to_id = {}
@@ -46,7 +38,8 @@ class DistributedHungarian:
         # Assignment tracking
         self.assigned_task = None
         self.completed_tasks = set()
-        
+        self.gamma = 0  # Countervalue γ^i (논문의 Build_Latest_Graph 수렴 추적)
+
         # Init message
         self.global_adjacency = {}
         self._update_message([], [])
@@ -57,7 +50,6 @@ class DistributedHungarian:
     
     def decide(self, blackboard):
         _local_agents_info = blackboard['local_agents_info']
-        self.last_local_agents = _local_agents_info # Store for messaging
         _local_tasks_info = blackboard['local_tasks_info']
         messages = self.agent.messages_received
         
@@ -127,8 +119,12 @@ class DistributedHungarian:
                     if aid is not None:
                         perceived_ids.add(aid)
         
-        if not current_r_ids.issubset(perceived_ids): return True
-        if not perceived_ids.issubset(current_r_ids): return True
+        if not current_r_ids.issubset(perceived_ids):
+            self.gamma = 0
+            return True
+        if not perceived_ids.issubset(current_r_ids):
+            self.gamma = 0
+            return True
         return False
 
 
@@ -159,23 +155,9 @@ class DistributedHungarian:
         
         # 2.1 Update My Local View in Global Graph
         my_neighbors = {a.agent_id for a in local_agents}
-        self.global_adjacency[_agent_id] = my_neighbors
-        
+
         # 2.2 Merge Neighbors' Views via Link State Advertisement
-        # If I receive a message from 'sender', I trust 'sender's adjacency report' + 'sender's knowledge of others'
-        for msg in valid_msgs:
-            sender_id = msg.get('agent_id')
-            if sender_id is not None:
-                # Implicit edge: I hear sender -> I am connected to sender (Directional? No, assume bidir communication if msg received)
-                # But strictly, Link State relies on Sender reporting who THEY see.
-                
-                # Merge the received graph
-                received_adj = msg.get('adjacency_graph', {})
-                if isinstance(received_adj, dict):
-                    pass 
-        
-        new_global_adj = {}
-        new_global_adj[_agent_id] = my_neighbors
+        new_global_adj = {_agent_id: my_neighbors}
         
         for msg in valid_msgs:
             sender_id = msg.get('agent_id')
@@ -192,37 +174,21 @@ class DistributedHungarian:
         self.global_adjacency = new_global_adj
 
         # BFS to find Connected Component (Reachability)
-        reachable_ids = {_agent_id}
-        queue = [_agent_id]
         visited = {_agent_id}
-        
-        while queue:
-            curr = queue.pop(0)
-            # Retrieve neighbors from the merged graph
-            neighbors = self.global_adjacency.get(curr, set())
-            if not neighbors:
-                pass
+        queue = deque([_agent_id])
 
-            for n in neighbors:
+        while queue:
+            curr = queue.popleft()
+            for n in self.global_adjacency.get(curr, set()):
                 if n not in visited:
                     visited.add(n)
-                    reachable_ids.add(n)
-                    # Only traverse if we have adjacency info for 'n' (it's in the graph)
                     if n in self.global_adjacency:
                         queue.append(n)
-        
-        # Update R
-        self.R = [candidates[aid] for aid in sorted(list(reachable_ids)) if aid in candidates]
-        new_R_ids = reachable_ids
-        
-        # Handle Completed Tasks (Merge from all reachable nodes)
-        for msg in valid_msgs:
-            # Only trust messages from reachable agents
-            if msg['agent_id'] in new_R_ids:
-                for tid in msg.get('completed_tasks', set()):
-                    if tid not in self.completed_tasks:
-                        self.completed_tasks.add(tid)
 
+        # Update R
+        self.R = [candidates[aid] for aid in sorted(visited) if aid in candidates]
+        new_R_ids = visited
+        
         # Update P
         observed_task_ids = {t.task_id for t in local_tasks.values()}
 
@@ -230,19 +196,36 @@ class DistributedHungarian:
         current_p_map = {getattr(t, 'task_id', t.get('task_id') if isinstance(t, dict) else None): t for t in self.P}
         for t in local_tasks.values():
             current_p_map[t.task_id] = t
-            
+
+        # Handle Completed Tasks + tasks_info (merged loop)
         for msg in valid_msgs:
-            if msg['agent_id'] in new_R_ids:
-                for t in msg.get('tasks_info', []):
-                    tid = getattr(t, 'task_id', t.get('task_id') if isinstance(t, dict) else None)
-                    if tid is not None and tid not in self.completed_tasks:
-                        # tracking
-                        observed_task_ids.add(tid)
-                        current_p_map[tid] = t
+            if msg['agent_id'] not in new_R_ids:
+                continue
+            for tid in msg.get('completed_tasks', set()):
+                if tid not in self.completed_tasks:
+                    self.completed_tasks.add(tid)
+            for t in msg.get('tasks_info', []):
+                tid = getattr(t, 'task_id', t.get('task_id') if isinstance(t, dict) else None)
+                if tid is not None and tid not in self.completed_tasks:
+                    observed_task_ids.add(tid)
+                    current_p_map[tid] = t
 
         # Filter P
         self.P = [t for tid, t in current_p_map.items() if tid in observed_task_ids and tid not in self.completed_tasks]
         self.P.sort(key=lambda t: getattr(t, 'task_id', t.get('task_id') if isinstance(t, dict) else None))
+
+        # Lead Robot Selection via γ (논문의 Build_Latest_Graph)
+        # γ가 가장 높은 로봇(= 가장 수렴된 상태)의 countervalue를 상속
+        neighbor_gammas = {_agent_id: self.gamma}
+        for msg in valid_msgs:
+            sender = msg.get('agent_id')
+            if sender in visited:
+                neighbor_gammas[sender] = msg.get('gamma', 0)
+
+        lead_id = max(neighbor_gammas, key=neighbor_gammas.get)
+        lead_gamma = neighbor_gammas[lead_id]
+        if lead_id != _agent_id and lead_gamma > self.gamma:
+            self.gamma = lead_gamma
 
     # ==============================================================
     # Messaging
@@ -261,7 +244,8 @@ class DistributedHungarian:
                                        'agents_info': self.R, # Send Full Agent Objects (Data Payload)
                                        'tasks_info': self.P, # Send Full Task Objects (Data Payload)
                                        'completed_tasks': self.completed_tasks,
-                                       'assigned_task_id': self.assigned_task.task_id if self.assigned_task else None
+                                       'assigned_task_id': self.assigned_task.task_id if self.assigned_task else None,
+                                       'gamma': self.gamma,  # Countervalue for lead robot selection
                                        }
 
     def _update_visualization(self):
@@ -276,35 +260,15 @@ class DistributedHungarian:
     
     def _run_centralized_hungarian(self):
         """Run standard Hungarian locally on self.R and self.P"""
-        # 1. Build Weights
         self._build_weights_matrix()
-        
-        # 2. Init Labels
-        self.agent_label = np.min(self.weights, axis=1)
-        self.task_label = np.zeros(self.p, dtype=float)
-        
-        # 3. Hungarian Loop
-        max_iter = 100
-        iteration = 0
-        
-        self._build_equality_edges()
-        matching, _ = self._find_matching_and_cover(self.agent_label, self.task_label)
-        
-        while len(matching) < self.r and iteration < max_iter:
-            iteration += 1
-            
-            E_cand = self._step_1_a()
-            if not E_cand: break
-            
-            delta = self._step_1_b(E_cand)
-            if delta is None or delta == 0: break
-            
-            self._build_equality_edges()
-            matching, _ = self._find_matching_and_cover(self.agent_label, self.task_label)
-            
-        # 4. Assign
-        assigned_task = self._assign_from_matching(matching)
-        return assigned_task
+
+        w = np.where(np.isinf(self.weights), 1e9, self.weights)
+        row_ind, col_ind = linear_sum_assignment(w)
+        matching = list(zip(row_ind.tolist(), col_ind.tolist()))
+
+        result = self._assign_from_matching(matching)
+        self.gamma += 1  # 매칭 완료 시 γ 증가 (논문의 Local_Hungarian 수렴 카운터)
+        return result
 
         
     def _build_weights_matrix(self):
@@ -335,11 +299,15 @@ class DistributedHungarian:
             self.task_idx_to_obj[j] = t
             
         weights = np.full((n, n), DUMMY_COST, dtype=float)
-        
-        for i, agent in enumerate(local_agents):
-            for j, task in enumerate(local_tasks):
-                weights[i][j] = self._calculate_weight(agent, task)
-                
+
+        if num_agents > 0 and num_tasks > 0:
+            AGENT_SPEED = 0.5
+            agent_pos = np.array([[a.position.x, a.position.y] for a in local_agents])
+            task_pos  = np.array([[t.position.x, t.position.y] for t in local_tasks])
+            diff = agent_pos[:, np.newaxis, :] - task_pos[np.newaxis, :, :]
+            distances = np.sqrt((diff ** 2).sum(axis=2))
+            weights[:num_agents, :num_tasks] = 1.0 / (LAMBDA ** (distances / AGENT_SPEED))
+
         # Setting Dummies
         if num_agents > num_tasks:
             for j in range(num_tasks, n):
@@ -350,106 +318,6 @@ class DistributedHungarian:
                 self.agent_idx_to_id[i] = f"dummy_agent_{i}"
         
         self.weights = weights
-
-    def _calculate_weight(self, agent, task):
-        agent_position = agent.position
-        task_position = pygame.Vector2(task.position)
-        distance_to_task = agent_position.distance_to(task_position)
-        AGENT_SPEED = 0.5
-        expected_reward = LAMBDA**(distance_to_task/AGENT_SPEED)         
-        # expected_reward = LAMBDA**(distance_to_task/agent.max_speed + task.amount/agent.work_rate) #* task.amount
-        return 1.0 / expected_reward
-
-    def _build_equality_edges(self):
-        slack = self.weights - self.agent_label[:, np.newaxis] - self.task_label[np.newaxis, :]
-        mask = (~np.isinf(self.weights)) & (np.abs(slack) <= EPSILON)
-        rows, cols = np.where(mask)
-        self.Ey = set(zip(rows.tolist(), cols.tolist()))
-
-    def _step_1_a(self):
-        uncovered_rows = np.array([i for i in range(self.r) if i not in self.Rc], dtype=int)
-        uncovered_cols = np.array([j for j in range(self.p) if j not in self.Pc], dtype=int)
-
-        if len(uncovered_rows) == 0 or len(uncovered_cols) == 0:
-            return set()
-
-        sub_w = self.weights[np.ix_(uncovered_rows, uncovered_cols)]
-        sub_slack = sub_w - self.agent_label[uncovered_rows, np.newaxis] - self.task_label[np.newaxis, uncovered_cols]
-        sub_slack = np.where(np.isinf(sub_w), np.inf, sub_slack)
-
-        min_slack = sub_slack.min()
-        if np.isinf(min_slack):
-            return set()
-
-        local_rows, local_cols = np.where(sub_slack == min_slack)
-        return set(zip(uncovered_rows[local_rows].tolist(), uncovered_cols[local_cols].tolist()))
-
-    def _step_1_b(self, E_cand):
-        if not E_cand: return None
-        min_slack = float('inf')
-        for i, j in E_cand:
-            slack = self.weights[i, j] - self.agent_label[i] - self.task_label[j]
-            if slack < min_slack: min_slack = slack
-            
-        # Update labels
-        if self.Rc:
-            self.agent_label[list(self.Rc)] -= min_slack
-        uncovered_p_mask = np.ones(self.p, dtype=bool)
-        if self.Pc:
-            uncovered_p_mask[list(self.Pc)] = False
-        self.task_label[uncovered_p_mask] += min_slack
-        return min_slack
-
-    def _find_matching_and_cover(self, r_labels, p_labels):
-        adj = [[] for _ in range(self.r)]
-        for r_idx, p_idx in self.Ey:
-            adj[r_idx].append(p_idx)
-            
-        match_r = [-1] * self.r
-        match_p = [-1] * self.p
-        
-        # Deterministic Shuffle
-        rows = list(range(self.r))
-        random.shuffle(rows)
-        
-        for r_idx in rows:
-            visited = [False] * self.r
-            self._bmp(r_idx, match_r, match_p, adj, visited)
-            
-        matching = []
-        for r_idx in range(self.r):
-            if match_r[r_idx] != -1:
-                matching.append((r_idx, match_r[r_idx]))
-                
-        # Build Cover
-        unmatched_r = [r for r in range(self.r) if match_r[r] == -1]
-        reachable_r, reachable_p = set(), set()
-        
-        def dfs(u):
-            if u in reachable_r: return
-            reachable_r.add(u)
-            for v in adj[u]:
-                if v not in reachable_p:
-                    reachable_p.add(v)
-                    if match_p[v] != -1:
-                        dfs(match_p[v])
-                        
-        for u in unmatched_r: dfs(u)
-        
-        self.Rc = set([r for r in range(self.r) if r not in reachable_r])
-        self.Pc = reachable_p
-        
-        return matching, (self.Rc, self.Pc)
-
-    def _bmp(self, u, match_r, match_p, adj, visited):
-        if visited[u]: return False
-        visited[u] = True
-        for v in adj[u]:
-            if match_p[v] == -1 or self._bmp(match_p[v], match_r, match_p, adj, visited):
-                match_r[u] = v
-                match_p[v] = u
-                return True
-        return False
 
     def _assign_from_matching(self, matching):
         # Identify my assignment
