@@ -1,15 +1,15 @@
 import pygame
 import math
 import os
-from modules.utils import config, generate_positions 
+from modules.utils import config
 from modules.base_agent import BaseAgent
-from scenarios.features.mona.task import task_colors
+from scenarios.simple.sim.task import task_colors
 
 # Load agent configuration (Scenario Specific)
 work_rate = config['agents']['work_rate']
 
 # Load behavior tree
-behavior_tree_xml = f"{os.path.dirname(os.path.abspath(__file__))}/{config['agents']['behavior_tree_xml']}"
+behavior_tree_xml = f"{os.path.dirname(os.path.dirname(os.path.abspath(__file__)))}/{config['agents']['behavior_tree_xml']}"
 
 class Agent(BaseAgent):
     def __init__(self, agent_id, position, tasks_info):
@@ -35,25 +35,3 @@ class Agent(BaseAgent):
         self.color = task_colors.get(self.assigned_task_id, (20, 20, 20))  # Default to Dark Grey if no task is assigned
 
 
-
-def generate_agents(tasks_info, seed=None):
-    agent_quantity = config['agents']['quantity']
-    agent_locations = config['agents']['locations']
-
-    agents_positions = generate_positions(agent_quantity,
-                                      agent_locations['x_min'],
-                                      agent_locations['x_max'],
-                                      agent_locations['y_min'],
-                                      agent_locations['y_max'],
-                                      radius=agent_locations['non_overlap_radius'],
-                                      seed=seed)
-
-    # Initialize agents
-    agents = [Agent(idx, pos, tasks_info) for idx, pos in enumerate(agents_positions)]
-
-    # Provide the global info and create behavior tree
-    for agent in agents:
-        agent.set_global_info_agents(agents)
-        agent.create_behavior_tree(behavior_tree_xml)
-
-    return agents
