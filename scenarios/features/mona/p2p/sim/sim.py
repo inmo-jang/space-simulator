@@ -1,8 +1,8 @@
 from modules.base_sim import BaseSim
 from modules.utils import ResultSaver, config, generate_positions
-from scenarios.simple.sim.task import Task
-from scenarios.simple.sim.agent import Agent
-
+from scenarios.features.mona.p2p.sim.task import Task
+from scenarios.features.mona.p2p.sim.agent import Agent
+from scenarios.features.mona.p2p.sim.mona_controller import Mona_comm
 
 def generate_tasks(task_quantity=None, task_id_start=0, seed=None):
     if task_quantity is None:
@@ -47,6 +47,10 @@ class Sim(BaseSim):
         # Set data recording
         self.result_saver = ResultSaver(config)
 
+        # MONA initialization + Communication setup (configuration, communication)
+        self.mona_cfg = config.get("mona", {"enabled": False, "robots": []})
+        self.mona_comm = Mona_comm(self.mona_cfg)  
+
         # Initialise
         self.reset()
 
@@ -59,6 +63,10 @@ class Sim(BaseSim):
         
         # Initialize data recording
         self.data_records = []
+
+        # --- Mona_comm ---
+        for agent in self.agents:
+            agent.mona_comm = self.mona_comm
 
     def save_results(self):
         pass

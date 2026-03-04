@@ -24,6 +24,13 @@ task_locations = config['tasks']['locations']
 sampling_freq = config['simulation']['sampling_freq']
 sampling_time = 1.0 / sampling_freq
 agent_max_random_movement_duration = config.get('agents', {}).get('random_exploration_duration', None)
+use_rotation_shim = config.get('agents', {}).get('use_rotation_shim', False)
+
+def _move(agent, target):
+    if use_rotation_shim:
+        agent.follow_rotation_shim(target)
+    else:
+        agent.follow(target)
 
 
 class IsTaskCompleted(SyncCondition):
@@ -66,7 +73,7 @@ class MoveToTarget(SyncAction):
         if assigned_task_id is None:
             raise ValueError(f"[{self.name}] Error: No assigned_task_id found in the blackboard!")
 
-        agent.follow(agent.tasks_info[assigned_task_id].position)
+        _move(agent,agent.tasks_info[assigned_task_id].position)
         return Status.RUNNING
 
 
@@ -81,7 +88,7 @@ class ExecuteTask(SyncAction):
 
         agent.tasks_info[assigned_task_id].reduce_amount(agent.work_rate)
         agent.update_task_amount_done(agent.work_rate)
-        agent.follow(agent.tasks_info[assigned_task_id].position)
+        _move(agent,agent.tasks_info[assigned_task_id].position)
         return Status.RUNNING
 
 
@@ -100,7 +107,7 @@ class Explore(SyncAction):
             self.random_move_time = 0
 
         self.random_move_time += sampling_time
-        agent.follow(self.random_waypoint)
+        _move(agent,self.random_waypoint)
         return Status.RUNNING
 
     def halt(self):
