@@ -3,7 +3,7 @@ import math
 import os
 from modules.utils import config
 from modules.base_agent import BaseAgent
-from scenarios.simple.sim.task import task_colors
+from scenarios.features.mona.full_simulation.sim.task import task_colors
 
 # Load agent configuration (Scenario Specific)
 work_rate = config['agents']['work_rate']

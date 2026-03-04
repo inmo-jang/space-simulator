@@ -1,7 +1,7 @@
 from modules.base_sim import BaseSim
 from modules.utils import ResultSaver, config, generate_positions
-from scenarios.simple.sim.task import Task
-from scenarios.simple.sim.agent import Agent
+from scenarios.features.mona.full_simulation.sim.task import Task
+from scenarios.features.mona.full_simulation.sim.agent import Agent
 
 
 def generate_tasks(task_quantity=None, task_id_start=0, seed=None):
