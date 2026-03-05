@@ -1,7 +1,9 @@
 from modules.base_sim import BaseSim
 from modules.utils import ResultSaver, config, generate_positions
-from scenarios.simple.sim.task import Task
-from scenarios.simple.sim.agent import Agent
+from scenarios.features.mona.puppet.sim.task import Task
+from scenarios.features.mona.puppet.sim.agent import Agent
+import pygame
+import socket, json, threading
 
 
 def generate_tasks(task_quantity=None, task_id_start=0, seed=None):
@@ -50,6 +52,10 @@ class Sim(BaseSim):
         # Initialise
         self.reset()
 
+        
+        t = threading.Thread(target=self._listen_whycon_udp, daemon=True)
+        t.start()
+
     def reset(self):
         super().reset()
 
@@ -77,3 +83,44 @@ class Sim(BaseSim):
             tasks_total_amount_left
         ])        
                   
+        
+    def handle_keyboard_events(self):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                self.running = False
+        
+            # Q 키로 종료
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_q or event.key == pygame.K_ESCAPE:
+                    self.running = False
+
+            # 마우스 클릭으로 태스크 생성
+            elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                if not self.agents:
+                    continue
+                click_pos = pygame.Vector2(event.pos)
+                new_id = len(self.tasks)
+                self.tasks.append(Task(new_id, click_pos))
+                print(f"[{self.simulation_time:.2f}] Spawned Task {new_id} at ({int(click_pos.x)}, {int(click_pos.y)})")
+
+
+
+    def _listen_whycon_udp(self):
+        udp_port = int(getattr(self, "config", {}).get("mona", {}).get("udp_port", 9999))
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        sock.bind(("0.0.0.0", udp_port))
+        print(f"[Env] WhyCon UDP listening on 0.0.0.0:{udp_port}")
+        while True:
+            try:
+                data, _ = sock.recvfrom(2048)
+                msg = json.loads(data)
+                agent_id = int(msg.get("agent_id", 0))
+                x = float(msg["x"]);
+                y = float(msg["y"])
+                yaw = msg.get("yaw", None)
+                if 0 <= agent_id < len(self.agents):
+                    ag = self.agents[agent_id]
+                    if hasattr(ag, "set_position"):
+                        ag.set_position(x, y, yaw)
+            except Exception as e:
+                print(f"[WhyCon UDP Error] {e}")
