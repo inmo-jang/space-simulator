@@ -24,14 +24,25 @@ def generate_tasks(task_quantity=None, task_id_start=0, seed=None):
 def generate_agents(tasks_info, seed=None):
     agent_quantity = config['agents']['quantity']
     agent_locations = config['agents']['locations']
+    fixed_positions = config['agents'].get('fixed_positions', [])
+    fixed_positions = [tuple(p) for p in fixed_positions]  # list → tuple
 
-    agents_positions = generate_positions(agent_quantity,
-                                          agent_locations['x_min'],
-                                          agent_locations['x_max'],
-                                          agent_locations['y_min'],
-                                          agent_locations['y_max'],
-                                          radius=agent_locations['non_overlap_radius'],
-                                          seed=seed)
+    num_fixed  = min(len(fixed_positions), agent_quantity)
+    num_random = agent_quantity - num_fixed
+
+    if num_random > 0:
+        random_positions = generate_positions(
+                                      num_random,
+                                      agent_locations['x_min'],
+                                      agent_locations['x_max'],
+                                      agent_locations['y_min'],
+                                      agent_locations['y_max'],
+                                      radius=agent_locations['non_overlap_radius'],
+                                      seed=seed)
+    else:
+        random_positions = []
+
+    agents_positions = fixed_positions[:num_fixed] + random_positions
 
     agents = [Agent(idx, pos, tasks_info) for idx, pos in enumerate(agents_positions)]
     return agents
