@@ -85,7 +85,7 @@ tasks:
 
 simulation:
   random_seed: 1  # Random seed (integer ≥ 1), or None to disable seeding
-  sampling_freq: 11.0 
+  sampling_freq: 10.0 
   speed_up_factor: 0 # 0 mean max booster; 1 means normal; 10 means 10-times faster
   max_simulation_time: 0 # 0 means no limit
   agent_track_size: 400  

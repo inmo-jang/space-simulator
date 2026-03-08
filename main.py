@@ -8,7 +8,7 @@ from modules.utils import set_config
 
 # Parse command line arguments
 parser = argparse.ArgumentParser(description='SPACE (Swarm Planning And Control Evaluation) Simulator')
-parser.add_argument('--config', type=str, default='scenarios/features/mona/offboard/configs/offboard.yaml', help='Path to the configuration file (default: --config=config.yaml)')
+parser.add_argument('--config', type=str, default='scenarios/features/mona/full_simulation/configs/full_simulation.yaml', help='Path to the configuration file (default: --config=config.yaml)')
 args = parser.parse_args()
 
 # Load configuration and initialize the environment
