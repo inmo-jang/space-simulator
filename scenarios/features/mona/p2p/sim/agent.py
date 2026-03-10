@@ -14,7 +14,7 @@ work_rate = config['agents']['work_rate']
 COMMUNICATION_RADIUS = config['agents']['communication_radius']
 
 # Compression scale factor for CBBA bids (preserves precision in integer format)
-BID_SCALE_FACTOR = 100000.0
+BID_SCALE_FACTOR = 10000000.0
 
 # Load behavior tree
 behavior_tree_xml = f"{os.path.dirname(os.path.dirname(os.path.abspath(__file__)))}/{config['agents']['behavior_tree_xml']}"
@@ -120,9 +120,20 @@ class Agent(BaseAgent):
 
         now = time.time()
         peer_ids = set()
-        self.reset_messages_received()
 
         monitor = mc.get_message(self.agent_id)
+
+        # ★ 새 데이터가 없으면 이전 messages_received를 유지 (full_simulation과 동일한 동작)
+        if monitor is None:
+            # 타임아웃 체크: 마지막 수신 후 _vis_keep_sec 초 지나면 agents_nearby 초기화
+            now = time.time()
+            if (now - self._last_peer_toa) > self._vis_keep_sec:
+                self.agents_nearby = []
+                self.communication_radius = 0
+            return self.agents_nearby
+
+        # 새 데이터 도착 → reset 후 처리
+        self.reset_messages_received()
              
         if isinstance(monitor, dict):
             recv = monitor.get("received_messages") or {}
