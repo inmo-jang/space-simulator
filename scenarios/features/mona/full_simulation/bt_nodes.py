@@ -1,11 +1,13 @@
 import random
+import pygame
 from modules.base_bt_nodes import BTNodeList, Status, Node, Sequence, Fallback, ReactiveSequence, ReactiveFallback, SyncAction, SyncCondition, GatherLocalInfo, AssignTask
 
 # BT Node List
 CUSTOM_ACTION_NODES = [
     'MoveToTarget',
     'ExecuteTask',
-    'Explore'
+    'Explore',
+    'Idle',
 ]
 
 CUSTOM_CONDITION_NODES = [
@@ -112,3 +114,14 @@ class Explore(SyncAction):
 
     def halt(self):
         self.random_move_time = float('inf')
+
+class Idle(SyncAction):
+    def __init__(self, name, agent):
+        super().__init__(name, self._update)
+
+    def _update(self, agent, blackboard):
+        agent.velocity = pygame.Vector2(0, 0)
+        agent.acceleration = pygame.Vector2(0, 0)
+        # ★ rotation update 블록을 건너뛰게 함 (atan2(0,0)=0 회전 방지)
+        agent._use_rotation_shim = True
+        return Status.RUNNING
