@@ -1,5 +1,6 @@
 import os
 os.environ['SDL_VIDEO_WINDOW_POS'] = "0,30"  # top-left corner
+import time
 import pygame
 import importlib
 from modules.utils import pre_render_text, ResultSaver
@@ -86,6 +87,8 @@ class BaseSim:
         # Initialize simulation time           
         self.simulation_time = 0.0
         self.last_print_time = 0.0   # Variable to track the last time tasks_left was printed
+        self.wall_clock_elapsed = 0.0   # Wall clock elapsed (pauses when simulation pauses)
+        self._wall_clock_last = time.time()
 
         # Initialize dynamic task generation time
         self.generation_count = 0
@@ -103,6 +106,11 @@ class BaseSim:
 
 
     def update_simulation(self):
+        # Wall clock update (only accumulates when simulation is running)
+        now = time.time()
+        self.wall_clock_elapsed += now - self._wall_clock_last
+        self._wall_clock_last = now
+
         # Agent status update
         for agent in self.agents:
             agent.update()
@@ -175,8 +183,10 @@ class BaseSim:
             self.draw_agents()
 
             # Display task quantity and elapsed simulation time                
-            task_time_text = pre_render_text(f'Tasks left: {self.tasks_left}; Time: {self.simulation_time:.2f}s', 36, (0, 0, 0))
-            self.screen.blit(task_time_text, (self.screen_width - 350, 20))
+            task_time_text = pre_render_text(f'Tasks left: {self.tasks_left}; Simulation Time: {self.simulation_time:.2f}s', 36, (0, 0, 0))
+            self.screen.blit(task_time_text, (self.screen_width - 450, 20))
+            wall_clock_text = pre_render_text(f'Wall Clock: {self.wall_clock_elapsed:.2f}s', 36, (0, 0, 0))
+            self.screen.blit(wall_clock_text, (self.screen_width - 205, 60))
 
 
             # # Call draw_decision_making_status from the imported module if it exists
@@ -243,6 +253,8 @@ class BaseSim:
                     self.running = False
                 elif event.key == pygame.K_p:
                     self.game_paused = not self.game_paused
+                    if not self.game_paused:
+                        self._wall_clock_last = time.time()  # resume 시 pause 구간 제외
                 elif event.key == pygame.K_s:
                     if not self.recording:
                         self.recording = True
