@@ -8,6 +8,7 @@ import time
 from modules.utils import merge_dicts
 
 KEEP_MOVING_DURING_CONVERGENCE = config['decision_making']['CBBA'].get('execute_movements_during_convergence', False)
+GLOBAL_CONVERGENCE = config['decision_making']['CBBA'].get('enable_global_convergence', False)
 MAX_TASKS_PER_AGENT = config['decision_making']['CBBA']['max_tasks_per_agent']
 LAMBDA = config['decision_making']['CBBA']['task_reward_discount_factor']
 WINNING_BID_CANCEL = config['decision_making']['CBBA']['winning_bid_cancel']
@@ -102,7 +103,9 @@ class CBBA:
         
         if self.phase == Phase.ASSIGNMENT_CONSENSUS:
             self.update_time_stamp()
-            # Phase 2 Consensus
+            # Phase 2 Consensus: consensus 후 z를 message_to_share에 반영 (이웃이 최신 z를 볼 수 있도록)
+            self.agent.message_to_share['winning_agents'] = copy.deepcopy(self.z)
+            self.agent.message_to_share['winning_bids'] = copy.deepcopy(self.y)
             candidates = list(local_tasks_info.values()) if isinstance(local_tasks_info, dict) else local_tasks_info            
             
             # Parse all neighbor messages once before the consensus loop (message caching)
@@ -240,14 +243,31 @@ class CBBA:
                 if len(updated_bundle) > 0:
                     self.no_bundle_duration = 0
 
-            if updated_bundle == self.bundle: # NOTE: 원래 모든 agents가 다 converge할 때까지 기다려야하는데, 분산화 현실성상 진행
-                # Converged!
+            if updated_bundle == self.bundle: # Local 수렴 완료
 
-                # _next_assigned_task = next((task for task in self.agent.assigned_tasks if task.completed is False), None)
-                self.assigned_task = self.path[0] if self.path else None
-                self.agent.message_to_share['assigned_task_id'] = self.assigned_task.task_id if self.assigned_task is not None else None # For Rviz visualisation                  
-                self.agent.message_to_share['planned_tasks_id'] = [task.task_id for task in self.path] # For Rviz visualisation
-                return self.assigned_task.task_id if self.assigned_task is not None else None
+                if GLOBAL_CONVERGENCE:
+                    # Task 충돌 체크: bundle 내 모든 task에 대해 이웃의 z와 비교
+                    conflict = False
+                    for task_id in self.bundle:
+                        if conflict:
+                            break
+                        for msg in self.agent.messages_received:
+                            if msg.get('agent_id') == self.agent.agent_id:
+                                continue
+                            z_k = msg.get('winning_agents', {})
+                            if z_k.get(task_id) is not None and z_k.get(task_id) != self.agent.agent_id:
+                                conflict = True
+                                break
+                    converged = not conflict
+                else:
+                    converged = True  # Local 수렴만으로 충분
+
+                if converged:
+                    # 수렴!
+                    self.assigned_task = self.path[0] if self.path else None
+                    self.agent.message_to_share['assigned_task_id'] = self.assigned_task.task_id if self.assigned_task is not None else None # For Rviz visualisation
+                    self.agent.message_to_share['planned_tasks_id'] = [task.task_id for task in self.path] # For Rviz visualisation
+                    return self.assigned_task.task_id if self.assigned_task is not None else None
 
             else:
                 self.bundle = updated_bundle
