@@ -30,12 +30,15 @@ class CBBA:
 
         self.phase = Phase.BUILD_BUNDLE
 
+        self.is_locally_converged = False
+
         self.agent.message_to_share = { # Message Initialization
             'agent_id': self.agent.agent_id,
             'assigned_task_id': None,
             'winning_agents': self.z, 
             'winning_bids': self.y,
-            'message_received_time_stamp': self.s
+            'message_received_time_stamp': self.s,
+            'is_locally_converged': False
             } 
         
         
@@ -88,12 +91,16 @@ class CBBA:
             # Phase 1 Build Bundle 
             self.build_bundle(local_tasks_info)            
             # Broadcasting
+            # If bundle is still empty after building, the agent has nothing to bid on → trivially converged
+            bundle_empty_after_build = len(self.bundle) == 0
+            self.is_locally_converged = bundle_empty_after_build
             self.agent.message_to_share = { 
                 'agent_id': self.agent.agent_id,
                 'assigned_task_id': self.assigned_task.task_id if self.assigned_task is not None else None,                     
                 'winning_agents': copy.deepcopy(self.z), 
                 'winning_bids': copy.deepcopy(self.y),
-                'message_received_time_stamp': copy.deepcopy(self.s)
+                'message_received_time_stamp': copy.deepcopy(self.s),
+                'is_locally_converged': bundle_empty_after_build
                 } 
             
             self.phase = Phase.ASSIGNMENT_CONSENSUS
@@ -103,9 +110,7 @@ class CBBA:
         
         if self.phase == Phase.ASSIGNMENT_CONSENSUS:
             self.update_time_stamp()
-            # Phase 2 Consensus: consensus 후 z를 message_to_share에 반영 (이웃이 최신 z를 볼 수 있도록)
-            self.agent.message_to_share['winning_agents'] = copy.deepcopy(self.z)
-            self.agent.message_to_share['winning_bids'] = copy.deepcopy(self.y)
+            # Phase 2 Consensus
             candidates = list(local_tasks_info.values()) if isinstance(local_tasks_info, dict) else local_tasks_info            
             
             # Parse all neighbor messages once before the consensus loop (message caching)
@@ -243,47 +248,45 @@ class CBBA:
                 if len(updated_bundle) > 0:
                     self.no_bundle_duration = 0
 
-            if updated_bundle == self.bundle: # Local 수렴 완료
+            if updated_bundle == self.bundle: # Locally converged
+                self.is_locally_converged = True
+                self.assigned_task = self.path[0] if self.path else None
+                self.agent.message_to_share['assigned_task_id'] = self.assigned_task.task_id if self.assigned_task is not None else None # For Rviz visualisation
+                self.agent.message_to_share['planned_tasks_id'] = [task.task_id for task in self.path] # For Rviz visualisation
+                self.agent.message_to_share['is_locally_converged'] = True
 
                 if GLOBAL_CONVERGENCE:
-                    # Task 충돌 체크: bundle 내 모든 task에 대해 이웃의 z와 비교
-                    conflict = False
-                    for task_id in self.bundle:
-                        if conflict:
-                            break
-                        for msg in self.agent.messages_received:
-                            if msg.get('agent_id') == self.agent.agent_id:
-                                continue
-                            z_k = msg.get('winning_agents', {})
-                            if z_k.get(task_id) is not None and z_k.get(task_id) != self.agent.agent_id:
-                                conflict = True
-                                break
-                    converged = not conflict
+                    # Move only if ALL neighbors are also locally converged
+                    if self._is_globally_converged():
+                        return self.assigned_task.task_id if self.assigned_task is not None else None
+                    else:
+                        return None
                 else:
-                    converged = True  # Local 수렴만으로 충분
-
-                if converged:
-                    # 수렴!
-                    self.assigned_task = self.path[0] if self.path else None
-                    self.agent.message_to_share['assigned_task_id'] = self.assigned_task.task_id if self.assigned_task is not None else None # For Rviz visualisation
-                    self.agent.message_to_share['planned_tasks_id'] = [task.task_id for task in self.path] # For Rviz visualisation
+                    # Move as soon as self is locally converged (original behavior)
                     return self.assigned_task.task_id if self.assigned_task is not None else None
 
             else:
+                self.is_locally_converged = False
+                self.agent.message_to_share['is_locally_converged'] = False
                 self.bundle = updated_bundle
                 self.path = updated_path
                 self.agent.set_planned_tasks(self.path) # For visualisation (SPACE only)
                 self.assigned_task = None # NOTE: 불만족 상황이 되었으니 assigned_task 초기화
                 self.phase = Phase.BUILD_BUNDLE
-        
-        if KEEP_MOVING_DURING_CONVERGENCE:
-            # Even though not being converged, let's move to the first task that I prefer to go
-            self.assigned_task = self.path[0] if self.path else None
-            return self.assigned_task.task_id if self.assigned_task is not None else None
-        else:
-            # self.agent.reset_movement()  # Neutralise the agent's current movement during converging to a consensus
-            return None
+
+        return None
     
+    def _is_globally_converged(self):
+        """Returns True only if self and ALL neighbors report local convergence."""
+        if not self.is_locally_converged:
+            return False
+        for msg in self.agent.messages_received:
+            if msg.get('agent_id') == self.agent.agent_id:
+                continue
+            if not msg.get('is_locally_converged', False):
+                return False
+        return True
+
     def _update(self, task_id, y_k, z_k):
         self.y[task_id] = y_k[task_id]   # Winning bid update
         self.z[task_id] = z_k[task_id]   # Winning agent update
