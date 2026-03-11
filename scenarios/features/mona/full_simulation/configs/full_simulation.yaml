@@ -16,6 +16,7 @@ decision_making: # Case 2
     task_reward_discount_factor: 0.999 
     winning_bid_cancel: True
     acceptable_empty_bundle_duration: 500 # sec
+    enable_global_convergence: True # True: 통신 범위 내 모든 이웃이 수렴해야 이동, False: 자신만 수렴하면 이동
 
 # decision_making: # Case 3
 #   plugin: plugins.greedy.greedy.FirstClaimGreedy
@@ -33,15 +34,20 @@ agents:
     - [40, 700]     # agent 1
     - [1300, 700]   # agent 2
     - [1300, 40]    # agent 3
+  fixed_angles:     # Initial heading in radians (optional, defaults to 0)
+    - 0.78539816           # agent 0 45  degree
+    - 5.49778714           # agent 1 315 degree
+    - 3.92699082           # agent 2 225 degree
+    - 2.35619449           # agent 3 135 degree
   locations:
     x_min: 0
     x_max: 1340
     y_min: 0
     y_max: 740
     non_overlap_radius: 0 
-  max_speed: 0.85  
-  max_accel: 0.05
-  max_angular_speed: 0.025
+  max_speed: 0.9  
+  max_accel: 1.0
+  max_angular_speed: 0.03
   target_approaching_radius: 50
   work_rate: 10  # work rate for each agent (per 1.0/simulation.sampling_freq)
   communication_radius: 2000 # 0 represents "global", meaning that each agent can access to the information of all the other agents
