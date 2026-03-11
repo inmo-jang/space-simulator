@@ -5,7 +5,8 @@ from modules.base_bt_nodes import BTNodeList, Status, Node, Sequence, Fallback, 
 CUSTOM_ACTION_NODES = [
     'MoveToTarget',
     'ExecuteTask',
-    'Explore'
+    'Explore',
+    'Idle',
 ]
 
 CUSTOM_CONDITION_NODES = [
@@ -105,3 +106,13 @@ class Explore(SyncAction):
 
     def halt(self):
         self.random_move_time = float('inf')
+
+
+class Idle(SyncAction):
+    def __init__(self, name, agent):
+        super().__init__(name, self._update)
+
+    def _update(self, agent, blackboard):
+        if agent._is_robot_connected():
+            agent._mona.send_stop()
+        return Status.RUNNING

@@ -65,6 +65,7 @@ class MonaClient:
     def send_stop(self) -> None:
         """Send stop command to robot."""
         self._send_packet(b"STOP\n")
+        print(f"[UDP->{self.host}:{self.port}] STOP")
 
     def close(self) -> None:
         """Close the UDP socket."""

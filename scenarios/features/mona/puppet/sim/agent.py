@@ -95,16 +95,12 @@ class Agent(BaseAgent):
     def update(self):
         """
         Update agent state each frame.
-        
-        - Real robot mode: Sends stop if no task assigned
+
+        - Real robot mode: BT handles all commands (including STOP via Idle node)
         - Simulation mode: BaseAgent handles physics
         """
         if not self._is_robot_connected():
             super().update()
-            return
-        
-        if self.assigned_task_id is None:
-            self._mona.send_stop()
 
     def _send_move_command(self, target):
         """Send movement command to real robot."""

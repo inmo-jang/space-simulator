@@ -6,7 +6,7 @@
       <ReactiveSequence>
         <ReactiveFallback>
           <AssignTask/>
-          <Explore/>
+          <Idle/>
         </ReactiveFallback>
         <ReactiveFallback>
           <IsTaskCompleted/>
@@ -29,6 +29,8 @@
     <Action ID="ExecuteTask"
             editable="true"/>
     <Action ID="Explore"
+            editable="true"/>
+    <Action ID="Idle"
             editable="true"/>
     <Action ID="GatherLocalInfo"
             editable="true"/>
