@@ -20,7 +20,7 @@ sampling_time = 1.0 / config['simulation']['sampling_freq']  # in seconds
 
 
 class BaseAgent:
-    def __init__(self, agent_id, position, tasks_info):
+    def __init__(self, agent_id, position, tasks_info, rotation=0):
         self.agent_id = agent_id
         self.type = None
         self.position = pygame.Vector2(position)
@@ -30,7 +30,7 @@ class BaseAgent:
         self.max_accel = agent_max_accel
         self.max_angular_speed = max_angular_speed
         self.memory_location = []  # To draw track
-        self.rotation = 0  # Initial rotation
+        self.rotation = rotation  # Initial rotation (radians)
         self.color = (0, 0, 255)  # Blue color
         self.font = pygame.font.Font(None, 15)
         self.blackboard = {}
