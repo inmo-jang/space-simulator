@@ -12,8 +12,8 @@ work_rate = config['agents']['work_rate']
 behavior_tree_xml = f"{os.path.dirname(os.path.dirname(os.path.abspath(__file__)))}/{config['agents']['behavior_tree_xml']}"
 
 class Agent(BaseAgent):
-    def __init__(self, agent_id, position, tasks_info):
-        super().__init__(agent_id, position, tasks_info)
+    def __init__(self, agent_id, position, tasks_info, rotation=0):
+        super().__init__(agent_id, position, tasks_info, rotation)
         self.work_rate = work_rate
 
         
