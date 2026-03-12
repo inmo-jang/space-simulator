@@ -280,9 +280,12 @@ class CBBA:
         """Returns True only if self and ALL neighbors report local convergence."""
         if not self.is_locally_converged:
             return False
-        for msg in self.agent.messages_received:
-            if msg.get('agent_id') == self.agent.agent_id:
-                continue
+        peer_msgs = [msg for msg in self.agent.messages_received
+                     if msg.get('agent_id') != self.agent.agent_id]
+        # 이웃 메시지가 하나도 없으면 (ESP32 꺼짐 등) 수렴 불가
+        if not peer_msgs:
+            return False
+        for msg in peer_msgs:
             if not msg.get('is_locally_converged', False):
                 return False
         return True
