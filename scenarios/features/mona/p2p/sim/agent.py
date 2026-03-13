@@ -14,7 +14,7 @@ work_rate = config['agents']['work_rate']
 COMMUNICATION_RADIUS = config['agents']['communication_radius']
 
 # Compression scale factor for CBBA bids (preserves precision in integer format)
-BID_SCALE_FACTOR = 10000000.0
+BID_SCALE_FACTOR = 100000000000000.0
 
 # Load behavior tree
 behavior_tree_xml = f"{os.path.dirname(os.path.dirname(os.path.abspath(__file__)))}/{config['agents']['behavior_tree_xml']}"
@@ -28,8 +28,8 @@ def _is_numeric_key(key) -> bool:
         return False
 
 class Agent(BaseAgent):
-    def __init__(self, agent_id, position, tasks_info):
-        super().__init__(agent_id, position, tasks_info)
+    def __init__(self, agent_id, position, tasks_info, rotation=0):
+        super().__init__(agent_id, position, tasks_info, rotation)
         self.work_rate = work_rate
 
         # Shared message to send to MONA (can be updated each tick)

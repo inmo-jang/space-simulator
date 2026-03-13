@@ -26,6 +26,7 @@ def generate_agents(tasks_info, seed=None):
     agent_locations = config['agents']['locations']
     fixed_positions = config['agents'].get('fixed_positions', [])
     fixed_positions = [tuple(p) for p in fixed_positions]  # list → tuple
+    fixed_angles = config['agents'].get('fixed_angles', [])  # radians
 
     num_fixed  = min(len(fixed_positions), agent_quantity)
     num_random = agent_quantity - num_fixed
@@ -44,7 +45,10 @@ def generate_agents(tasks_info, seed=None):
 
     agents_positions = fixed_positions[:num_fixed] + random_positions
 
-    agents = [Agent(idx, pos, tasks_info) for idx, pos in enumerate(agents_positions)]
+    agents = []
+    for idx, pos in enumerate(agents_positions):
+        angle = fixed_angles[idx] if idx < len(fixed_angles) else 0
+        agents.append(Agent(idx, pos, tasks_info, rotation=angle))
     return agents
 
 
