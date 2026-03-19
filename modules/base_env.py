@@ -219,8 +219,8 @@ class BaseEnv:
             self.clock.tick(self.sampling_freq*self.speed_up_factor)
 
     def close(self):
-        pygame.quit()
         self.save_results()
+        pygame.quit()
 
     def save_results():
         # Define it at your scenario-specific `env.py`

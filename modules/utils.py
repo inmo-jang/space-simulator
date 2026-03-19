@@ -5,6 +5,8 @@ import imageio
 import datetime
 from PIL import Image
 import os
+import matplotlib
+matplotlib.use('Agg')  # X display 없이 파일 저장 전용 백엔드
 import matplotlib.cm as cm
 import shutil
 import pandas as pd

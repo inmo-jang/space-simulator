@@ -20,7 +20,7 @@ sampling_time = 1.0 / config['simulation']['sampling_freq']  # in seconds
 
 
 class BaseAgent:
-    def __init__(self, agent_id, position, tasks_info):
+    def __init__(self, agent_id, position, tasks_info, rotation=0):
         self.agent_id = agent_id
         self.type = None
         self.position = pygame.Vector2(position)
@@ -30,7 +30,7 @@ class BaseAgent:
         self.max_accel = agent_max_accel
         self.max_angular_speed = max_angular_speed
         self.memory_location = []  # To draw track
-        self.rotation = 0  # Initial rotation
+        self.rotation = rotation  # Initial rotation (radians)
         self.color = (0, 0, 255)  # Blue color
         self.font = pygame.font.Font(None, 15)
         self.blackboard = {}
@@ -48,6 +48,16 @@ class BaseAgent:
 
         self.assigned_task_id = None         # Local decision-making result.
         self.planned_tasks = []              # Local decision-making result.
+
+        # Rotation Shim Controller state
+        self._use_rotation_shim = False      # True when follow_rotation_shim() was called this tick
+        self._rotation_shim_aligned = True   # True = moving phase, False = rotating phase
+
+        # Movement command flag
+        # Set to True by follow() or follow_rotation_shim() each tick.
+        # If False when update() runs, the agent decelerates to a full stop.
+        self._movement_commanded = False
+
 
     def create_behavior_tree(self, behavior_tree_xml):
         self.behavior_tree_xml = behavior_tree_xml
@@ -67,6 +77,7 @@ class BaseAgent:
         return await self.tree.run(self, self.blackboard)
 
     def follow(self, target):
+        self._movement_commanded = True
         # Calculate desired velocity
         desired = target - self.position
         d = desired.length()
@@ -86,6 +97,76 @@ class BaseAgent:
         steer = self.limit(steer, self.max_accel)
         self.applyForce(steer)
 
+    def follow_rotation_shim(self, target):
+        """
+        Rotation Shim Controller
+        ─────────────────────────────────────────────────────────────
+        Phase 1 (not aligned): Rotate in place toward the target.
+                                Velocity is zeroed – the agent does NOT move.
+        Phase 2 (aligned):     Lock rotation to target heading and move
+                                straight. No further rotation adjustment
+                                is applied during translation.
+        ─────────────────────────────────────────────────────────────
+        """
+        self._use_rotation_shim = True
+        self._movement_commanded = True
+
+        desired = target - self.position
+        d = desired.length()
+
+        if d == 0:
+            self._rotation_shim_aligned = True
+            return
+
+        # --- Target heading angle ---
+        desired_angle = math.atan2(desired.y, desired.x)
+
+        # --- Angular error, normalised to [-π, π] ---
+        angle_diff = desired_angle - self.rotation
+        while angle_diff > math.pi:
+            angle_diff -= 2 * math.pi
+        while angle_diff < -math.pi:
+            angle_diff += 2 * math.pi
+
+        # Threshold below which we consider the agent "aligned" (~2.9°)
+        ALIGN_THRESHOLD = 0.05  # radians
+
+        if abs(angle_diff) > ALIGN_THRESHOLD:
+            # ── Phase 1: Rotate only ──────────────────────────────
+            self._rotation_shim_aligned = False
+
+            # Rotate at max angular speed (or smaller if nearly aligned)
+            rot_step = math.copysign(
+                min(abs(angle_diff), self.max_angular_speed), angle_diff
+            )
+            self.rotation += rot_step * sampling_time
+
+            # Hard-brake: kill any residual velocity so agent stays put
+            self.velocity = pygame.Vector2(0, 0)
+            self.acceleration = pygame.Vector2(0, 0)
+
+        else:
+            # ── Phase 2: Move straight ────────────────────────────
+            self._rotation_shim_aligned = True
+
+            # Lock heading exactly to target direction
+            self.rotation = desired_angle
+
+            # Arrival behaviour (gradual deceleration near target)
+            if d < agent_approaching_to_target_radius:
+                speed = self.max_speed * (d / agent_approaching_to_target_radius)
+            else:
+                speed = self.max_speed
+
+            forward = pygame.Vector2(
+                math.cos(self.rotation), math.sin(self.rotation)
+            )
+            desired_vel = forward * speed
+            steer = desired_vel - self.velocity
+            steer = self.limit(steer, self.max_accel)
+            self.applyForce(steer)
+
+
     def applyForce(self, force):
         self.acceleration += force
 
@@ -103,19 +184,41 @@ class BaseAgent:
         if len(self.memory_location) > agent_track_size:
             self.memory_location.pop(0)
 
-        # Update rotation
-        desired_rotation = math.atan2(self.velocity.y, self.velocity.x)
-        rotation_diff = desired_rotation - self.rotation
-        while rotation_diff > math.pi:
-            rotation_diff -= 2 * math.pi
-        while rotation_diff < -math.pi:
-            rotation_diff += 2 * math.pi
+        if not self._movement_commanded:
+            # No movement node ran this tick → decelerate to a full stop
+            if self.velocity.length_squared() > 0:
+                brake = -self.velocity.normalize() * min(self.max_accel, self.velocity.length() / sampling_time)
+                # Direct velocity zeroing is cleaner than applying a force
+                # (avoids one-frame overshoot at very low speeds)
+                if self.velocity.length() <= self.max_accel * sampling_time:
+                    self.velocity = pygame.Vector2(0, 0)
+                else:
+                    self.velocity += brake * sampling_time
 
-        # Limit angular velocity
-        if abs(rotation_diff) > self.max_angular_speed:
-            rotation_diff = math.copysign(self.max_angular_speed, rotation_diff)
+        if self._use_rotation_shim:
+            # Rotation is already managed by follow_rotation_shim():
+            #   - Phase 1: rotation incremented there, velocity is 0
+            #   - Phase 2: rotation locked to target heading there
+            # Nothing to do here; just reset the flag for the next tick.
+            pass
+        else:
+            # ── Standard velocity-based rotation update ──────────
+            desired_rotation = math.atan2(self.velocity.y, self.velocity.x)
+            rotation_diff = desired_rotation - self.rotation
+            while rotation_diff > math.pi:
+                rotation_diff -= 2 * math.pi
+            while rotation_diff < -math.pi:
+                rotation_diff += 2 * math.pi
 
-        self.rotation += rotation_diff * sampling_time
+            # Limit angular velocity
+            if abs(rotation_diff) > self.max_angular_speed:
+                rotation_diff = math.copysign(self.max_angular_speed, rotation_diff)
+
+            self.rotation += rotation_diff * sampling_time
+
+        # Reset flags – will be set again next tick if needed
+        self._use_rotation_shim = False
+        self._movement_commanded = False
 
     def reset_movement(self):
         self.velocity = pygame.Vector2(0, 0)

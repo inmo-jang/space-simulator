@@ -17,6 +17,7 @@ class BaseTask:
     def reduce_amount(self, work_rate):
         self.amount -= work_rate * sampling_time
         if self.amount <= 0:
+            self.amount = 0.0
             self.set_done()
 
     def draw(self, screen):

@@ -1,10 +1,58 @@
-from modules.base_env import BaseEnv
-from modules.utils import ResultSaver
-from scenarios.features.mona.task import generate_tasks
-from scenarios.features.mona.agent import generate_agents
-import pygame
+from modules.base_sim import BaseSim
+from modules.utils import ResultSaver, config, generate_positions
+from scenarios.features.mona.full_simulation.sim.task import Task
+from scenarios.features.mona.full_simulation.sim.agent import Agent
 
-class Env(BaseEnv):
+
+def generate_tasks(task_quantity=None, task_id_start=0, seed=None):
+    if task_quantity is None:
+        task_quantity = config['tasks']['quantity']
+    task_locations = config['tasks']['locations']
+
+    tasks_positions = generate_positions(task_quantity,
+                                        task_locations['x_min'],
+                                        task_locations['x_max'],
+                                        task_locations['y_min'],
+                                        task_locations['y_max'],
+                                        radius=task_locations['non_overlap_radius'],
+                                        seed=seed)
+
+    tasks = [Task(idx + task_id_start, pos) for idx, pos in enumerate(tasks_positions)]
+    return tasks
+
+
+def generate_agents(tasks_info, seed=None):
+    agent_quantity = config['agents']['quantity']
+    agent_locations = config['agents']['locations']
+    fixed_positions = config['agents'].get('fixed_positions', [])
+    fixed_positions = [tuple(p) for p in fixed_positions]  # list → tuple
+    fixed_angles = config['agents'].get('fixed_angles', [])  # radians
+
+    num_fixed  = min(len(fixed_positions), agent_quantity)
+    num_random = agent_quantity - num_fixed
+
+    if num_random > 0:
+        random_positions = generate_positions(
+                                      num_random,
+                                      agent_locations['x_min'],
+                                      agent_locations['x_max'],
+                                      agent_locations['y_min'],
+                                      agent_locations['y_max'],
+                                      radius=agent_locations['non_overlap_radius'],
+                                      seed=seed)
+    else:
+        random_positions = []
+
+    agents_positions = fixed_positions[:num_fixed] + random_positions
+
+    agents = []
+    for idx, pos in enumerate(agents_positions):
+        angle = fixed_angles[idx] if idx < len(fixed_angles) else 0
+        agents.append(Agent(idx, pos, tasks_info, rotation=angle))
+    return agents
+
+
+class Sim(BaseSim):
     def __init__(self, config):
         super().__init__(config)
 
@@ -50,8 +98,8 @@ class Env(BaseEnv):
 
         # Save yaml
         if self.save_config_yaml:                
-            self.result_saver.save_config_yaml()           
-   
+            self.result_saver.save_config_yaml()   
+
     def record_timewise_result(self):
         agents_total_distance_moved = sum(agent.distance_moved for agent in self.agents)
         agents_total_task_amount_done = sum(agent.task_amount_done for agent in self.agents)
