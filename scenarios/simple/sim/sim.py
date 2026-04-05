@@ -1,5 +1,5 @@
 from modules.base_sim import BaseSim
-from modules.utils import ResultSaver, config, generate_positions
+from modules.utils import ResultSaver, config, generate_positions, pre_render_text
 from scenarios.simple.sim.task import Task
 from scenarios.simple.sim.agent import Agent
 
@@ -77,3 +77,24 @@ class Sim(BaseSim):
             tasks_total_amount_left
         ])        
                   
+
+    def draw_status_overlay(self):
+        # Display task quantity, assigned tasks, and elapsed simulation time
+        # NOTE: 'Assigned' count is only valid in CBBA mode (other plugins may not update planned_tasks consistently)
+        assigned_tasks = len({task.task_id for agent in self.agents for task in agent.planned_tasks})
+        task_time_text = pre_render_text(f'Tasks left: {self.tasks_left}; Assigned: {assigned_tasks}; Time: {self.simulation_time:.2f}s', 36, (0, 0, 0))
+        self.screen.blit(task_time_text, (self.screen_width - 450, 20))
+
+        # Check communication connectivity (BFS)
+        visited = {0}
+        queue = [0]
+        while queue:
+            for n in self.agents[queue.pop(0)].agents_nearby:
+                if n.agent_id not in visited:
+                    visited.add(n.agent_id)
+                    queue.append(n.agent_id)
+        if len(visited) == len(self.agents):
+            conn_text = pre_render_text('Connected', 28, (0, 150, 0))
+        else:
+            conn_text = pre_render_text('Not Connected', 28, (200, 0, 0))
+        self.screen.blit(conn_text, (self.screen_width - 450, 50))

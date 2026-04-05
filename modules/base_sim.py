@@ -161,6 +161,10 @@ class BaseSim:
             task.draw(self.screen)
 
 
+    def draw_status_overlay(self):
+        task_time_text = pre_render_text(f'Tasks left: {self.tasks_left}; Time: {self.simulation_time:.2f}s', 36, (0, 0, 0))
+        self.screen.blit(task_time_text, (self.screen_width - 350, 20))
+
     def render(self):
         if self.rendering_mode == "Screen" and self.screen:
             # Draw background
@@ -174,9 +178,7 @@ class BaseSim:
             self.draw_agents_info()
             self.draw_agents()
 
-            # Display task quantity and elapsed simulation time                
-            task_time_text = pre_render_text(f'Tasks left: {self.tasks_left}; Time: {self.simulation_time:.2f}s', 36, (0, 0, 0))
-            self.screen.blit(task_time_text, (self.screen_width - 350, 20))
+            self.draw_status_overlay()
 
 
             # # Call draw_decision_making_status from the imported module if it exists
