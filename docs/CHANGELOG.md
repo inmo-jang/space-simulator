@@ -2,6 +2,19 @@
 
 ## [Unreleased]
 
+### Fixed
+- **CBBA (`cbba.py`)**
+  - **Bundle management**: Changed bundle construction to use `append` instead of `insert`, and when outbid, all tasks after the outbid task are now removed from the bundle.
+  - **Multi-hop information propagation**: Fixed three issues that prevented consensus information from propagating beyond 1-hop neighbors:
+    1. `message_to_share` (y, z, s) was only broadcast during BUILD_BUNDLE phase — added broadcast after ASSIGNMENT_CONSENSUS phase as well.
+    2. `update_time_stamp()` was called before conflict resolution, causing `s_km > s_im` (Table I) to always be false. Moved to after conflict resolution per Eqn (5).
+    3. Removed overly restrictive skip condition (`if j not in y_k or j not in y_i`) that prevented Table I rules (e.g., Rule 4, 13) from firing when `z_ij = None`.
+  - These fixes eliminate the occurrence of unassigned tasks (as long as all agents are connected).
+
+### Changed
+- **Base Simulation (`base_sim.py`)**
+  - Extracted status text rendering into overridable `draw_status_overlay()` method, allowing scenario-specific subclasses to customise the HUD overlay.
+
 ### Added
 - **New Scenario: Turtle Catcher (`scenarios/features/turtle_catcher/`)**
   - Added as a direct counterpart to `py_bt_ros/scenarios/example_turtlesim`, enabling the same BT logic to be tested in simulation before porting to ROS.
@@ -62,7 +75,8 @@
 
 - **Scenario: Simple**
   - Added `IsTaskCompleted`, `IsArrivedAtTarget`, `MoveToTarget`, and `ExecuteTask` to the simple scenario. These replace the functionality of `TaskExecutingNode`, which has been removed.   
-  - Renamed `ExplorationNode` to `Explore()` following the new naming convention (using verb forms).     
+  - Renamed `ExplorationNode` to `Explore()` following the new naming convention (using verb forms).
+  - Overrode `draw_status_overlay()` to display assigned tasks count (from `planned_tasks`) and communication connectivity status (BFS-based Connected/Not Connected indicator).     
 
 - **Environment**
   - Modified `env.reset()` to restart with a new random scenario.  

@@ -58,8 +58,8 @@ class CBBA:
         self.assigned_task = local_tasks_info.get(previous_assigned_task_id)        
         if self.assigned_task is None and previous_assigned_task_id is not None: 
             if len(self.path) != 0 and self.path[0].task_id == previous_assigned_task_id:
-                self.path.pop(0)
-                self.bundle.pop(0)
+                completed_task_id = self.path.pop(0).task_id
+                self.bundle.remove(completed_task_id)
             self.phase = Phase.BUILD_BUNDLE
 
         if len(self.bundle) == 0:
@@ -101,7 +101,7 @@ class CBBA:
             return None
         
         if self.phase == Phase.ASSIGNMENT_CONSENSUS:
-            self.update_time_stamp()
+            # self.update_time_stamp() # NOTE: Moved after conflict resolution. s_i must reflect prior knowledge during Table I comparisons (s_km > s_im), otherwise merging s_k beforehand makes the comparison always false.
             # Phase 2 Consensus
             candidates = list(local_tasks_info.values()) if isinstance(local_tasks_info, dict) else local_tasks_info            
             
@@ -131,9 +131,9 @@ class CBBA:
                     s_k = parsed_msg['s_k']
                     k_agent_id = parsed_msg['agent_id']
                     
-                    # Skip if task is not in both bid lists
-                    if j not in y_k or j not in y_i:
-                        continue
+                    # # Skip if task is not in both bid lists
+                    # if j not in y_k or j not in y_i: # NOTE: Commented out - this prevents Table I rules (e.g., Rule 4, 13) from firing when z_ij=None. The z_i.get(j) checks handle missing y_i[j] implicitly.
+                    #     continue
 
                     try:    
                         if z_k.get(j) == k_agent_id:
@@ -231,11 +231,23 @@ class CBBA:
                     except Exception as e:
                         pass
 
+            # Update time stamp after conflict resolution (Eqn 5)
+            self.update_time_stamp()
+
             # Bundle Update
             updated_bundle, updated_path = self.update_bundle_and_path()
             
             # Reset Message
             # self.agent.reset_messages_received()
+
+            # Broadcast updated y, z, s for multi-hop propagation
+            self.agent.message_to_share.update({
+                'winning_agents': copy.deepcopy(self.z),
+                'winning_bids': copy.deepcopy(self.y),
+                'message_received_time_stamp': copy.deepcopy(self.s)
+            })
+
+
             if WINNING_BID_CANCEL:
                 if len(updated_bundle) > 0:
                     self.no_bundle_duration = 0
@@ -283,8 +295,14 @@ class CBBA:
                 _n_bar = idx
                 break
 
+        _tasks_to_remove = set(self.bundle[_n_bar:])
+        for _task_id in _tasks_to_remove:
+            if self.z.get(_task_id) == self.agent.agent_id:
+                self.y[_task_id] = float('-inf')
+                self.z[_task_id] = None
+
         _bundle = self.bundle[0:_n_bar]
-        _path = self.path[0:_n_bar]
+        _path = [t for t in self.path if t.task_id not in _tasks_to_remove]
 
         return _bundle, _path
 
@@ -315,7 +333,8 @@ class CBBA:
             best_insertion_idx = best_insertion_idx_list[task_to_add.task_id]
 
             # Line 11
-            self.bundle.insert(best_insertion_idx, task_to_add.task_id)
+            # self.bundle.insert(best_insertion_idx, task_to_add.task_id)
+            self.bundle.append(task_to_add.task_id)
             # Line 12
             self.path.insert(best_insertion_idx, task_to_add)
             # Line 13
