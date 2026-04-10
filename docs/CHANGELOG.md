@@ -10,10 +10,13 @@
     2. `update_time_stamp()` was called before conflict resolution, causing `s_km > s_im` (Table I) to always be false. Moved to after conflict resolution per Eqn (5).
     3. Removed overly restrictive skip condition (`if j not in y_k or j not in y_i`) that prevented Table I rules (e.g., Rule 4, 13) from firing when `z_ij = None`.
   - These fixes eliminate the occurrence of unassigned tasks (as long as all agents are connected).
+  - **Removed phase state machine**: `BUILD_BUNDLE` and `ASSIGNMENT_CONSENSUS` no longer alternate across ticks. Both consensus and bundle-building now run every tick (consensus first, then build), following the same restructuring pattern applied to GRAPE. This makes CBBA naturally reactive to agent position changes.
+  - **Added rebid check**: Before bundle-building, the bid for the first task in the path is recalculated using the agent's current position. If the bid has worsened, the entire bundle is abandoned and rebuilt from scratch. This enables reactive task re-allocation when an agent's position changes (e.g., due to collision avoidance or manual repositioning).
 
 ### Changed
 - **Base Simulation (`base_sim.py`)**
   - Extracted status text rendering into overridable `draw_status_overlay()` method, allowing scenario-specific subclasses to customise the HUD overlay.
+  - Added drag & drop support for agents and tasks: left-click to grab, drag to reposition, release to drop. Agents are prioritised over tasks when overlapping. Dragged agents skip `update()` to prevent position overwrite, and `reset_movement()` is called on drop to zero velocity/acceleration.
 
 ### Added
 - **New Scenario: Turtle Catcher (`scenarios/features/turtle_catcher/`)**
