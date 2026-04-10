@@ -27,8 +27,6 @@ class CBBA:
         self.bundle = [] # Bundle (a list of task id)      
         self.path = [] # Path (a list of task object) 
 
-        self.phase = Phase.BUILD_BUNDLE
-
         self.agent.message_to_share = { # Message Initialization
             'agent_id': self.agent.agent_id,
             'assigned_task_id': None,
@@ -50,8 +48,9 @@ class CBBA:
             - `task_id`, if task allocation works well
             - `None`, otherwise
         '''        
-        previous_assigned_task_id = self.assigned_task.task_id if self.assigned_task is not None else None  # For Debug        
-        
+        previous_assigned_task_id = self.assigned_task.task_id if self.assigned_task is not None else None  # For Debug
+        previous_bundle = self.bundle[:]
+
         local_tasks_info = blackboard['local_tasks_info']
 
         # Check if the existing task is done or not available anymore (e.g., completed by others, disappeared due to dynamic environment, etc.)            
@@ -60,10 +59,6 @@ class CBBA:
             if len(self.path) != 0 and self.path[0].task_id == previous_assigned_task_id:
                 completed_task_id = self.path.pop(0).task_id
                 self.bundle.remove(completed_task_id)
-            self.phase = Phase.BUILD_BUNDLE
-
-        if len(self.bundle) == 0:
-            self.phase = Phase.BUILD_BUNDLE
 
         # Give up the decision-making process if there is no task nearby 
         if len(local_tasks_info) == 0 and len(self.bundle) == 0: 
@@ -81,28 +76,8 @@ class CBBA:
                 self.s = {}                  
                 self.no_bundle_duration = 0         
 
-        # Look for a task within situation awareness radius if there is no existing assigned task
-        # if self.assigned_task is None:
-        if self.phase == Phase.BUILD_BUNDLE:
-            # Phase 1 Build Bundle 
-            self.build_bundle(local_tasks_info)            
-            # Broadcasting
-            self.agent.message_to_share = { 
-                'agent_id': self.agent.agent_id,
-                'assigned_task_id': self.assigned_task.task_id if self.assigned_task is not None else None,                     
-                'winning_agents': copy.deepcopy(self.z), 
-                'winning_bids': copy.deepcopy(self.y),
-                'message_received_time_stamp': copy.deepcopy(self.s)
-                } 
-            
-            self.phase = Phase.ASSIGNMENT_CONSENSUS
-            self.agent.set_planned_tasks(self.path) # For visualisation (SPACE only)
-            self.assigned_task = None   # 아직 consensus 안된거니까 None 이라고 해줘야함
-            return None
-        
-        if self.phase == Phase.ASSIGNMENT_CONSENSUS:
+        if True:  # Phase.ASSIGNMENT_CONSENSUS
             # self.update_time_stamp() # NOTE: Moved after conflict resolution. s_i must reflect prior knowledge during Table I comparisons (s_km > s_im), otherwise merging s_k beforehand makes the comparison always false.
-            # Phase 2 Consensus
             candidates = list(local_tasks_info.values()) if isinstance(local_tasks_info, dict) else local_tasks_info            
             
             # Parse all neighbor messages once before the consensus loop (message caching)
@@ -236,38 +211,51 @@ class CBBA:
 
             # Bundle Update
             updated_bundle, updated_path = self.update_bundle_and_path()
-            
-            # Reset Message
-            # self.agent.reset_messages_received()
+            self.bundle = updated_bundle
+            self.path = updated_path
 
-            # Broadcast updated y, z, s for multi-hop propagation
-            self.agent.message_to_share.update({
+            if WINNING_BID_CANCEL:
+                if len(self.bundle) > 0:
+                    self.no_bundle_duration = 0
+
+        # Rebid check: recalculate bid for the first task in the path
+        if self.path:
+            first_task = self.path[0]
+            current_bid = self.calculate_score_along_path(self.agent.position, [first_task])
+            if current_bid >= self.y.get(first_task.task_id, 0):
+                self.y[first_task.task_id] = current_bid
+            else:
+                # Position worsened — abandon entire bundle and rebuild
+                for task_id in self.bundle:
+                    if self.z.get(task_id) == self.agent.agent_id:
+                        self.y[task_id] = float('-inf')
+                        self.z[task_id] = None
+                self.bundle = []
+                self.path = []
+
+        if True:  # Phase.BUILD_BUNDLE
+            self.build_bundle(local_tasks_info)
+            # Broadcasting
+            self.agent.message_to_share = {
+                'agent_id': self.agent.agent_id,
+                'assigned_task_id': self.assigned_task.task_id if self.assigned_task is not None else None,
                 'winning_agents': copy.deepcopy(self.z),
                 'winning_bids': copy.deepcopy(self.y),
                 'message_received_time_stamp': copy.deepcopy(self.s)
-            })
+                }
+            self.agent.set_planned_tasks(self.path) # For visualisation (SPACE only)
 
+        # Convergence Check
+        if self.bundle == previous_bundle:
+            # Converged!
+            self.assigned_task = self.path[0] if self.path else None
+            self.agent.message_to_share['assigned_task_id'] = self.assigned_task.task_id if self.assigned_task is not None else None
+            self.agent.message_to_share['planned_tasks_id'] = [task.task_id for task in self.path]
+            return self.assigned_task.task_id if self.assigned_task is not None else None
 
-            if WINNING_BID_CANCEL:
-                if len(updated_bundle) > 0:
-                    self.no_bundle_duration = 0
+        else:
+            self.assigned_task = None
 
-            if updated_bundle == self.bundle: # NOTE: 원래 모든 agents가 다 converge할 때까지 기다려야하는데, 분산화 현실성상 진행
-                # Converged!
-
-                # _next_assigned_task = next((task for task in self.agent.assigned_tasks if task.completed is False), None)
-                self.assigned_task = self.path[0] if self.path else None
-                self.agent.message_to_share['assigned_task_id'] = self.assigned_task.task_id if self.assigned_task is not None else None # For Rviz visualisation                  
-                self.agent.message_to_share['planned_tasks_id'] = [task.task_id for task in self.path] # For Rviz visualisation
-                return self.assigned_task.task_id if self.assigned_task is not None else None
-
-            else:
-                self.bundle = updated_bundle
-                self.path = updated_path
-                self.agent.set_planned_tasks(self.path) # For visualisation (SPACE only)
-                self.assigned_task = None # NOTE: 불만족 상황이 되었으니 assigned_task 초기화
-                self.phase = Phase.BUILD_BUNDLE
-        
         if KEEP_MOVING_DURING_CONVERGENCE:
             # Even though not being converged, let's move to the first task that I prefer to go
             self.assigned_task = self.path[0] if self.path else None
