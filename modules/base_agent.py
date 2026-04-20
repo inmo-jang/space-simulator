@@ -86,6 +86,7 @@ class BaseAgent:
         steer = self.limit(steer, self.max_accel)
         self.applyForce(steer)
 
+
     def applyForce(self, force):
         self.acceleration += force
 
@@ -102,20 +103,6 @@ class BaseAgent:
         self.memory_location.append((self.position.x, self.position.y))
         if len(self.memory_location) > agent_track_size:
             self.memory_location.pop(0)
-
-        # Update rotation
-        desired_rotation = math.atan2(self.velocity.y, self.velocity.x)
-        rotation_diff = desired_rotation - self.rotation
-        while rotation_diff > math.pi:
-            rotation_diff -= 2 * math.pi
-        while rotation_diff < -math.pi:
-            rotation_diff += 2 * math.pi
-
-        # Limit angular velocity
-        if abs(rotation_diff) > self.max_angular_speed:
-            rotation_diff = math.copysign(self.max_angular_speed, rotation_diff)
-
-        self.rotation += rotation_diff * sampling_time
 
     def reset_movement(self):
         self.velocity = pygame.Vector2(0, 0)
