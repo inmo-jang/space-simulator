@@ -125,6 +125,7 @@ async def game_loop():
         if not game_paused and not mission_completed:
             # Run behavior trees for each agent without rendering
             for agent in agents:
+                agent.simulation_time = simulation_time
                 await agent.run_tree()    
                 agent.update()
 
@@ -149,6 +150,10 @@ async def game_loop():
             if save_timewise_result_csv:
                 agents_total_distance_moved = sum(agent.distance_moved for agent in agents)
                 agents_total_task_amount_done = sum(agent.task_amount_done for agent in agents)
+                agents_total_messages_attempted = sum(agent.messages_attempted for agent in agents)
+                agents_total_messages_delivered = sum(agent.messages_delivered for agent in agents)
+                agents_total_messages_dropped = sum(agent.messages_dropped for agent in agents)
+                agents_total_messages_received = sum(agent.messages_received_count for agent in agents)
                 remaining_tasks = len([task for task in tasks if not task.completed])
                 tasks_total_amount_left = sum(task.amount for task in tasks)
                 
@@ -156,6 +161,10 @@ async def game_loop():
                     simulation_time, 
                     agents_total_distance_moved,
                     agents_total_task_amount_done,
+                    agents_total_messages_attempted,
+                    agents_total_messages_delivered,
+                    agents_total_messages_dropped,
+                    agents_total_messages_received,
                     remaining_tasks,
                     tasks_total_amount_left
                 ])
@@ -243,12 +252,30 @@ async def game_loop():
 
     # Save time series data
     if save_timewise_result_csv:        
-        csv_file_path = result_saver.save_to_csv("timewise", data_records, ['time', 'agents_total_distance_moved', 'agents_total_task_amount_done', 'remaining_tasks', 'tasks_total_amount_left'])          
+        csv_file_path = result_saver.save_to_csv("timewise", data_records, [
+            'time',
+            'agents_total_distance_moved',
+            'agents_total_task_amount_done',
+            'agents_total_messages_attempted',
+            'agents_total_messages_delivered',
+            'agents_total_messages_dropped',
+            'agents_total_messages_received',
+            'remaining_tasks',
+            'tasks_total_amount_left'
+        ])
         result_saver.plot_timewise_result(csv_file_path)
     
     # Save agent-wise data            
     if save_agentwise_result_csv:        
-        variables_to_save = ['agent_id', 'task_amount_done', 'distance_moved']
+        variables_to_save = [
+            'agent_id',
+            'task_amount_done',
+            'distance_moved',
+            'messages_attempted',
+            'messages_delivered',
+            'messages_dropped',
+            'messages_received_count'
+        ]
         agentwise_results = result_saver.get_agentwise_results(agents, variables_to_save)                        
         csv_file_path = result_saver.save_to_csv('agentwise', agentwise_results, variables_to_save)
         

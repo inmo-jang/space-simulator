@@ -172,36 +172,58 @@ class ResultSaver:
         remaining_tasks = df['remaining_tasks']
         tasks_total_amount_left = df['tasks_total_amount_left']
 
+        has_message_columns = {
+            'agents_total_messages_attempted',
+            'agents_total_messages_delivered',
+            'agents_total_messages_dropped',
+            'agents_total_messages_received',
+        }.issubset(df.columns)
 
-        plt.figure(figsize=(12, 8))
+        if has_message_columns:
+            plt.figure(figsize=(14, 10))
+            subplot_rows = 3
+        else:
+            plt.figure(figsize=(12, 8))
+            subplot_rows = 2
 
-        plt.subplot(2, 2, 1)
+        plt.subplot(subplot_rows, 2, 1)
         plt.plot(time, agents_total_distance_moved, label='Total Distance Moved by Agents')
         plt.xlabel('Time')
         plt.ylabel('Distance Moved')
         plt.legend()
         plt.grid(True)  
 
-        plt.subplot(2, 2, 2)
+        plt.subplot(subplot_rows, 2, 2)
         plt.plot(time, agents_total_task_amount_done, label='Total Task Amount Done by Agents')
         plt.xlabel('Time')
         plt.ylabel('Task Amount Done')
         plt.legend()
         plt.grid(True)  
 
-        plt.subplot(2, 2, 3)
+        plt.subplot(subplot_rows, 2, 3)
         plt.plot(time, remaining_tasks, label='The Number of Remaining Tasks')
         plt.xlabel('Time')
         plt.ylabel('The Number of Remaining Tasks')
         plt.legend()
         plt.grid(True)  
 
-        plt.subplot(2, 2, 4)
+        plt.subplot(subplot_rows, 2, 4)
         plt.plot(time, tasks_total_amount_left, label='Total Amount of Tasks')
         plt.xlabel('Time')
         plt.ylabel('Tasks Total Amount')
         plt.legend()
         plt.grid(True)  
+
+        if has_message_columns:
+            plt.subplot(subplot_rows, 2, 5)
+            plt.plot(time, df['agents_total_messages_attempted'], label='Attempted')
+            plt.plot(time, df['agents_total_messages_delivered'], label='Delivered')
+            plt.plot(time, df['agents_total_messages_dropped'], label='Dropped')
+            plt.plot(time, df['agents_total_messages_received'], label='Received')
+            plt.xlabel('Time')
+            plt.ylabel('Messages')
+            plt.legend()
+            plt.grid(True)
 
         plt.tight_layout()
 
@@ -226,8 +248,7 @@ class ResultSaver:
         num_plots = len(columns)
         
         # Create a figure with subplots
-        plt.figure(figsize=(8, 6))
-        # plt.figure(figsize=(15, 5 * num_plots))
+        plt.figure(figsize=(max(8, 3 * num_plots), 6))
         
         for i, col in enumerate(columns):
             plt.subplot(1, num_plots, i + 1)  # Create a subplot for each column
