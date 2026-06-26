@@ -50,6 +50,49 @@ This section defines the properties and behaviors of the agents in the simulatio
     - **Type**: Float
     - **Example**: `50.0`
 
+- **`communication_radius`**: Distance within which another agent can be considered as a communication candidate.
+    - **Type**: Float
+    - **Example**: `500.0`
+    - **Note**: `0` means global candidate access. The configured communication model still decides whether each message is received or dropped.
+
+- **`situation_awareness_radius`**: Distance within which an agent can sense local tasks.
+    - **Type**: Float
+    - **Example**: `500.0`
+    - **Note**: `0` means global task awareness.
+
+## `communication` Section
+
+This section defines the packet-level communication model used after agents select communication candidates by `agents.communication_radius`. Decision-making plugins continue to publish `agent.message_to_share` and consume `agent.messages_received`; the communication model only decides whether a non-empty packet is accepted or dropped.
+
+- **`model`**: Communication channel model.
+    - **Type**: String
+    - **Options**: `Perfect`, `Bernoulli`, `GilbertElliot`, `Rayleigh`
+    - **Example**: `Bernoulli`
+
+- **`random_seed`**: Optional seed for reproducible packet drops.
+    - **Type**: Integer or `null`
+    - **Example**: `42`
+
+- **`bernoulli.p_success`**: Independent probability that each message is received.
+    - **Type**: Float in `[0, 1]`
+    - **Example**: `0.8`
+
+- **`gilbert_elliot`**: Two-state communication model for bursty drops.
+    - `p_good_success`: Message success probability in the good state.
+    - `p_bad_success`: Message success probability in the bad state.
+    - `p_good_to_good`: Probability that a good link remains good at a transition check.
+    - `p_bad_to_bad`: Probability that a bad link remains bad at a transition check.
+    - `transition_interval_seconds`: Simulation-time interval between state transition checks.
+    - `initial_state`: `Good` or `Bad`.
+
+- **`rayleigh`**: Distance-sensitive fading model using path loss and a sampled Rayleigh channel envelope.
+    - `transmit_power_db`: Transmit power in dB.
+    - `sensitivity_threshold_db`: Minimum received power required for packet reception.
+    - `path_loss_at_reference_db`: Path loss at `reference_distance`.
+    - `reference_distance`: Reference distance for path-loss calculation.
+    - `path_loss_exponent`: Environment-dependent path-loss exponent.
+    - `fading_scale`: Rayleigh envelope scale.
+
 ## `tasks` Section
 
 This section defines the properties of tasks within the simulation.
@@ -108,5 +151,9 @@ This section defines the overall simulation parameters.
     - `agent_id`: Displays agent identifiers on the screen.
     - `agent_assigned_task_id`: Shows the task identifier assigned to each agent.
     - `task_id`: Displays task identifiers on the tasks.
+
+- **`saving_options`**: customize saved outputs:
+    - `save_timewise_result_csv`: Saves time-series task, distance, and communication counts.
+    - `save_agentwise_result_csv`: Saves per-agent task, distance, and communication counts.
 
 This detailed explanation should help you configure the SPACE Simulator effectively by adjusting the parameters in the `config.yaml` file according to your needs.
