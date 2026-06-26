@@ -1,5 +1,12 @@
 # CHANGELOG.md
 
+## Unreleased
+### Changes
+- **Communication Models**
+  - Added configurable packet-level communication models: `Perfect`, `Bernoulli`, `GilbertElliot`, and `Rayleigh`.
+  - Preserved the existing decision-making plugin interface by applying message drops between `message_to_share` and `messages_received`.
+  - Added timewise and agentwise communication counters for attempted, delivered, dropped, and received messages.
+
 ## Version 1.2.12 (24-08-20)
 ### Changes
 - **Simulation**
@@ -269,4 +276,3 @@
   - Added `work_rate` for agents.
   - Added `amounts` configuration to define the range of task amounts.
   - Added `task_visualisation_factor` to adjust the visual representation of tasks based on their amounts.
-

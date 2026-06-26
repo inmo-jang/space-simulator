@@ -40,6 +40,26 @@ agents:
   situation_awareness_radius: 500 # 0 represents "global", meaning that each agent can access to the information of all the tasks
   random_exploration_duration: 1000.0 # sec
 
+communication:
+  model: Perfect # Options: Perfect; Bernoulli; GilbertElliot; Rayleigh
+  random_seed: null # Set an integer for reproducible packet drops
+  bernoulli:
+    p_success: 1.0 # Probability that a sent message is received
+  gilbert_elliot:
+    p_good_success: 1.0
+    p_bad_success: 0.0
+    p_good_to_good: 0.9
+    p_bad_to_bad: 0.9
+    transition_interval_seconds: 1.0
+    initial_state: Good # Options: Good; Bad
+  rayleigh:
+    transmit_power_db: 30.0
+    sensitivity_threshold_db: -65.0
+    path_loss_at_reference_db: 40.0
+    reference_distance: 1.0
+    path_loss_exponent: 2.5
+    fading_scale: 1.0
+
 tasks:
   quantity: 100
   locations:

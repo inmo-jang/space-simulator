@@ -3,6 +3,7 @@ import math
 import copy
 from modules.behavior_tree import *
 from modules.utils import config, generate_positions, parse_behavior_tree
+from modules.communication import build_communication_model
 from modules.task import task_colors
 
 # Load agent configuration
@@ -14,6 +15,7 @@ agent_track_size = config['simulation']['agent_track_size']
 work_rate = config['agents']['work_rate']
 agent_communication_radius = config['agents']['communication_radius']
 agent_situation_awareness_radius = config.get('agents', {}).get('situation_awareness_radius', 0)
+communication_model = build_communication_model()
 font = pygame.font.Font(None, 15)
 
 # Load behavior tree
@@ -40,8 +42,14 @@ class Agent:
         self.communication_radius = agent_communication_radius
         self.situation_awareness_radius = agent_situation_awareness_radius
         self.agents_nearby = []
+        self.candidate_agents_nearby = []
         self.message_to_share = {}
         self.messages_received = []
+        self.messages_attempted = 0
+        self.messages_delivered = 0
+        self.messages_dropped = 0
+        self.messages_received_count = 0
+        self.simulation_time = 0.0
 
         self.assigned_task_id = None         # Local decision-making result.
         self.planned_tasks = []              # Local decision-making result.
@@ -145,11 +153,27 @@ class Agent:
         return vector
 
     def local_message_receive(self):
-        self.agents_nearby = self.get_agents_nearby()
-        for other_agent in self.agents_nearby:
-            if other_agent.agent_id != self.agent_id:                         
-                self.receive_message(other_agent.message_to_share)
-                # other_agent.receive_message(self.message_to_share)                          
+        self.candidate_agents_nearby = self.get_agents_nearby()
+        self.agents_nearby = []
+
+        for other_agent in self.candidate_agents_nearby:
+            if other_agent.agent_id == self.agent_id:
+                continue
+
+            message = other_agent.message_to_share
+            if not message:
+                continue
+
+            # Messages are still authored by decision-making plugins; this layer only
+            # decides whether a non-empty packet survives the configured channel.
+            other_agent.messages_attempted += 1
+            if communication_model.should_receive(other_agent, self, message, self.simulation_time):
+                other_agent.messages_delivered += 1
+                self.messages_received_count += 1
+                self.agents_nearby.append(other_agent)
+                self.receive_message(message)
+            else:
+                other_agent.messages_dropped += 1
 
         return self.agents_nearby
 

@@ -26,6 +26,7 @@ The official documentation of the SPACE simulator is available at [http://space-
 - Simulates multiple agents performing tasks
 - Agents use behavior trees for decision-making
 - Real-time task assignment and execution
+- Configurable communication models for decentralized algorithm comparisons
 - Debug mode for visualizing agent behavior
 
 
@@ -87,6 +88,7 @@ Refer to the configuration guide [CONFIG_GUIDE.md](/docs/CONFIG_GUIDE.md)
     - `agent.py`: Defines the Agent class and manages agent behavior.
     - `task.py`: Defines the Task class and manages task behavior.
     - `behavior_tree.py`: Implements behavior tree nodes and execution logic.
+    - `communication.py`: Applies packet-level communication models between agents.
     - `utils.py`: Utility functions and configuration loading.
 - `/plugins/`
     - `my_decision_making_plugin.py`: Template for decision-making algorithms for each agent.
